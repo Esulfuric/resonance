@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { Bell, Home, Search, User } from 'lucide-react';
+import { Bell, Home, Search, User, Music } from 'lucide-react';
 import Logo from './Logo';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -30,6 +30,10 @@ const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
                 <Link to="/feed" className="text-sm font-medium transition-colors hover:text-primary">
                   <Home className="h-5 w-5" />
                   <span className="sr-only">Home</span>
+                </Link>
+                <Link to="/discover" className="text-sm font-medium transition-colors hover:text-primary">
+                  <Music className="h-5 w-5" />
+                  <span className="sr-only">Discover</span>
                 </Link>
                 <Link to="/search" className="text-sm font-medium transition-colors hover:text-primary">
                   <Search className="h-5 w-5" />
@@ -78,13 +82,13 @@ const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
               <Home className="h-5 w-5" />
               <span className="text-xs">Home</span>
             </Link>
+            <Link to="/discover" className="flex flex-1 flex-col items-center justify-center">
+              <Music className="h-5 w-5" />
+              <span className="text-xs">Discover</span>
+            </Link>
             <Link to="/search" className="flex flex-1 flex-col items-center justify-center">
               <Search className="h-5 w-5" />
               <span className="text-xs">Search</span>
-            </Link>
-            <Link to="/notifications" className="flex flex-1 flex-col items-center justify-center">
-              <Bell className="h-5 w-5" />
-              <span className="text-xs">Alerts</span>
             </Link>
             <Link to="/profile" className="flex flex-1 flex-col items-center justify-center">
               <User className="h-5 w-5" />
