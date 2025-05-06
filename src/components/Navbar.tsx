@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Bell, Home, Search, User, Music, LogOut } from 'lucide-react';
 import Logo from './Logo';

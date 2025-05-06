@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { CreatePostForm } from "@/components/CreatePostForm";
 import { PostCard } from "@/components/PostCard";
@@ -9,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefreshCcw, Twitter, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 
 const mockPosts = [
   {
@@ -79,10 +79,16 @@ const trendingTopics = [
 const Feed = () => {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("foryou");
+  // Use auth guard to protect this route
+  const { isLoading } = useAuthGuard();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isAuthenticated={true} />
+      <Navbar />
       <div className="container flex-1 py-6">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
           {/* Main content */}

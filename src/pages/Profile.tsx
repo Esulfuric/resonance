@@ -1,10 +1,11 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PostCard } from "@/components/PostCard";
 import Navbar from "@/components/Navbar";
 import { Music, Users, Settings } from "lucide-react";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
+import { useSupabase } from "@/lib/supabase-provider";
 
 const mockPosts = [
   {
@@ -50,22 +51,34 @@ const mockPosts = [
 ];
 
 const Profile = () => {
+  const { isLoading, user } = useAuthGuard();
+  const { user: supabaseUser } = useSupabase();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+  
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isAuthenticated={true} />
+      <Navbar />
       <main className="container flex-1 py-6">
         {/* Profile header */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
             <Avatar className="h-24 w-24 md:h-32 md:w-32 avatar-ring">
-              <AvatarImage src="https://randomuser.me/api/portraits/women/42.jpg" alt="Jane Cooper" />
-              <AvatarFallback>JC</AvatarFallback>
+              <AvatarImage 
+                src={supabaseUser?.user_metadata?.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg"} 
+                alt={supabaseUser?.user_metadata?.full_name || "User"} 
+              />
+              <AvatarFallback>
+                {supabaseUser?.user_metadata?.full_name?.[0] || supabaseUser?.email?.[0] || 'U'}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl font-bold">Jane Cooper</h1>
-              <p className="text-muted-foreground">@janecooper</p>
+              <h1 className="text-2xl font-bold">{supabaseUser?.user_metadata?.full_name || "User"}</h1>
+              <p className="text-muted-foreground">@{supabaseUser?.user_metadata?.username || supabaseUser?.email?.split("@")[0] || "user"}</p>
               <p className="mt-2 max-w-xl">
-                Music enthusiast | Indie rock & electronic | Always hunting for new sounds 🎵
+                {supabaseUser?.user_metadata?.bio || "Music enthusiast | Share your bio in settings"}
               </p>
               <div className="flex gap-4 mt-4 justify-center md:justify-start">
                 <div>

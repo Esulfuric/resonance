@@ -14,6 +14,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Heart, MessageCircle, Share, Play, Pause } from "lucide-react";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 
 interface MusicReel {
   id: number;
@@ -177,10 +178,15 @@ const MusicReelCard = ({ reel }: { reel: MusicReel }) => {
 
 const Discover = () => {
   const isMobile = useIsMobile();
+  const { isLoading } = useAuthGuard();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isAuthenticated={true} />
+      <Navbar />
       <main className="container flex-1 py-6">
         <h1 className="text-2xl font-bold mb-6">Discover New Music</h1>
         
