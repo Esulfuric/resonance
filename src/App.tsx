@@ -17,6 +17,7 @@ import { MobileNavigation } from "./components/MobileNavigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { SupabaseProvider } from "@/lib/supabase-provider";
+import { toast } from "sonner";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,20 @@ const App = () => {
     } else {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
+    }
+
+    // Check if Supabase environment variables are missing
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      toast.error(
+        "Supabase configuration missing", 
+        { 
+          description: "Please make sure you've connected your project to Supabase through the Lovable integration.",
+          duration: 10000,
+        }
+      );
     }
   }, []);
 
