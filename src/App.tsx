@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
 import Discover from "./pages/Discover";
@@ -15,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import { MobileNavigation } from "./components/MobileNavigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
+import { SupabaseProvider } from "@/lib/supabase-provider";
 
 const queryClient = new QueryClient();
 
@@ -34,33 +36,36 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="min-h-screen"
-        >
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <MobileNavigation />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/feed" element={<Feed />} />
-              <Route path="/discover" element={<Discover />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/profile" element={<Profile />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </motion.div>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <SupabaseProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="min-h-screen"
+          >
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <MobileNavigation />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/feed" element={<Feed />} />
+                <Route path="/discover" element={<Discover />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/profile" element={<Profile />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </motion.div>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </SupabaseProvider>
   );
 };
 

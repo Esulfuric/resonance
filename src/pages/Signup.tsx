@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Logo from "@/components/Logo";
+import { useSupabase } from "@/lib/supabase-provider";
 
 const Signup = () => {
   const [name, setName] = useState("");
@@ -17,20 +18,34 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp } = useSupabase();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { error } = await signUp(email, password, {
+        full_name: name,
+        username: username
+      });
+      
+      if (error) throw error;
+      
       toast({
         title: "Account created",
-        description: "Welcome to Resonance! Your account has been created.",
+        description: "Welcome to Resonance! Check your email for confirmation.",
       });
-      navigate("/feed");
-    }, 1500);
+      navigate("/login");
+    } catch (error: any) {
+      toast({
+        title: "Signup failed",
+        description: error.message || "There was a problem creating your account.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

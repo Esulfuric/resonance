@@ -1,6 +1,6 @@
 
 import { Link } from 'react-router-dom';
-import { Bell, Home, Search, User, Music } from 'lucide-react';
+import { Bell, Home, Search, User, Music, LogOut } from 'lucide-react';
 import Logo from './Logo';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -8,13 +8,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { MusicPlayer } from './MusicPlayer';
 import { ThemeToggle } from './ThemeToggle';
 import { motion } from "framer-motion";
+import { useSupabase } from '@/lib/supabase-provider';
+import { useToast } from '@/hooks/use-toast';
 
-interface NavbarProps {
-  isAuthenticated?: boolean;
-}
-
-const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
+const Navbar = () => {
   const isMobile = useIsMobile();
+  const { user, signOut } = useSupabase();
+  const { toast } = useToast();
+  const isAuthenticated = !!user;
   
   const logoVariants = {
     hidden: { opacity: 0, y: -20 },
@@ -23,7 +24,7 @@ const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
   
   const navItemVariants = {
     hidden: { opacity: 0, y: -10 },
-    visible: i => ({ 
+    visible: (i: number) => ({ 
       opacity: 1, 
       y: 0, 
       transition: { 
@@ -32,6 +33,22 @@ const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
         ease: "easeOut"
       } 
     })
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -83,8 +100,8 @@ const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
                 >
                   <Link to="/profile" className="flex items-center gap-2">
                     <Avatar className="h-8 w-8 avatar-ring">
-                      <AvatarImage src="https://randomuser.me/api/portraits/women/42.jpg" alt="Profile" />
-                      <AvatarFallback>JD</AvatarFallback>
+                      <AvatarImage src={user?.user_metadata?.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg"} alt="Profile" />
+                      <AvatarFallback>{user?.user_metadata?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
                     </Avatar>
                   </Link>
                 </motion.div>
@@ -97,6 +114,23 @@ const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
                 >
                   <ThemeToggle />
                 </motion.div>
+                
+                <motion.div
+                  custom={6}
+                  variants={navItemVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleSignOut}
+                    className="rounded-full ml-2"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span className="sr-only">Sign out</span>
+                  </Button>
+                </motion.div>
               </nav>
             </div>
             
@@ -104,8 +138,8 @@ const Navbar = ({ isAuthenticated = false }: NavbarProps) => {
               <ThemeToggle />
               <Link to="/profile" className="flex items-center gap-2">
                 <Avatar className="h-8 w-8 avatar-ring">
-                  <AvatarImage src="https://randomuser.me/api/portraits/women/42.jpg" alt="Profile" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarImage src={user?.user_metadata?.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg"} alt="Profile" />
+                  <AvatarFallback>{user?.user_metadata?.full_name?.[0] || user?.email?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
               </Link>
             </div>
