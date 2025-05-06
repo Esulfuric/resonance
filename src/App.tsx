@@ -13,11 +13,13 @@ import Profile from "./pages/Profile";
 import Discover from "./pages/Discover";
 import SearchPage from "./pages/Search";
 import NotFound from "./pages/NotFound";
-import { MobileNavigation } from "./components/MobileNavigation";
+import CreatePost from "./pages/CreatePost";
+import { BottomNavigation } from "./components/BottomNavigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { SupabaseProvider } from "@/lib/supabase-provider";
 import { toast } from "sonner";
+import Navbar from "./components/Navbar";
 
 const queryClient = new QueryClient();
 
@@ -58,24 +60,45 @@ const App = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="min-h-screen"
+            className="min-h-screen pb-16"
           >
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <MobileNavigation />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/feed" element={<Feed />} />
-                <Route path="/discover" element={<Discover />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/profile" element={<Profile />} />
+                <Route path="/feed" element={
+                  <>
+                    <Navbar />
+                    <Feed />
+                  </>
+                } />
+                <Route path="/discover" element={
+                  <>
+                    <Navbar />
+                    <Discover />
+                  </>
+                } />
+                <Route path="/search" element={
+                  <>
+                    <Navbar />
+                    <SearchPage />
+                  </>
+                } />
+                <Route path="/profile" element={
+                  <>
+                    <Navbar />
+                    <Profile />
+                  </>
+                } />
+                <Route path="/create-post" element={<CreatePost />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <BottomNavigation />
             </BrowserRouter>
           </motion.div>
         </TooltipProvider>

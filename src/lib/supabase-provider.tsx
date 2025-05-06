@@ -20,41 +20,50 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
-    const fetchSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Error fetching session:', error);
-      }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    };
-    
-    fetchSession();
-
-    // Set up auth state listener
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
-
+    
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+    
     return () => {
       subscription.unsubscribe();
     };
   }, []);
 
   const signUp = async (email: string, password: string, metadata?: { full_name?: string, username?: string }) => {
-    return supabase.auth.signUp({
+    const response = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
       }
     });
+    
+    // If successful signup and we have user data, create a profile
+    if (response.data?.user && !response.error) {
+      try {
+        await supabase.from('profiles').insert({
+          id: response.data.user.id,
+          username: metadata?.username || email.split('@')[0],
+          full_name: metadata?.full_name || '',
+          avatar_url: '',
+          updated_at: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error("Error creating profile:", error);
+      }
+    }
+    
+    return response;
   };
 
   const signIn = async (email: string, password: string) => {
