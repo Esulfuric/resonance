@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { PostCard } from "@/components/PostCard";
 import { TrendingMusic } from "@/components/TrendingMusic";
@@ -24,20 +25,25 @@ const Feed = () => {
     const fetchPosts = async () => {
       try {
         setIsLoading(true);
-        let query = supabase.from('posts').select('*, profiles(*)').order('created_at', { ascending: false }) as any;
         
-        if (activeTab === 'following') {
-          // In a real app, you would filter to show only followed users' posts
-          // For now, we'll just show fewer posts to simulate the difference
-          query = query.limit(2);
-        } else {
-          query = query.limit(10);
-        }
+        // This query joins the posts table with the profiles table
+        const query = supabase
+          .from('posts')
+          .select(`
+            *,
+            profiles:user_id(*)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(activeTab === 'following' ? 2 : 10);
         
         const { data, error } = await query;
         
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching posts:', error);
+          throw error;
+        }
         
+        console.log("Fetched posts:", data);
         setPosts(data || []);
       } catch (error: any) {
         console.error('Error fetching posts:', error);
@@ -69,73 +75,16 @@ const Feed = () => {
   if (!user) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
-  
-  // Fallback to mock posts if no real posts exist
-  const mockPosts = [
-    {
-      id: 1,
-      user: {
-        name: "Jane Cooper",
-        username: "janecooper",
-        avatar: "https://randomuser.me/api/portraits/women/42.jpg",
-      },
-      timestamp: "2h ago",
-      content: "Just discovered this amazing new track! The beat is so addictive. #MusicDiscovery",
-      songInfo: {
-        title: "Ocean Waves",
-        artist: "Chill Vibes",
-        albumCover: "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?q=80&w=200&auto=format&fit=crop",
-      },
-      stats: {
-        likes: 42,
-        comments: 5,
-        shares: 2,
-      },
-    },
-    {
-      id: 2,
-      user: {
-        name: "Robert Fox",
-        username: "robertfox",
-        avatar: "https://randomuser.me/api/portraits/men/64.jpg",
-      },
-      timestamp: "3h ago",
-      content: "Throwback to this classic album that never gets old. What's your favorite track from it? 🎵",
-      songInfo: {
-        title: "Neon City",
-        artist: "Synth Collective",
-        albumCover: "https://images.unsplash.com/photo-1563089145-599997674d42?q=80&w=200&auto=format&fit=crop",
-      },
-      stats: {
-        likes: 24,
-        comments: 8,
-        shares: 1,
-      },
-    },
-    {
-      id: 3,
-      user: {
-        name: "Esther Howard",
-        username: "estherhoward",
-        avatar: "https://randomuser.me/api/portraits/women/24.jpg",
-      },
-      timestamp: "5h ago",
-      content: "Been listening to this on repeat all day. The lyrics really hit different today. Anyone else feel the same? 🎧",
-      stats: {
-        likes: 18,
-        comments: 3,
-        shares: 0,
-      },
-    },
-  ];
 
+  // Map the posts data to the format expected by PostCard component
   const displayPosts = posts.length > 0 ? posts.map((post) => {
+    const profile = post.profiles || {};
     return {
       id: post.id,
       user: {
-        name: post.profiles?.full_name || post.profiles?.username || "User",
-        username: post.profiles?.username || "user",
-        avatar: post.profiles?.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg",
+        name: profile.full_name || profile.username || "User",
+        username: profile.username || "user",
+        avatar: profile.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg",
       },
       timestamp: new Date(post.created_at).toLocaleDateString(),
       content: post.content,
@@ -150,8 +99,9 @@ const Feed = () => {
         shares: 0,
       },
     };
-  }) : [] as any[];
+  }) : [];
 
+  // Fallback mock data for trending topics
   const trendingTopics = [
     { id: 1, name: "#NewMusicFriday", postCount: "24.5K posts" },
     { id: 2, name: "Drake", postCount: "18.2K posts" },
