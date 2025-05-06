@@ -51,13 +51,16 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     // If successful signup and we have user data, create a profile
     if (response.data?.user && !response.error) {
       try {
-        await supabase.from('profiles').insert({
+        // Type assertion to handle the typing issue
+        const { error } = await supabase.from('profiles').insert({
           id: response.data.user.id,
           username: metadata?.username || email.split('@')[0],
           full_name: metadata?.full_name || '',
           avatar_url: '',
           updated_at: new Date().toISOString(),
-        });
+        } as any);
+        
+        if (error) throw error;
       } catch (error) {
         console.error("Error creating profile:", error);
       }

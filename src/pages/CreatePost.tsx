@@ -36,7 +36,7 @@ const CreatePost = () => {
           user_id: user.id,
           content,
           song_title: attachedSong || null
-        });
+        } as any);
       
       if (error) throw error;
       

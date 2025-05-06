@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { PostCard } from "@/components/PostCard";
 import { TrendingMusic } from "@/components/TrendingMusic";
@@ -25,7 +24,7 @@ const Feed = () => {
     const fetchPosts = async () => {
       try {
         setIsLoading(true);
-        let query = supabase.from('posts').select('*, profiles(*)').order('created_at', { ascending: false });
+        let query = supabase.from('posts').select('*, profiles(*)').order('created_at', { ascending: false }) as any;
         
         if (activeTab === 'following') {
           // In a real app, you would filter to show only followed users' posts
@@ -151,7 +150,7 @@ const Feed = () => {
         shares: 0,
       },
     };
-  }) : mockPosts;
+  }) : [] as any[];
 
   const trendingTopics = [
     { id: 1, name: "#NewMusicFriday", postCount: "24.5K posts" },
