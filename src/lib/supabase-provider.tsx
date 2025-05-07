@@ -3,11 +3,18 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
+type UserMetadata = {
+  full_name?: string;
+  username?: string;
+  bio?: string;
+  user_type?: 'musician' | 'listener';
+}
+
 type SupabaseContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, metadata?: { full_name?: string, username?: string }) => Promise<any>;
+  signUp: (email: string, password: string, metadata?: UserMetadata) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
 };
@@ -39,7 +46,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signUp = async (email: string, password: string, metadata?: { full_name?: string, username?: string }) => {
+  const signUp = async (email: string, password: string, metadata?: UserMetadata) => {
     const response = await supabase.auth.signUp({
       email,
       password,
@@ -51,14 +58,14 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     // If successful signup and we have user data, create a profile
     if (response.data?.user && !response.error) {
       try {
-        // Type assertion to handle the typing issue
         const { error } = await supabase.from('profiles').insert({
           id: response.data.user.id,
           username: metadata?.username || email.split('@')[0],
           full_name: metadata?.full_name || '',
+          bio: metadata?.bio || '',
           avatar_url: '',
           updated_at: new Date().toISOString(),
-        } as any);
+        });
         
         if (error) throw error;
       } catch (error) {

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +34,6 @@ const Signup = () => {
       const { error } = await signUp(email, password, {
         full_name: name,
         username: username,
-        user_type: userType,
         bio: bio
       });
       

@@ -42,14 +42,33 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
       
       let query = supabase
         .from('posts')
-        .select('*, profiles:user_id(*)')
+        .select(`
+          *,
+          profiles:user_id (
+            full_name,
+            username,
+            avatar_url
+          )
+        `)
         .order('created_at', { ascending: false });
       
       // Apply filters based on active tab
-      if (activeTab === 'following') {
-        // TODO: For following tab, we would filter by followed users
-        // This is a placeholder - implement proper following filter once that feature is built
-        query = query.limit(10);
+      if (activeTab === 'following' && user) {
+        // For following tab, get followed users first, then their posts
+        const { data: followedUsers } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+          
+        if (followedUsers && followedUsers.length > 0) {
+          const followingIds = followedUsers.map(fu => fu.following_id);
+          query = query.in('user_id', followingIds);
+        } else {
+          // No followed users, return empty array
+          setPosts([]);
+          setIsLoading(false);
+          return;
+        }
       } else {
         // For you tab - show more posts
         query = query.limit(20);
@@ -61,7 +80,9 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
         throw error;
       }
       
-      setPosts(data || []);
+      // Safely cast the data to our Post interface
+      const typedPosts = (data || []) as Post[];
+      setPosts(typedPosts);
     } catch (error: any) {
       console.error('Error fetching posts:', error);
       toast({

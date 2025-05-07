@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,7 +56,14 @@ const UserProfile = () => {
         // Fetch user posts
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
-          .select('*, profiles:user_id(*)')
+          .select(`
+            *,
+            profiles:user_id(
+              full_name,
+              username, 
+              avatar_url
+            )
+          `)
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
         
@@ -65,34 +71,36 @@ const UserProfile = () => {
         setPosts(postsData || []);
         
         // Check if current user is following this profile
-        const { data: followData, error: followError } = await supabase
-          .from('follows')
-          .select('*')
-          .eq('follower_id', currentUser.id)
-          .eq('following_id', userId)
-          .maybeSingle();
+        if (currentUser) {
+          const { data: followData, error: followError } = await supabase
+            .from('follows')
+            .select('*')
+            .eq('follower_id', currentUser.id)
+            .eq('following_id', userId)
+            .maybeSingle();
+            
+          if (followError) throw followError;
           
-        if (followError) throw followError;
-        
-        setIsFollowing(!!followData);
+          setIsFollowing(!!followData);
+        }
         
         // Get follower count
-        const { data: followers, error: followerError } = await supabase
+        const { count: followerCount, error: followerError } = await supabase
           .from('follows')
-          .select('*', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('following_id', userId);
           
         if (followerError) throw followerError;
-        setFollowerCount(followers?.length || 0);
+        setFollowerCount(followerCount || 0);
         
         // Get following count
-        const { data: following, error: followingError } = await supabase
+        const { count: followingCount, error: followingError } = await supabase
           .from('follows')
-          .select('*', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('follower_id', userId);
           
         if (followingError) throw followingError;
-        setFollowingCount(following?.length || 0);
+        setFollowingCount(followingCount || 0);
         
       } catch (error: any) {
         console.error('Error fetching profile:', error);

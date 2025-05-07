@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +11,7 @@ import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useSupabase } from "@/lib/supabase-provider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
 import { 
   Dialog, 
   DialogContent, 
@@ -86,7 +86,14 @@ const Profile = () => {
         // Fetch user posts
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
-          .select('*, profiles:user_id(*)')
+          .select(`
+            *,
+            profiles:user_id (
+              full_name,
+              username,
+              avatar_url
+            )
+          `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
         
