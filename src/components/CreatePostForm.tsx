@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSupabase } from "@/lib/supabase-provider";
 import { supabase } from "@/lib/supabase";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function CreatePostForm() {
   const [content, setContent] = useState("");
@@ -16,6 +17,7 @@ export function CreatePostForm() {
   const [isPosting, setIsPosting] = useState(false);
   const { toast } = useToast();
   const { user } = useSupabase();
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,10 +42,17 @@ export function CreatePostForm() {
         description: "Your post has been shared with your followers.",
       });
       
+      // Invalidate and refetch queries to update the UI
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['userPosts'] });
+      
       // Reset the form
       setContent("");
       setAttachedSong(null);
       setIsFocused(false);
+      
+      // Force refresh the current page to show the new post
+      window.location.reload();
       
     } catch (error: any) {
       console.error("Error creating post:", error);

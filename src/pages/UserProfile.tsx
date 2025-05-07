@@ -1,26 +1,57 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PostCard } from "@/components/PostCard";
 import { Music, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
+import { ProfileHeader } from "@/components/ProfileHeader";
+
+interface UserProfile {
+  id: string;
+  username?: string;
+  full_name?: string;
+  bio?: string;
+  avatar_url?: string;
+  user_type?: 'musician' | 'listener';
+}
+
+interface FormattedPost {
+  id: string;
+  user: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  timestamp: string;
+  content: string;
+  songInfo?: {
+    title: string;
+    artist: string;
+    albumCover: string;
+  };
+  stats: {
+    likes: number;
+    comments: number;
+    shares: number;
+  };
+}
 
 const UserProfile = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user: currentUser } = useSupabase();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<any[]>([]);
-  const [isFollowing, setIsFollowing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [followerCount, setFollowerCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
+  const [activeTab, setActiveTab] = useState("posts");
+  const [followers, setFollowers] = useState<any[]>([]);
+  const [following, setFollowing] = useState<any[]>([]);
   
   // Use auth guard to protect this route
   useAuthGuard();
@@ -70,37 +101,39 @@ const UserProfile = () => {
         if (postsError) throw postsError;
         setPosts(postsData || []);
         
-        // Check if current user is following this profile
-        if (currentUser) {
-          const { data: followData, error: followError } = await supabase
-            .from('follows')
-            .select('*')
-            .eq('follower_id', currentUser.id)
-            .eq('following_id', userId)
-            .maybeSingle();
-            
-          if (followError) throw followError;
-          
-          setIsFollowing(!!followData);
-        }
-        
-        // Get follower count
-        const { count: followerCount, error: followerError } = await supabase
+        // Fetch followers (people following this user)
+        const { data: followersData, error: followersError } = await supabase
           .from('follows')
-          .select('*', { count: 'exact', head: true })
+          .select(`
+            follower_id,
+            profiles:follower_id (
+              id,
+              username,
+              full_name,
+              avatar_url
+            )
+          `)
           .eq('following_id', userId);
-          
-        if (followerError) throw followerError;
-        setFollowerCount(followerCount || 0);
         
-        // Get following count
-        const { count: followingCount, error: followingError } = await supabase
+        if (followersError) throw followersError;
+        setFollowers(followersData || []);
+        
+        // Fetch following (people this user follows)
+        const { data: followingData, error: followingError } = await supabase
           .from('follows')
-          .select('*', { count: 'exact', head: true })
+          .select(`
+            following_id,
+            profiles:following_id (
+              id,
+              username,
+              full_name,
+              avatar_url
+            )
+          `)
           .eq('follower_id', userId);
-          
+        
         if (followingError) throw followingError;
-        setFollowingCount(followingCount || 0);
+        setFollowing(followingData || []);
         
       } catch (error: any) {
         console.error('Error fetching profile:', error);
@@ -117,53 +150,6 @@ const UserProfile = () => {
     fetchProfileData();
   }, [userId, navigate, toast, currentUser]);
   
-  const handleFollowToggle = async () => {
-    if (!currentUser || !userId) return;
-    
-    try {
-      if (isFollowing) {
-        // Unfollow user
-        const { error } = await supabase
-          .from('follows')
-          .delete()
-          .eq('follower_id', currentUser.id)
-          .eq('following_id', userId);
-          
-        if (error) throw error;
-        
-        setFollowerCount(prev => Math.max(0, prev - 1));
-      } else {
-        // Follow user
-        const { error } = await supabase
-          .from('follows')
-          .insert({
-            follower_id: currentUser.id,
-            following_id: userId,
-            created_at: new Date().toISOString()
-          });
-          
-        if (error) throw error;
-        
-        setFollowerCount(prev => prev + 1);
-      }
-      
-      setIsFollowing(!isFollowing);
-      toast({
-        title: isFollowing ? "Unfollowed" : "Following",
-        description: isFollowing 
-          ? `You are no longer following ${profile?.full_name || profile?.username || "this user"}` 
-          : `You are now following ${profile?.full_name || profile?.username || "this user"}`,
-      });
-    } catch (error: any) {
-      console.error('Error toggling follow:', error);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-  
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading profile...</div>;
   }
@@ -173,7 +159,7 @@ const UserProfile = () => {
   }
 
   // Format posts for display
-  const displayPosts = posts.map((post) => {
+  const displayPosts: FormattedPost[] = posts.map((post) => {
     return {
       id: post.id,
       user: {
@@ -202,60 +188,16 @@ const UserProfile = () => {
     <div className="min-h-screen flex flex-col pb-16">
       <main className="container flex-1 py-6">
         {/* Profile header */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-            <Avatar className="h-24 w-24 md:h-32 md:w-32 avatar-ring">
-              <AvatarImage 
-                src={profile.avatar_url || undefined} 
-                alt={profile.full_name || "User"} 
-              />
-              <AvatarFallback>
-                {profile.full_name?.[0] || profile.username?.[0] || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl font-bold">{profile.full_name || "User"}</h1>
-              <p className="text-muted-foreground">@{profile.username || "user"}</p>
-              <p className="mt-2 max-w-xl">
-                {profile.bio || "Music enthusiast"}
-              </p>
-              <div className="flex gap-4 mt-4 justify-center md:justify-start">
-                <div>
-                  <span className="font-bold">{posts.length}</span>{" "}
-                  <span className="text-muted-foreground">Posts</span>
-                </div>
-                <div>
-                  <span className="font-bold">{followingCount}</span>{" "}
-                  <span className="text-muted-foreground">Following</span>
-                </div>
-                <div>
-                  <span className="font-bold">{followerCount}</span>{" "}
-                  <span className="text-muted-foreground">Followers</span>
-                </div>
-              </div>
-            </div>
-            {!isOwnProfile && (
-              <div className="md:self-start">
-                <Button 
-                  variant={isFollowing ? "outline" : "default"}
-                  onClick={handleFollowToggle}
-                >
-                  {isFollowing ? "Following" : "Follow"}
-                </Button>
-              </div>
-            )}
-            {isOwnProfile && (
-              <div className="md:self-start">
-                <Button onClick={() => navigate('/profile')}>
-                  Edit Profile
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
+        <ProfileHeader 
+          profile={{
+            ...profile,
+            post_count: posts.length
+          }} 
+          isOwnProfile={isOwnProfile}
+        />
 
         {/* Profile content */}
-        <Tabs defaultValue="posts" className="mt-6">
+        <Tabs defaultValue={activeTab} className="mt-6" onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto md:mx-0">
             <TabsTrigger value="posts" className="flex gap-2 items-center">
               <Music className="h-4 w-4" />
@@ -266,6 +208,7 @@ const UserProfile = () => {
               <span className="hidden sm:inline">Following</span>
             </TabsTrigger>
           </TabsList>
+          
           <TabsContent value="posts" className="mt-6 space-y-6">
             {displayPosts.length > 0 ? (
               displayPosts.map((post) => (
@@ -277,14 +220,43 @@ const UserProfile = () => {
               </div>
             )}
           </TabsContent>
+          
           <TabsContent value="following" className="mt-6">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                {isOwnProfile 
-                  ? "You aren't following anyone yet." 
-                  : "This user isn't following anyone yet."}
-              </p>
-            </div>
+            {following.length > 0 ? (
+              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {following.map((follow) => (
+                  <div 
+                    key={follow.following_id} 
+                    className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer"
+                    onClick={() => navigate(`/profile/${follow.profiles.id}`)}
+                  >
+                    <Avatar>
+                      <AvatarImage src={follow.profiles.avatar_url} />
+                      <AvatarFallback>
+                        {(follow.profiles.full_name?.[0] || follow.profiles.username?.[0] || 'U').toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{follow.profiles.full_name || follow.profiles.username}</p>
+                      <p className="text-sm text-muted-foreground">@{follow.profiles.username}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  {isOwnProfile 
+                    ? "You aren't following anyone yet." 
+                    : "This user isn't following anyone yet."}
+                </p>
+                {isOwnProfile && (
+                  <Button className="mt-4" onClick={() => navigate('/search')}>
+                    Find people to follow
+                  </Button>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </main>

@@ -1,17 +1,17 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { PostCard } from "@/components/PostCard";
-import { Music, Users, Settings, Upload, Camera, Key } from "lucide-react";
+import { Music, Users, Settings, Key } from "lucide-react";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useSupabase } from "@/lib/supabase-provider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { 
   Dialog, 
   DialogContent, 
@@ -21,6 +21,29 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from "@/components/ui/dialog";
+import { ProfileHeader } from "@/components/ProfileHeader";
+import { ProfileEditor } from "@/components/ProfileEditor";
+
+interface FormattedPost {
+  id: string;
+  user: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  timestamp: string;
+  content: string;
+  songInfo?: {
+    title: string;
+    artist: string;
+    albumCover: string;
+  };
+  stats: {
+    likes: number;
+    comments: number;
+    shares: number;
+  };
+}
 
 const Profile = () => {
   const { isLoading: authLoading, user } = useAuthGuard();
@@ -30,14 +53,15 @@ const Profile = () => {
   
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
+    id: "",
     full_name: "",
     username: "",
     bio: "",
-    avatar_url: ""
+    avatar_url: "",
+    user_type: undefined as 'musician' | 'listener' | undefined
   });
   
   // Password change states
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -45,6 +69,7 @@ const Profile = () => {
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [activeTab, setActiveTab] = useState("posts");
   
   // For avatar upload
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,18 +93,22 @@ const Profile = () => {
         
         if (profileData) {
           setProfileData({
+            id: profileData.id,
             full_name: profileData.full_name || "",
             username: profileData.username || "",
             bio: profileData.bio || "",
-            avatar_url: profileData.avatar_url || ""
+            avatar_url: profileData.avatar_url || "",
+            user_type: profileData.user_type
           });
         } else {
           // Set default values from Supabase auth if profile doesn't exist
           setProfileData({
+            id: user.id,
             full_name: supabaseUser?.user_metadata?.full_name || "",
             username: supabaseUser?.user_metadata?.username || supabaseUser?.email?.split("@")[0] || "",
             bio: supabaseUser?.user_metadata?.bio || "",
-            avatar_url: supabaseUser?.user_metadata?.avatar_url || ""
+            avatar_url: supabaseUser?.user_metadata?.avatar_url || "",
+            user_type: supabaseUser?.user_metadata?.user_type
           });
         }
         
@@ -114,39 +143,6 @@ const Profile = () => {
     
     fetchUserData();
   }, [user, supabaseUser, toast]);
-  
-  const handleUpdateProfile = async () => {
-    if (!user) return;
-    
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: profileData.full_name,
-          username: profileData.username,
-          bio: profileData.bio,
-          avatar_url: profileData.avatar_url,
-          updated_at: new Date().toISOString()
-        });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated.",
-      });
-      
-      setIsEditing(false);
-    } catch (error: any) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Error updating profile",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
   
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -251,7 +247,6 @@ const Profile = () => {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setIsChangingPassword(false);
       
     } catch (error: any) {
       console.error('Error changing password:', error);
@@ -263,7 +258,8 @@ const Profile = () => {
     }
   };
   
-  const displayPosts = userPosts.map((post) => {
+  // Format posts for display
+  const displayPosts: FormattedPost[] = userPosts.map((post) => {
     const profile = post.profiles || {};
     return {
       id: post.id,
@@ -294,157 +290,39 @@ const Profile = () => {
   return (
     <div className="min-h-screen flex flex-col pb-16">
       <main className="container flex-1 py-6">
-        {/* Profile header */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-            <div className="relative group">
-              <Avatar className="h-24 w-24 md:h-32 md:w-32 avatar-ring">
-                <AvatarImage 
-                  src={profileData.avatar_url || supabaseUser?.user_metadata?.avatar_url || undefined} 
-                  alt={profileData.full_name || "User"} 
-                />
-                <AvatarFallback>
-                  {(profileData.full_name?.[0] || supabaseUser?.email?.[0] || 'U').toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div 
-                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Camera className="h-6 w-6 text-white" />
-              </div>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleAvatarUpload} 
-                accept="image/*" 
-                className="hidden" 
-                disabled={uploadingAvatar}
-              />
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="fullName" className="text-sm font-medium">Full Name</label>
-                    <Input 
-                      id="fullName"
-                      value={profileData.full_name} 
-                      onChange={(e) => setProfileData({...profileData, full_name: e.target.value})}
-                      placeholder="Your full name" 
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="username" className="text-sm font-medium">Username</label>
-                    <Input 
-                      id="username"
-                      value={profileData.username} 
-                      onChange={(e) => setProfileData({...profileData, username: e.target.value})}
-                      placeholder="Your username" 
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="bio" className="text-sm font-medium">Bio</label>
-                    <Textarea 
-                      id="bio"
-                      value={profileData.bio} 
-                      onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
-                      placeholder="Tell us about yourself"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <h1 className="text-2xl font-bold">{profileData.full_name || "User"}</h1>
-                  <p className="text-muted-foreground">@{profileData.username || "user"}</p>
-                  <p className="mt-2 max-w-xl">
-                    {profileData.bio || "Share your bio by editing your profile"}
-                  </p>
-                </>
-              )}
-              <div className="flex gap-4 mt-4 justify-center md:justify-start">
-                <div>
-                  <span className="font-bold">{userPosts.length}</span>{" "}
-                  <span className="text-muted-foreground">Posts</span>
-                </div>
-                <div>
-                  <span className="font-bold">0</span>{" "}
-                  <span className="text-muted-foreground">Following</span>
-                </div>
-                <div>
-                  <span className="font-bold">0</span>{" "}
-                  <span className="text-muted-foreground">Followers</span>
-                </div>
-              </div>
-            </div>
-            <div className="md:self-start">
-              {isEditing ? (
-                <div className="space-x-2">
-                  <Button onClick={handleUpdateProfile}>Save</Button>
-                  <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="flex items-center gap-2 w-full">
-                        <Key className="h-4 w-4" />
-                        <span>Change Password</span>
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Change Password</DialogTitle>
-                        <DialogDescription>
-                          Enter your current password and a new password below.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="current-password">Current Password</Label>
-                          <Input 
-                            id="current-password" 
-                            type="password" 
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            placeholder="••••••••" 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="new-password">New Password</Label>
-                          <Input 
-                            id="new-password" 
-                            type="password" 
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="••••••••" 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm-password">Confirm New Password</Label>
-                          <Input 
-                            id="confirm-password" 
-                            type="password" 
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="••••••••" 
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button type="submit" onClick={handlePasswordChange}>Save Changes</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              )}
-            </div>
+        {/* Profile header or editor */}
+        {isEditing ? (
+          <div className="mb-8 max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-4">Edit Profile</h2>
+            <ProfileEditor 
+              profileData={profileData}
+              onSave={() => setIsEditing(false)}
+              onCancel={() => setIsEditing(false)}
+            />
           </div>
-        </div>
+        ) : (
+          <ProfileHeader 
+            profile={{
+              ...profileData,
+              post_count: userPosts.length
+            }} 
+            isOwnProfile={true}
+            onAvatarClick={() => fileInputRef.current?.click()}
+            isUploadingAvatar={uploadingAvatar}
+          />
+        )}
+        
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleAvatarUpload} 
+          accept="image/*" 
+          className="hidden" 
+          disabled={uploadingAvatar}
+        />
 
         {/* Profile content */}
-        <Tabs defaultValue="posts" className="mt-6">
+        <Tabs defaultValue={activeTab} className="mt-6" onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto md:mx-0">
             <TabsTrigger value="posts" className="flex gap-2 items-center">
               <Music className="h-4 w-4" />
@@ -459,6 +337,7 @@ const Profile = () => {
               <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
+          
           <TabsContent value="posts" className="mt-6 space-y-6">
             {displayPosts.length > 0 ? (
               displayPosts.map((post) => (
@@ -471,12 +350,14 @@ const Profile = () => {
               </div>
             )}
           </TabsContent>
+          
           <TabsContent value="following" className="mt-6">
             <div className="text-center py-8">
               <p className="text-muted-foreground">You aren't following anyone yet.</p>
               <Button className="mt-4" onClick={() => navigate("/search")}>Find People to Follow</Button>
             </div>
           </TabsContent>
+          
           <TabsContent value="settings" className="mt-6">
             <div className="max-w-md space-y-4">
               <div className="space-y-1">
@@ -484,6 +365,18 @@ const Profile = () => {
                 <p className="text-sm text-muted-foreground">Manage your account preferences and settings.</p>
               </div>
               <div className="border rounded-lg divide-y">
+                <div className="p-4">
+                  <h4 className="font-medium">Profile Information</h4>
+                  <p className="text-sm text-muted-foreground mt-1">Update how others see you on the platform</p>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="mt-2" 
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Edit Profile
+                  </Button>
+                </div>
                 <div className="p-4">
                   <h4 className="font-medium">Email & Password</h4>
                   <p className="text-sm text-muted-foreground mt-1">Current email: {supabaseUser?.email}</p>
@@ -535,10 +428,6 @@ const Profile = () => {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                </div>
-                <div className="p-4">
-                  <h4 className="font-medium">Privacy Settings</h4>
-                  <Button size="sm" variant="outline" className="mt-2" onClick={() => setIsEditing(true)}>Manage Profile</Button>
                 </div>
               </div>
             </div>

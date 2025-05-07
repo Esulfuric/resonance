@@ -23,7 +23,22 @@ import { toast } from "sonner";
 import Navbar from "./components/Navbar";
 import { AuthenticatedRoute } from "./components/AuthenticatedRoute";
 
-const queryClient = new QueryClient();
+// Create a Query Client with proper config for better error handling
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      onError: (error: any) => {
+        toast.error("Action Failed", {
+          description: error.message || "There was a problem with your request",
+        });
+      }
+    }
+  }
+});
 
 const App = () => {
   // Check for saved theme preference or use system preference
@@ -44,13 +59,7 @@ const App = () => {
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
     if (!supabaseUrl || !supabaseAnonKey) {
-      toast.error(
-        "Supabase configuration missing", 
-        { 
-          description: "Please make sure you've connected your project to Supabase through the Lovable integration.",
-          duration: 10000,
-        }
-      );
+      console.warn("Supabase configuration missing in environment variables");
     }
   }, []);
 
