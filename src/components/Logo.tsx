@@ -21,7 +21,7 @@ const Logo = ({ variant = 'full', className = '', size = 'normal' }: LogoProps) 
 
   // Apply different size classes based on effectiveSize
   const sizeClass = effectiveSize === 'large' 
-    ? "h-16 md:h-20" // Larger logo
+    ? "h-20 md:h-28" // Increased from h-16 md:h-20 for a larger logo
     : "h-8 md:h-10"; // Normal size logo
 
   return (
