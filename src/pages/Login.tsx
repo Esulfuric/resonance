@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,16 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn } = useSupabase();
+  const { signIn, user } = useSupabase();
+
+  // If user is already logged in, redirect to feed
+  useEffect(() => {
+    if (user) {
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin') || '/feed';
+      sessionStorage.removeItem('redirectAfterLogin'); // Clear the stored path
+      navigate(redirectPath);
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,14 +39,14 @@ const Login = () => {
         title: "Login successful",
         description: "Welcome back to Resonance!",
       });
-      navigate("/feed");
+
+      // The useEffect above will handle the redirect
     } catch (error: any) {
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };

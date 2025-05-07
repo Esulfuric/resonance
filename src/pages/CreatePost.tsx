@@ -19,7 +19,7 @@ const CreatePost = () => {
   const { user } = useAuthGuard();
   
   if (!user) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">Redirecting...</div>;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,7 +36,7 @@ const CreatePost = () => {
           user_id: user.id,
           content,
           song_title: attachedSong || null
-        } as any);
+        });
       
       if (error) throw error;
       
@@ -53,7 +53,6 @@ const CreatePost = () => {
         description: error.message || "There was a problem creating your post.",
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -116,7 +115,7 @@ const CreatePost = () => {
                         onClick={() => setAttachedSong(null)}
                       >
                         <span className="sr-only">Remove</span>
-                        ✕
+                        <X className="h-3 w-3" />
                       </Button>
                     </div>
                   )}

@@ -6,31 +6,59 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Music, Image, Smile, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
+import { useSupabase } from "@/lib/supabase-provider";
+import { supabase } from "@/lib/supabase";
 
 export function CreatePostForm() {
   const [content, setContent] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [attachedSong, setAttachedSong] = useState<string | null>(null);
+  const [isPosting, setIsPosting] = useState(false);
   const { toast } = useToast();
+  const { user } = useSupabase();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
-
-    // In a real app, we would send this data to the server
-    toast({
-      title: "Post created!",
-      description: "Your post has been published.",
-    });
+    if (!content.trim() || !user) return;
     
-    // Reset the form
-    setContent("");
-    setAttachedSong(null);
-    setIsFocused(false);
+    setIsPosting(true);
+    
+    try {
+      // Create post in Supabase
+      const { error } = await supabase
+        .from('posts')
+        .insert({
+          user_id: user.id,
+          content,
+          song_title: attachedSong || null
+        });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Post created!",
+        description: "Your post has been shared with your followers.",
+      });
+      
+      // Reset the form
+      setContent("");
+      setAttachedSong(null);
+      setIsFocused(false);
+      
+    } catch (error: any) {
+      console.error("Error creating post:", error);
+      toast({
+        title: "Error creating post",
+        description: error.message || "There was a problem sharing your post.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const handleAttachSong = () => {
-    // Mock attaching a song
+    // Mock attaching a song - in a real app, this would open a music selection modal
     setAttachedSong("Ocean Waves by Chill Vibes");
   };
 
@@ -40,8 +68,11 @@ export function CreatePostForm() {
         <form onSubmit={handleSubmit}>
           <div className="flex gap-3">
             <Avatar className="h-10 w-10 avatar-ring">
-              <AvatarImage src="https://randomuser.me/api/portraits/women/42.jpg" alt="Profile" />
-              <AvatarFallback>JD</AvatarFallback>
+              <AvatarImage 
+                src={user?.user_metadata?.avatar_url} 
+                alt={user?.user_metadata?.full_name || "Profile"} 
+              />
+              <AvatarFallback>{user?.email?.[0] || 'U'}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <Textarea
@@ -108,9 +139,9 @@ export function CreatePostForm() {
                   type="submit"
                   size="sm"
                   className="bg-resonance-green hover:bg-resonance-green/90"
-                  disabled={!content.trim()}
+                  disabled={!content.trim() || isPosting}
                 >
-                  Post
+                  {isPosting ? "Posting..." : "Post"}
                 </Button>
               </div>
             </div>

@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -21,6 +21,7 @@ import { motion } from "framer-motion";
 import { SupabaseProvider } from "@/lib/supabase-provider";
 import { toast } from "sonner";
 import Navbar from "./components/Navbar";
+import { AuthenticatedRoute } from "./components/AuthenticatedRoute";
 
 const queryClient = new QueryClient();
 
@@ -67,42 +68,60 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <Routes>
+                {/* Public routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                
+                {/* Protected routes with Navbar */}
                 <Route path="/feed" element={
-                  <>
-                    <Navbar />
-                    <Feed />
-                  </>
+                  <AuthenticatedRoute>
+                    <>
+                      <Navbar />
+                      <Feed />
+                    </>
+                  </AuthenticatedRoute>
                 } />
                 <Route path="/discover" element={
-                  <>
-                    <Navbar />
-                    <Discover />
-                  </>
+                  <AuthenticatedRoute>
+                    <>
+                      <Navbar />
+                      <Discover />
+                    </>
+                  </AuthenticatedRoute>
                 } />
                 <Route path="/search" element={
-                  <>
-                    <Navbar />
-                    <SearchPage />
-                  </>
+                  <AuthenticatedRoute>
+                    <>
+                      <Navbar />
+                      <SearchPage />
+                    </>
+                  </AuthenticatedRoute>
                 } />
                 <Route path="/profile" element={
-                  <>
-                    <Navbar />
-                    <Profile />
-                  </>
+                  <AuthenticatedRoute>
+                    <>
+                      <Navbar />
+                      <Profile />
+                    </>
+                  </AuthenticatedRoute>
                 } />
                 <Route path="/profile/:userId" element={
-                  <>
-                    <Navbar />
-                    <UserProfile />
-                  </>
+                  <AuthenticatedRoute>
+                    <>
+                      <Navbar />
+                      <UserProfile />
+                    </>
+                  </AuthenticatedRoute>
                 } />
-                <Route path="/create-post" element={<CreatePost />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="/create-post" element={
+                  <AuthenticatedRoute>
+                    <CreatePost />
+                  </AuthenticatedRoute>
+                } />
+                
+                {/* Catch-all route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <BottomNavigation />

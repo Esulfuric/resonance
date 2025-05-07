@@ -9,6 +9,7 @@ import { Music, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabase } from "@/lib/supabase-provider";
+import { useAuthGuard } from "@/hooks/use-auth-guard";
 
 const UserProfile = () => {
   const { userId } = useParams();
@@ -19,14 +20,18 @@ const UserProfile = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  
+  // Use auth guard to protect this route
+  useAuthGuard();
   
   useEffect(() => {
+    if (!userId || !currentUser) {
+      return;
+    }
+    
     const fetchProfileData = async () => {
-      if (!userId) {
-        navigate('/feed');
-        return;
-      }
-      
       setIsLoading(true);
       try {
         // Fetch user profile
@@ -59,6 +64,36 @@ const UserProfile = () => {
         if (postsError) throw postsError;
         setPosts(postsData || []);
         
+        // Check if current user is following this profile
+        const { data: followData, error: followError } = await supabase
+          .from('follows')
+          .select('*')
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', userId)
+          .maybeSingle();
+          
+        if (followError) throw followError;
+        
+        setIsFollowing(!!followData);
+        
+        // Get follower count
+        const { data: followers, error: followerError } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact' })
+          .eq('following_id', userId);
+          
+        if (followerError) throw followerError;
+        setFollowerCount(followers?.length || 0);
+        
+        // Get following count
+        const { data: following, error: followingError } = await supabase
+          .from('follows')
+          .select('*', { count: 'exact' })
+          .eq('follower_id', userId);
+          
+        if (followingError) throw followingError;
+        setFollowingCount(following?.length || 0);
+        
       } catch (error: any) {
         console.error('Error fetching profile:', error);
         toast({
@@ -72,16 +107,53 @@ const UserProfile = () => {
     };
     
     fetchProfileData();
-  }, [userId, navigate, toast]);
+  }, [userId, navigate, toast, currentUser]);
   
-  const handleFollowToggle = () => {
-    setIsFollowing(!isFollowing);
-    toast({
-      title: isFollowing ? "Unfollowed" : "Following",
-      description: isFollowing 
-        ? `You are no longer following ${profile?.full_name || profile?.username || "this user"}` 
-        : `You are now following ${profile?.full_name || profile?.username || "this user"}`,
-    });
+  const handleFollowToggle = async () => {
+    if (!currentUser || !userId) return;
+    
+    try {
+      if (isFollowing) {
+        // Unfollow user
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', userId);
+          
+        if (error) throw error;
+        
+        setFollowerCount(prev => Math.max(0, prev - 1));
+      } else {
+        // Follow user
+        const { error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: currentUser.id,
+            following_id: userId,
+            created_at: new Date().toISOString()
+          });
+          
+        if (error) throw error;
+        
+        setFollowerCount(prev => prev + 1);
+      }
+      
+      setIsFollowing(!isFollowing);
+      toast({
+        title: isFollowing ? "Unfollowed" : "Following",
+        description: isFollowing 
+          ? `You are no longer following ${profile?.full_name || profile?.username || "this user"}` 
+          : `You are now following ${profile?.full_name || profile?.username || "this user"}`,
+      });
+    } catch (error: any) {
+      console.error('Error toggling follow:', error);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
   
   if (isLoading) {
@@ -145,11 +217,11 @@ const UserProfile = () => {
                   <span className="text-muted-foreground">Posts</span>
                 </div>
                 <div>
-                  <span className="font-bold">0</span>{" "}
+                  <span className="font-bold">{followingCount}</span>{" "}
                   <span className="text-muted-foreground">Following</span>
                 </div>
                 <div>
-                  <span className="font-bold">0</span>{" "}
+                  <span className="font-bold">{followerCount}</span>{" "}
                   <span className="text-muted-foreground">Followers</span>
                 </div>
               </div>
@@ -199,7 +271,11 @@ const UserProfile = () => {
           </TabsContent>
           <TabsContent value="following" className="mt-6">
             <div className="text-center py-8">
-              <p className="text-muted-foreground">This user isn't following anyone yet.</p>
+              <p className="text-muted-foreground">
+                {isOwnProfile 
+                  ? "You aren't following anyone yet." 
+                  : "This user isn't following anyone yet."}
+              </p>
             </div>
           </TabsContent>
         </Tabs>

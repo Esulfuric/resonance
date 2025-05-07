@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Logo from "@/components/Logo";
 import { useSupabase } from "@/lib/supabase-provider";
@@ -15,6 +16,7 @@ const Signup = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [userType, setUserType] = useState("listener"); // Default to listener
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,9 +27,16 @@ const Signup = () => {
     setLoading(true);
     
     try {
+      // Generate a bio based on user type selection
+      const bio = userType === "musician" 
+        ? "Musician sharing their musical journey." 
+        : "Music enthusiast exploring new sounds.";
+
       const { error } = await signUp(email, password, {
         full_name: name,
-        username: username
+        username: username,
+        user_type: userType,
+        bio: bio
       });
       
       if (error) throw error;
@@ -114,6 +123,21 @@ const Signup = () => {
                   Must be at least 8 characters long
                 </p>
               </div>
+              
+              <div className="space-y-3">
+                <Label>I am a:</Label>
+                <RadioGroup defaultValue="listener" onValueChange={setUserType} value={userType}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="musician" id="musician" />
+                    <Label htmlFor="musician" className="cursor-pointer">Musician</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="listener" id="listener" />
+                    <Label htmlFor="listener" className="cursor-pointer">Listener</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
               <div className="flex items-center space-x-2">
                 <Checkbox id="terms" required />
                 <Label htmlFor="terms" className="text-sm font-normal">

@@ -10,10 +10,13 @@ import { useSupabase } from '@/lib/supabase-provider';
 export const BottomNavigation = () => {
   const location = useLocation();
   const { user } = useSupabase();
-  const isAuthenticated = !!user;
+  
+  // Don't show bottom nav if not authenticated or on public routes
+  if (!user) return null;
 
-  // Don't show bottom nav if not authenticated
-  if (!isAuthenticated) return null;
+  // Don't show on public routes even if authenticated
+  const publicRoutes = ['/', '/login', '/signup', '/forgot-password'];
+  if (publicRoutes.includes(location.pathname)) return null;
 
   const navItems = [
     { icon: Home, path: '/feed', label: 'Home' },
