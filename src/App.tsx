@@ -10,6 +10,7 @@ import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
+import UserProfile from "./pages/UserProfile";
 import Discover from "./pages/Discover";
 import SearchPage from "./pages/Search";
 import NotFound from "./pages/NotFound";
@@ -92,6 +93,12 @@ const App = () => {
                   <>
                     <Navbar />
                     <Profile />
+                  </>
+                } />
+                <Route path="/profile/:userId" element={
+                  <>
+                    <Navbar />
+                    <UserProfile />
                   </>
                 } />
                 <Route path="/create-post" element={<CreatePost />} />

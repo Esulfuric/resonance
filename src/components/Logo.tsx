@@ -1,21 +1,34 @@
 
 import React from "react";
+import { useLocation } from "react-router-dom";
 
 interface LogoProps {
   variant?: 'full' | 'icon';
   className?: string;
+  size?: 'normal' | 'large';
 }
 
-const Logo = ({ variant = 'full', className = '' }: LogoProps) => {
+const Logo = ({ variant = 'full', className = '', size = 'normal' }: LogoProps) => {
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
+  
+  // Use large size on landing page
+  const effectiveSize = isLandingPage ? 'large' : size;
+  
   const logoPath = variant === 'full' 
     ? "/lovable-uploads/f88943c3-2040-4b4d-ba24-7ebdf825541b.png" 
     : "/lovable-uploads/e28a1c2c-395b-4ed6-93ca-2860228c51c4.png";
+
+  // Apply different size classes based on effectiveSize
+  const sizeClass = effectiveSize === 'large' 
+    ? "h-16 md:h-20" // Larger logo
+    : "h-8 md:h-10"; // Normal size logo
 
   return (
     <img 
       src={logoPath} 
       alt="Resonance Logo" 
-      className={`resonance-logo ${className}`}
+      className={`resonance-logo ${sizeClass} ${className}`}
     />
   );
 };
