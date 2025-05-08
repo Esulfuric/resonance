@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +30,7 @@ interface FormattedPost {
   };
   timestamp: string;
   content: string;
+  imageUrl?: string;
   songInfo?: {
     title: string;
     artist: string;
@@ -41,6 +43,13 @@ interface FormattedPost {
   };
 }
 
+interface FollowUser {
+  id: string;
+  username?: string;
+  full_name?: string;
+  avatar_url?: string;
+}
+
 const UserProfile = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -50,8 +59,8 @@ const UserProfile = () => {
   const [posts, setPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("posts");
-  const [followers, setFollowers] = useState<any[]>([]);
-  const [following, setFollowing] = useState<any[]>([]);
+  const [followers, setFollowers] = useState<FollowUser[]>([]);
+  const [following, setFollowing] = useState<FollowUser[]>([]);
   
   // Use auth guard to protect this route
   useAuthGuard();
@@ -116,7 +125,16 @@ const UserProfile = () => {
           .eq('following_id', userId);
         
         if (followersError) throw followersError;
-        setFollowers(followersData || []);
+        
+        // Extract follower profiles
+        const followerProfiles = followersData?.map(item => ({
+          id: item.profiles.id,
+          username: item.profiles.username,
+          full_name: item.profiles.full_name,
+          avatar_url: item.profiles.avatar_url
+        })) || [];
+        
+        setFollowers(followerProfiles);
         
         // Fetch following (people this user follows)
         const { data: followingData, error: followingError } = await supabase
@@ -133,7 +151,16 @@ const UserProfile = () => {
           .eq('follower_id', userId);
         
         if (followingError) throw followingError;
-        setFollowing(followingData || []);
+        
+        // Extract following profiles
+        const followingProfiles = followingData?.map(item => ({
+          id: item.profiles.id,
+          username: item.profiles.username,
+          full_name: item.profiles.full_name,
+          avatar_url: item.profiles.avatar_url
+        })) || [];
+        
+        setFollowing(followingProfiles);
         
       } catch (error: any) {
         console.error('Error fetching profile:', error);
@@ -169,6 +196,7 @@ const UserProfile = () => {
       },
       timestamp: new Date(post.created_at).toLocaleDateString(),
       content: post.content,
+      imageUrl: post.image_url,
       songInfo: post.song_title ? {
         title: post.song_title,
         artist: "Unknown Artist",
@@ -184,6 +212,30 @@ const UserProfile = () => {
   
   const isOwnProfile = currentUser?.id === userId;
   
+  // Component to display user list (for followers/following)
+  const UserList = ({ users }: { users: FollowUser[] }) => (
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {users.map((user) => (
+        <div 
+          key={user.id} 
+          className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer"
+          onClick={() => navigate(`/profile/${user.id}`)}
+        >
+          <Avatar>
+            <AvatarImage src={user.avatar_url} />
+            <AvatarFallback>
+              {(user.full_name?.[0] || user.username?.[0] || 'U').toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium">{user.full_name || user.username}</p>
+            <p className="text-sm text-muted-foreground">@{user.username}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+  
   return (
     <div className="min-h-screen flex flex-col pb-16">
       <main className="container flex-1 py-6">
@@ -191,17 +243,23 @@ const UserProfile = () => {
         <ProfileHeader 
           profile={{
             ...profile,
-            post_count: posts.length
+            post_count: posts.length,
+            follower_count: followers.length,
+            following_count: following.length
           }} 
           isOwnProfile={isOwnProfile}
         />
 
         {/* Profile content */}
         <Tabs defaultValue={activeTab} className="mt-6" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto md:mx-0">
+          <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto md:mx-0">
             <TabsTrigger value="posts" className="flex gap-2 items-center">
               <Music className="h-4 w-4" />
               <span className="hidden sm:inline">Posts</span>
+            </TabsTrigger>
+            <TabsTrigger value="followers" className="flex gap-2 items-center">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Followers</span>
             </TabsTrigger>
             <TabsTrigger value="following" className="flex gap-2 items-center">
               <Users className="h-4 w-4" />
@@ -221,28 +279,23 @@ const UserProfile = () => {
             )}
           </TabsContent>
           
+          <TabsContent value="followers" className="mt-6">
+            {followers.length > 0 ? (
+              <UserList users={followers} />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  {isOwnProfile 
+                    ? "You don't have any followers yet." 
+                    : "This user doesn't have any followers yet."}
+                </p>
+              </div>
+            )}
+          </TabsContent>
+          
           <TabsContent value="following" className="mt-6">
             {following.length > 0 ? (
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {following.map((follow) => (
-                  <div 
-                    key={follow.following_id} 
-                    className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer"
-                    onClick={() => navigate(`/profile/${follow.profiles.id}`)}
-                  >
-                    <Avatar>
-                      <AvatarImage src={follow.profiles.avatar_url} />
-                      <AvatarFallback>
-                        {(follow.profiles.full_name?.[0] || follow.profiles.username?.[0] || 'U').toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{follow.profiles.full_name || follow.profiles.username}</p>
-                      <p className="text-sm text-muted-foreground">@{follow.profiles.username}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <UserList users={following} />
             ) : (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">

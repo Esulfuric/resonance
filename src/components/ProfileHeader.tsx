@@ -14,6 +14,8 @@ interface ProfileData {
   bio?: string;
   user_type?: 'musician' | 'listener';
   post_count: number;
+  follower_count?: number;
+  following_count?: number;
 }
 
 interface ProfileHeaderProps {
@@ -38,6 +40,10 @@ export function ProfileHeader({
     followingCount, 
     handleFollowToggle 
   } = useFollow({ profileId: profile.id });
+
+  // Use provided counts if available, otherwise use values from useFollow
+  const displayFollowerCount = profile.follower_count !== undefined ? profile.follower_count : followerCount;
+  const displayFollowingCount = profile.following_count !== undefined ? profile.following_count : followingCount;
 
   return (
     <div className="mb-8">
@@ -77,16 +83,16 @@ export function ProfileHeader({
             {profile.bio || (profile.user_type === 'musician' ? 'Musician' : 'Music enthusiast')}
           </p>
           <div className="flex gap-4 mt-4 justify-center md:justify-start">
-            <div>
+            <div className="cursor-pointer" onClick={() => navigate(`/profile/${profile.id}?tab=posts`)}>
               <span className="font-bold">{profile.post_count}</span>{" "}
               <span className="text-muted-foreground">Posts</span>
             </div>
-            <div>
-              <span className="font-bold">{followingCount}</span>{" "}
+            <div className="cursor-pointer" onClick={() => navigate(`/profile/${profile.id}?tab=following`)}>
+              <span className="font-bold">{displayFollowingCount}</span>{" "}
               <span className="text-muted-foreground">Following</span>
             </div>
-            <div>
-              <span className="font-bold">{followerCount}</span>{" "}
+            <div className="cursor-pointer" onClick={() => navigate(`/profile/${profile.id}?tab=followers`)}>
+              <span className="font-bold">{displayFollowerCount}</span>{" "}
               <span className="text-muted-foreground">Followers</span>
             </div>
           </div>

@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
-import { UserSearch } from "@/components/UserSearch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,27 +9,34 @@ import { Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from "react-router-dom";
 
 interface UserProfile {
   id: string;
-  username: string;
-  full_name: string;
-  avatar_url: string;
-  bio: string;
+  username: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  user_type: string | null;
 }
 
 const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
-  const [recentSearches, setRecentSearches] = useState<UserProfile[]>([]);
+  const [suggestedUsers, setSuggestedUsers] = useState<UserProfile[]>([]);
+  const [recentlyActive, setRecentlyActive] = useState<UserProfile[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState("suggested");
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Use auth guard to protect this route
   const { user } = useAuthGuard();
   
   useEffect(() => {
     fetchRandomProfiles();
+    fetchRecentlyActive();
   }, []);
   
   const fetchRandomProfiles = async () => {
@@ -39,17 +45,35 @@ const SearchPage = () => {
         .from('profiles')
         .select('*')
         .neq('id', user?.id || '')
-        .limit(5);
+        .limit(8);
         
       if (error) throw error;
       
-      setRecentSearches(data as UserProfile[]);
+      setSuggestedUsers(data as UserProfile[]);
     } catch (error: any) {
       console.error('Error fetching profiles:', error);
     }
   };
+
+  const fetchRecentlyActive = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*, posts(count)')
+        .neq('id', user?.id || '')
+        .order('updated_at', { ascending: false })
+        .limit(8);
+        
+      if (error) throw error;
+      
+      setRecentlyActive(data as UserProfile[]);
+    } catch (error: any) {
+      console.error('Error fetching recent profiles:', error);
+    }
+  };
   
-  const handleSearch = async () => {
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
     
     setIsSearching(true);
@@ -85,38 +109,44 @@ const SearchPage = () => {
     }
   };
   
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-  
   if (!user) {
     return <div className="flex items-center justify-center h-screen">Redirecting...</div>;
   }
 
   const renderUserCard = (profile: UserProfile) => (
-    <Link to={`/profile/${profile.id}`} key={profile.id}>
-      <Card className="hover:bg-accent transition-colors">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <Avatar>
-              <AvatarImage src={profile.avatar_url} />
-              <AvatarFallback>
-                {profile.full_name?.[0] || profile.username?.[0] || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{profile.full_name}</p>
-              <p className="text-sm text-muted-foreground truncate">@{profile.username}</p>
-            </div>
-            <Button variant="outline" size="sm" className="whitespace-nowrap">
-              View Profile
-            </Button>
+    <Card 
+      key={profile.id} 
+      className="hover:bg-accent transition-colors cursor-pointer"
+      onClick={() => navigate(`/profile/${profile.id}`)}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarImage src={profile.avatar_url || undefined} />
+            <AvatarFallback>
+              {(profile.full_name?.[0] || profile.username?.[0] || 'U').toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium truncate">{profile.full_name || profile.username || "User"}</p>
+            <p className="text-sm text-muted-foreground truncate">
+              @{profile.username || "user"}{" "}
+              {profile.user_type && (
+                <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground ml-1">
+                  {profile.user_type}
+                </span>
+              )}
+            </p>
+            {profile.bio && (
+              <p className="text-sm truncate mt-1">{profile.bio}</p>
+            )}
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+          <Button variant="outline" size="sm" className="whitespace-nowrap">
+            View Profile
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 
   return (
@@ -124,24 +154,23 @@ const SearchPage = () => {
       <main className="container flex-1 py-6">
         <h1 className="text-2xl font-bold mb-6">Search</h1>
         
-        <div className="relative mb-6">
+        <form onSubmit={handleSearch} className="relative mb-6 max-w-lg">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search for users, music, or posts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleKeyPress}
-            className="pr-10"
+            className="pl-9 pr-20 py-6"
           />
           <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-0 top-0 h-full" 
-            onClick={handleSearch}
-            disabled={isSearching}
+            type="submit"
+            variant="default" 
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-resonance-green hover:bg-resonance-green/90" 
+            disabled={isSearching || !searchQuery.trim()}
           >
-            <Search className="h-4 w-4" />
+            {isSearching ? "Searching..." : "Search"}
           </Button>
-        </div>
+        </form>
         
         {searchResults.length > 0 ? (
           <div className="space-y-4">
@@ -151,20 +180,34 @@ const SearchPage = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold">People to Follow</h2>
+          <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="suggested">Suggested Users</TabsTrigger>
+              <TabsTrigger value="active">Recently Active</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="suggested" className="space-y-4">
+              <h2 className="text-lg font-semibold">Suggested Users</h2>
               <div className="space-y-3">
-                {recentSearches.length > 0 ? (
-                  recentSearches.map(renderUserCard)
+                {suggestedUsers.length > 0 ? (
+                  suggestedUsers.map(renderUserCard)
                 ) : (
                   <p className="text-muted-foreground">No suggested users found</p>
                 )}
               </div>
-            </div>
+            </TabsContent>
             
-            <UserSearch />
-          </div>
+            <TabsContent value="active" className="space-y-4">
+              <h2 className="text-lg font-semibold">Recently Active</h2>
+              <div className="space-y-3">
+                {recentlyActive.length > 0 ? (
+                  recentlyActive.map(renderUserCard)
+                ) : (
+                  <p className="text-muted-foreground">No recently active users found</p>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         )}
       </main>
     </div>

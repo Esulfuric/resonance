@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,18 +9,39 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { supabase } from "@/lib/supabase";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 const CreatePost = () => {
   const [content, setContent] = useState("");
   const [attachedSong, setAttachedSong] = useState<string | null>(null);
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMusicDialogOpen, setIsMusicDialogOpen] = useState(false);
+  const [songTitle, setSongTitle] = useState("");
+  const [songArtist, setSongArtist] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuthGuard();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   if (!user) {
     return <div className="flex items-center justify-center h-screen">Redirecting...</div>;
   }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Create a preview
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachedImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    setImageFile(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,13 +50,47 @@ const CreatePost = () => {
     setIsSubmitting(true);
     
     try {
+      let uploadedImageUrl = null;
+      
+      // Upload image if attached
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `posts/${fileName}`;
+        
+        // Check if the storage bucket exists and create it if it doesn't
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const postsBucket = buckets?.find(b => b.name === 'posts');
+        
+        if (!postsBucket) {
+          await supabase.storage.createBucket('posts', { public: true });
+        }
+        
+        // Upload the file
+        const { data: uploadData, error: uploadError } = await supabase
+          .storage
+          .from('posts')
+          .upload(filePath, imageFile);
+          
+        if (uploadError) throw uploadError;
+        
+        // Get the public URL
+        const { data: urlData } = supabase
+          .storage
+          .from('posts')
+          .getPublicUrl(filePath);
+          
+        uploadedImageUrl = urlData.publicUrl;
+      }
+      
       // Create post in Supabase
       const { error } = await supabase
         .from('posts')
         .insert({
           user_id: user.id,
           content,
-          song_title: attachedSong || null
+          song_title: attachedSong,
+          image_url: uploadedImageUrl
         });
       
       if (error) throw error;
@@ -57,8 +113,15 @@ const CreatePost = () => {
   };
 
   const handleAttachSong = () => {
-    // Mock attaching a song - in a real app this would open a music selection modal
-    setAttachedSong("Ocean Waves by Chill Vibes");
+    setIsMusicDialogOpen(true);
+  };
+
+  const saveSongDetails = () => {
+    if (songTitle.trim()) {
+      const songInfo = songArtist ? `${songTitle} by ${songArtist}` : songTitle;
+      setAttachedSong(songInfo);
+      setIsMusicDialogOpen(false);
+    }
   };
 
   return (
@@ -102,6 +165,7 @@ const CreatePost = () => {
                     autoFocus
                   />
                   
+                  {/* Display attached song */}
                   {attachedSong && (
                     <div className="mb-3 flex items-center gap-2 rounded-md bg-secondary p-2 text-sm">
                       <Music className="h-4 w-4 text-resonance-green" />
@@ -113,8 +177,33 @@ const CreatePost = () => {
                         className="h-5 w-5"
                         onClick={() => setAttachedSong(null)}
                       >
-                        <span className="sr-only">Remove</span>
                         <X className="h-3 w-3" />
+                        <span className="sr-only">Remove</span>
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Display attached image */}
+                  {attachedImage && (
+                    <div className="mb-3 relative">
+                      <img 
+                        src={attachedImage} 
+                        alt="Attached" 
+                        className="rounded-md max-h-64 w-auto object-contain"
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6 rounded-full"
+                        onClick={() => {
+                          setAttachedImage(null);
+                          setImageFile(null);
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                        <span className="sr-only">Remove</span>
                       </Button>
                     </div>
                   )}
@@ -135,10 +224,18 @@ const CreatePost = () => {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 rounded-full"
+                      onClick={() => fileInputRef.current?.click()}
                     >
                       <Image className="h-4 w-4" />
                       <span className="sr-only">Attach image</span>
                     </Button>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange} 
+                      accept="image/*" 
+                      className="hidden"
+                    />
                     <Button
                       type="button"
                       variant="ghost"
@@ -155,6 +252,37 @@ const CreatePost = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Music selection dialog */}
+      <Dialog open={isMusicDialogOpen} onOpenChange={setIsMusicDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Music to your Post</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Song Title</label>
+              <Input
+                placeholder="Enter song title"
+                value={songTitle}
+                onChange={(e) => setSongTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Artist (optional)</label>
+              <Input
+                placeholder="Enter artist name"
+                value={songArtist}
+                onChange={(e) => setSongArtist(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsMusicDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveSongDetails}>Add Music</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

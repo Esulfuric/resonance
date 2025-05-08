@@ -14,6 +14,7 @@ interface Post {
   content: string;
   created_at: string;
   song_title?: string;
+  image_url?: string;
   profiles?: {
     full_name?: string;
     username?: string;
@@ -116,6 +117,7 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
         artist: "Unknown Artist",
         albumCover: "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?q=80&w=200&auto=format&fit=crop",
       } : undefined,
+      imageUrl: post.image_url,
       stats: {
         likes: 0,
         comments: 0,

@@ -33,6 +33,7 @@ interface FormattedPost {
   };
   timestamp: string;
   content: string;
+  imageUrl?: string;
   songInfo?: {
     title: string;
     artist: string;
@@ -54,6 +55,13 @@ interface ProfileType {
   avatar_url: string | null;
   user_type?: 'musician' | 'listener';
   updated_at: string | null;
+}
+
+interface FollowUser {
+  id: string;
+  username?: string;
+  full_name?: string;
+  avatar_url?: string;
 }
 
 const Profile = () => {
@@ -81,6 +89,8 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
+  const [followers, setFollowers] = useState<FollowUser[]>([]);
+  const [following, setFollowing] = useState<FollowUser[]>([]);
   
   // For avatar upload
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,6 +151,58 @@ const Profile = () => {
         if (postsError) throw postsError;
         setUserPosts(postsData || []);
         
+        // Fetch followers
+        const { data: followersData, error: followersError } = await supabase
+          .from('follows')
+          .select(`
+            follower_id,
+            profiles:follower_id (
+              id,
+              username,
+              full_name,
+              avatar_url
+            )
+          `)
+          .eq('following_id', user.id);
+        
+        if (followersError) throw followersError;
+        
+        // Extract follower profiles
+        const followerProfiles = followersData?.map(item => ({
+          id: item.profiles.id,
+          username: item.profiles.username,
+          full_name: item.profiles.full_name,
+          avatar_url: item.profiles.avatar_url
+        })) || [];
+        
+        setFollowers(followerProfiles);
+        
+        // Fetch following
+        const { data: followingData, error: followingError } = await supabase
+          .from('follows')
+          .select(`
+            following_id,
+            profiles:following_id (
+              id,
+              username,
+              full_name,
+              avatar_url
+            )
+          `)
+          .eq('follower_id', user.id);
+        
+        if (followingError) throw followingError;
+        
+        // Extract following profiles
+        const followingProfiles = followingData?.map(item => ({
+          id: item.profiles.id,
+          username: item.profiles.username,
+          full_name: item.profiles.full_name,
+          avatar_url: item.profiles.avatar_url
+        })) || [];
+        
+        setFollowing(followingProfiles);
+        
       } catch (error: any) {
         console.error('Error fetching user data:', error);
         toast({
@@ -162,6 +224,14 @@ const Profile = () => {
     
     try {
       setUploadingAvatar(true);
+      
+      // Check if the storage bucket exists and create it if it doesn't
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const profilesBucket = buckets?.find(b => b.name === 'profiles');
+      
+      if (!profilesBucket) {
+        await supabase.storage.createBucket('profiles', { public: true });
+      }
       
       // Generate unique file name
       const fileExt = file.name.split('.').pop();
@@ -282,6 +352,7 @@ const Profile = () => {
       },
       timestamp: new Date(post.created_at).toLocaleDateString(),
       content: post.content,
+      imageUrl: post.image_url,
       songInfo: post.song_title ? {
         title: post.song_title,
         artist: "Unknown Artist",
@@ -294,6 +365,30 @@ const Profile = () => {
       },
     };
   });
+  
+  // Component to display user list (for followers/following)
+  const UserList = ({ users }: { users: FollowUser[] }) => (
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+      {users.map((user) => (
+        <div 
+          key={user.id} 
+          className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer"
+          onClick={() => navigate(`/profile/${user.id}`)}
+        >
+          <Avatar>
+            <AvatarImage src={user.avatar_url} />
+            <AvatarFallback>
+              {(user.full_name?.[0] || user.username?.[0] || 'U').toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium">{user.full_name || user.username}</p>
+            <p className="text-sm text-muted-foreground">@{user.username}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
   
   if (authLoading || isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
@@ -316,7 +411,9 @@ const Profile = () => {
           <ProfileHeader 
             profile={{
               ...profileData,
-              post_count: userPosts.length
+              post_count: userPosts.length,
+              follower_count: followers.length,
+              following_count: following.length
             }} 
             isOwnProfile={true}
             onAvatarClick={() => fileInputRef.current?.click()}
@@ -335,10 +432,14 @@ const Profile = () => {
 
         {/* Profile content */}
         <Tabs defaultValue={activeTab} className="mt-6" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto md:mx-0">
+          <TabsList className="grid grid-cols-4 w-full max-w-md mx-auto md:mx-0">
             <TabsTrigger value="posts" className="flex gap-2 items-center">
               <Music className="h-4 w-4" />
               <span className="hidden sm:inline">Posts</span>
+            </TabsTrigger>
+            <TabsTrigger value="followers" className="flex gap-2 items-center">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Followers</span>
             </TabsTrigger>
             <TabsTrigger value="following" className="flex gap-2 items-center">
               <Users className="h-4 w-4" />
@@ -363,11 +464,25 @@ const Profile = () => {
             )}
           </TabsContent>
           
+          <TabsContent value="followers" className="mt-6">
+            {followers.length > 0 ? (
+              <UserList users={followers} />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">You don't have any followers yet.</p>
+              </div>
+            )}
+          </TabsContent>
+          
           <TabsContent value="following" className="mt-6">
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">You aren't following anyone yet.</p>
-              <Button className="mt-4" onClick={() => navigate("/search")}>Find People to Follow</Button>
-            </div>
+            {following.length > 0 ? (
+              <UserList users={following} />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">You aren't following anyone yet.</p>
+                <Button className="mt-4" onClick={() => navigate("/search")}>Find People to Follow</Button>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="settings" className="mt-6">
