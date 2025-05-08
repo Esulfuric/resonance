@@ -1,7 +1,5 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { TabsContent } from "@/components/ui/tabs";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useSupabase } from "@/lib/supabase-provider";
 import { supabase } from "@/lib/supabase";
@@ -9,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ProfileHeader } from "@/components/ProfileHeader";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { ProfileContent } from "@/components/ProfileContent";
-import { ProfileSettings } from "@/components/ProfileSettings";
 
 interface FormattedPost {
   id: string;
@@ -325,10 +322,6 @@ const Profile = () => {
           showSettings={true}
           defaultTab={activeTab}
         />
-
-        <TabsContent value="settings" className="mt-6">
-          <ProfileSettings />
-        </TabsContent>
       </main>
     </div>
   );

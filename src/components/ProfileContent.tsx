@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/PostCard";
 import { Music, Users, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ProfileSettings } from "@/components/ProfileSettings";
 
 interface FormattedPost {
   id: string;
@@ -152,6 +153,12 @@ export function ProfileContent({
           </div>
         )}
       </TabsContent>
+      
+      {showSettings && (
+        <TabsContent value="settings" className="mt-6">
+          <ProfileSettings />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }
