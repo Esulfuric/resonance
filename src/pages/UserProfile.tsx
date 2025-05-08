@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -95,79 +96,60 @@ const UserProfile = () => {
         // Fetch user posts
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
-          .select(`
-            *,
-            profiles:user_id(
-              full_name,
-              username, 
-              avatar_url
-            )
-          `)
+          .select('*')
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
         
         if (postsError) throw postsError;
         setPosts(postsData || []);
         
-        // Fetch followers with proper error handling
+        // Modified approach for fetching followers
+        // First get follower IDs
         const { data: followersData, error: followersError } = await supabase
           .from('follows')
-          .select(`
-            follower_id,
-            profiles:follower_id (
-              id,
-              username,
-              full_name,
-              avatar_url
-            )
-          `)
+          .select('follower_id')
           .eq('following_id', userId);
         
         if (followersError) throw followersError;
         
-        // Extract follower profiles with type safety
-        const followerProfiles: FollowUser[] = followersData
-          ? followersData
-              .filter(item => item.profiles) // Filter out any null profiles
-              .map(item => ({
-                id: item.profiles?.id || "",
-                username: item.profiles?.username || "",
-                full_name: item.profiles?.full_name || "",
-                avatar_url: item.profiles?.avatar_url || ""
-              }))
-          : [];
+        if (followersData && followersData.length > 0) {
+          // Then get the profile data for those followers
+          const followerIds = followersData.map(f => f.follower_id);
+          const { data: followerProfiles, error: followerProfilesError } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, avatar_url')
+            .in('id', followerIds);
+            
+          if (followerProfilesError) throw followerProfilesError;
+          
+          setFollowers(followerProfiles || []);
+        } else {
+          setFollowers([]);
+        }
         
-        setFollowers(followerProfiles);
-        
-        // Fetch following with proper error handling
+        // Modified approach for fetching following
+        // First get following IDs
         const { data: followingData, error: followingError } = await supabase
           .from('follows')
-          .select(`
-            following_id,
-            profiles:following_id (
-              id,
-              username,
-              full_name,
-              avatar_url
-            )
-          `)
+          .select('following_id')
           .eq('follower_id', userId);
         
         if (followingError) throw followingError;
         
-        // Extract following profiles with type safety
-        const followingProfiles: FollowUser[] = followingData
-          ? followingData
-              .filter(item => item.profiles) // Filter out any null profiles
-              .map(item => ({
-                id: item.profiles?.id || "",
-                username: item.profiles?.username || "",
-                full_name: item.profiles?.full_name || "",
-                avatar_url: item.profiles?.avatar_url || ""
-              }))
-          : [];
-        
-        setFollowing(followingProfiles);
+        if (followingData && followingData.length > 0) {
+          // Then get the profile data for those following
+          const followingIds = followingData.map(f => f.following_id);
+          const { data: followingProfiles, error: followingProfilesError } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, avatar_url')
+            .in('id', followingIds);
+            
+          if (followingProfilesError) throw followingProfilesError;
+          
+          setFollowing(followingProfiles || []);
+        } else {
+          setFollowing([]);
+        }
         
       } catch (error: any) {
         console.error('Error fetching profile:', error);
