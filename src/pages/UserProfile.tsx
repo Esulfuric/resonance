@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -110,7 +109,7 @@ const UserProfile = () => {
         if (postsError) throw postsError;
         setPosts(postsData || []);
         
-        // Fetch followers (people following this user)
+        // Fetch followers with proper error handling
         const { data: followersData, error: followersError } = await supabase
           .from('follows')
           .select(`
@@ -126,17 +125,21 @@ const UserProfile = () => {
         
         if (followersError) throw followersError;
         
-        // Extract follower profiles
-        const followerProfiles = followersData?.map(item => ({
-          id: item.profiles.id,
-          username: item.profiles.username,
-          full_name: item.profiles.full_name,
-          avatar_url: item.profiles.avatar_url
-        })) || [];
+        // Extract follower profiles with type safety
+        const followerProfiles: FollowUser[] = followersData
+          ? followersData
+              .filter(item => item.profiles) // Filter out any null profiles
+              .map(item => ({
+                id: item.profiles?.id || "",
+                username: item.profiles?.username || "",
+                full_name: item.profiles?.full_name || "",
+                avatar_url: item.profiles?.avatar_url || ""
+              }))
+          : [];
         
         setFollowers(followerProfiles);
         
-        // Fetch following (people this user follows)
+        // Fetch following with proper error handling
         const { data: followingData, error: followingError } = await supabase
           .from('follows')
           .select(`
@@ -152,13 +155,17 @@ const UserProfile = () => {
         
         if (followingError) throw followingError;
         
-        // Extract following profiles
-        const followingProfiles = followingData?.map(item => ({
-          id: item.profiles.id,
-          username: item.profiles.username,
-          full_name: item.profiles.full_name,
-          avatar_url: item.profiles.avatar_url
-        })) || [];
+        // Extract following profiles with type safety
+        const followingProfiles: FollowUser[] = followingData
+          ? followingData
+              .filter(item => item.profiles) // Filter out any null profiles
+              .map(item => ({
+                id: item.profiles?.id || "",
+                username: item.profiles?.username || "",
+                full_name: item.profiles?.full_name || "",
+                avatar_url: item.profiles?.avatar_url || ""
+              }))
+          : [];
         
         setFollowing(followingProfiles);
         

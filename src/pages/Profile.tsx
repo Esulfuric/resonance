@@ -1,9 +1,8 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PostCard } from "@/components/PostCard";
 import { Music, Users, Settings, Key } from "lucide-react";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
@@ -151,7 +150,7 @@ const Profile = () => {
         if (postsError) throw postsError;
         setUserPosts(postsData || []);
         
-        // Fetch followers
+        // Fetch followers with proper error handling
         const { data: followersData, error: followersError } = await supabase
           .from('follows')
           .select(`
@@ -167,17 +166,21 @@ const Profile = () => {
         
         if (followersError) throw followersError;
         
-        // Extract follower profiles
-        const followerProfiles = followersData?.map(item => ({
-          id: item.profiles.id,
-          username: item.profiles.username,
-          full_name: item.profiles.full_name,
-          avatar_url: item.profiles.avatar_url
-        })) || [];
+        // Extract follower profiles with type safety
+        const followerProfiles: FollowUser[] = followersData
+          ? followersData
+              .filter(item => item.profiles) // Filter out any null profiles
+              .map(item => ({
+                id: item.profiles?.id || "",
+                username: item.profiles?.username || "",
+                full_name: item.profiles?.full_name || "",
+                avatar_url: item.profiles?.avatar_url || ""
+              }))
+          : [];
         
         setFollowers(followerProfiles);
         
-        // Fetch following
+        // Fetch following with proper error handling
         const { data: followingData, error: followingError } = await supabase
           .from('follows')
           .select(`
@@ -193,13 +196,17 @@ const Profile = () => {
         
         if (followingError) throw followingError;
         
-        // Extract following profiles
-        const followingProfiles = followingData?.map(item => ({
-          id: item.profiles.id,
-          username: item.profiles.username,
-          full_name: item.profiles.full_name,
-          avatar_url: item.profiles.avatar_url
-        })) || [];
+        // Extract following profiles with type safety
+        const followingProfiles: FollowUser[] = followingData
+          ? followingData
+              .filter(item => item.profiles) // Filter out any null profiles
+              .map(item => ({
+                id: item.profiles?.id || "",
+                username: item.profiles?.username || "",
+                full_name: item.profiles?.full_name || "",
+                avatar_url: item.profiles?.avatar_url || ""
+              }))
+          : [];
         
         setFollowing(followingProfiles);
         

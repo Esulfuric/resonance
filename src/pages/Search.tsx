@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -18,7 +17,7 @@ interface UserProfile {
   full_name: string | null;
   avatar_url: string | null;
   bio: string | null;
-  user_type: string | null;
+  user_type?: string | null;
 }
 
 const SearchPage = () => {
@@ -49,6 +48,7 @@ const SearchPage = () => {
         
       if (error) throw error;
       
+      // Cast with type assertion to ensure user_type is optional
       setSuggestedUsers(data as UserProfile[]);
     } catch (error: any) {
       console.error('Error fetching profiles:', error);
@@ -66,6 +66,7 @@ const SearchPage = () => {
         
       if (error) throw error;
       
+      // Cast with type assertion to ensure user_type is optional
       setRecentlyActive(data as UserProfile[]);
     } catch (error: any) {
       console.error('Error fetching recent profiles:', error);
@@ -89,6 +90,7 @@ const SearchPage = () => {
         
       if (error) throw error;
       
+      // Cast with type assertion to ensure user_type is optional
       setSearchResults(data as UserProfile[]);
       
       if (data?.length === 0) {
