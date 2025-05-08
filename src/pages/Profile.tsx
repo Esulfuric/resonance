@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,6 +43,17 @@ interface FormattedPost {
     comments: number;
     shares: number;
   };
+}
+
+// Define the profile interface to match what's in the database
+interface ProfileType {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  user_type?: 'musician' | 'listener';
+  updated_at: string | null;
 }
 
 const Profile = () => {
@@ -91,13 +103,14 @@ const Profile = () => {
         }
         
         if (profileData) {
+          const profile = profileData as ProfileType;
           setProfileData({
-            id: profileData.id,
-            full_name: profileData.full_name || "",
-            username: profileData.username || "",
-            bio: profileData.bio || "",
-            avatar_url: profileData.avatar_url || "",
-            user_type: profileData.user_type as 'musician' | 'listener' | undefined
+            id: profile.id,
+            full_name: profile.full_name || "",
+            username: profile.username || "",
+            bio: profile.bio || "",
+            avatar_url: profile.avatar_url || "",
+            user_type: profile.user_type
           });
         } else {
           // Set default values from Supabase auth if profile doesn't exist
