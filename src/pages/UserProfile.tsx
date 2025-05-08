@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { PostCard } from "@/components/PostCard";
+import PostCard from "@/components/PostCard";
 import { Music, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -113,8 +113,10 @@ const UserProfile = () => {
         if (followersError) throw followersError;
         
         if (followersData && followersData.length > 0) {
-          // Then get the profile data for those followers
+          // Extract the follower IDs
           const followerIds = followersData.map(f => f.follower_id);
+          
+          // Then get the profile data for those followers
           const { data: followerProfiles, error: followerProfilesError } = await supabase
             .from('profiles')
             .select('id, username, full_name, avatar_url')
@@ -122,7 +124,12 @@ const UserProfile = () => {
             
           if (followerProfilesError) throw followerProfilesError;
           
-          setFollowers(followerProfiles || []);
+          // Make sure we have valid data before setting state
+          if (followerProfiles) {
+            setFollowers(followerProfiles);
+          } else {
+            setFollowers([]);
+          }
         } else {
           setFollowers([]);
         }
@@ -137,8 +144,10 @@ const UserProfile = () => {
         if (followingError) throw followingError;
         
         if (followingData && followingData.length > 0) {
-          // Then get the profile data for those following
+          // Extract the following IDs
           const followingIds = followingData.map(f => f.following_id);
+          
+          // Then get the profile data for those following
           const { data: followingProfiles, error: followingProfilesError } = await supabase
             .from('profiles')
             .select('id, username, full_name, avatar_url')
@@ -146,7 +155,12 @@ const UserProfile = () => {
             
           if (followingProfilesError) throw followingProfilesError;
           
-          setFollowing(followingProfiles || []);
+          // Make sure we have valid data before setting state
+          if (followingProfiles) {
+            setFollowing(followingProfiles);
+          } else {
+            setFollowing([]);
+          }
         } else {
           setFollowing([]);
         }
