@@ -4,7 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useFollow } from "@/hooks/use-follow";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useNavigate } from "react-router-dom";
-import { Camera } from "lucide-react";
+import { Camera, Edit } from "lucide-react";
 
 interface ProfileData {
   id: string;
@@ -23,13 +23,15 @@ interface ProfileHeaderProps {
   isOwnProfile: boolean;
   onAvatarClick?: () => void;
   isUploadingAvatar?: boolean;
+  onEditClick?: () => void;
 }
 
 export function ProfileHeader({ 
   profile, 
   isOwnProfile, 
   onAvatarClick, 
-  isUploadingAvatar = false 
+  isUploadingAvatar = false,
+  onEditClick
 }: ProfileHeaderProps) {
   const navigate = useNavigate();
   const { user: currentUser } = useSupabase();
@@ -49,7 +51,7 @@ export function ProfileHeader({
     <div className="mb-8">
       <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
         <div className="relative group">
-          <Avatar className="h-24 w-24 md:h-32 md:w-32 avatar-ring">
+          <Avatar className={`h-24 w-24 md:h-32 md:w-32 avatar-ring ${isUploadingAvatar ? 'opacity-50' : ''}`}>
             <AvatarImage 
               src={profile.avatar_url} 
               alt={profile.full_name || "User"}
@@ -65,6 +67,7 @@ export function ProfileHeader({
               onClick={onAvatarClick}
             >
               <Camera className="h-6 w-6 text-white" />
+              {isUploadingAvatar && <span className="absolute inset-0 flex items-center justify-center text-white text-xs">Uploading...</span>}
             </div>
           )}
         </div>
@@ -112,8 +115,8 @@ export function ProfileHeader({
         
         {isOwnProfile && (
           <div className="md:self-start">
-            <Button onClick={() => navigate('/profile')}>
-              Edit Profile
+            <Button onClick={onEditClick || (() => setIsEditing(true))} className="flex gap-2 items-center">
+              <Edit className="h-4 w-4" /> Edit Profile
             </Button>
           </div>
         )}

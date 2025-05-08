@@ -173,7 +173,7 @@ const MusicReelCard = ({
             <Button 
               variant="default" 
               size="sm" 
-              className="ml-auto bg-resonance-green hover:bg-resonance-green/90"
+              className="ml-2 bg-resonance-green hover:bg-resonance-green/90"
               onClick={(e) => {
                 e.stopPropagation();
                 handleUserClick(reel.user.id);

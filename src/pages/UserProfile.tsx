@@ -1,15 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { PostCard } from "@/components/PostCard";
-import { Music, Users } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { useSupabase } from "@/lib/supabase-provider";
+import { supabase } from "@/lib/supabase";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
+import { useSupabase } from "@/lib/supabase-provider";
 import { ProfileHeader } from "@/components/ProfileHeader";
+import { ProfileContent } from "@/components/ProfileContent";
 
 interface UserProfile {
   id: string;
@@ -57,7 +54,6 @@ const UserProfile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("posts");
   const [followers, setFollowers] = useState<FollowUser[]>([]);
   const [following, setFollowing] = useState<FollowUser[]>([]);
   
@@ -102,66 +98,38 @@ const UserProfile = () => {
         if (postsError) throw postsError;
         setPosts(postsData || []);
         
-        // Modified approach for fetching followers
-        // First get follower IDs
-        const { data: followersData, error: followersError } = await supabase
+        // Fetch followers - first get follower IDs, then get their profile data
+        const { data: followersData } = await supabase
           .from('follows')
           .select('follower_id')
           .eq('following_id', userId);
         
-        if (followersError) throw followersError;
-        
         if (followersData && followersData.length > 0) {
-          // Extract the follower IDs
           const followerIds = followersData.map(f => f.follower_id);
-          
-          // Then get the profile data for those followers
-          const { data: followerProfiles, error: followerProfilesError } = await supabase
+          const { data: followerProfiles } = await supabase
             .from('profiles')
             .select('id, username, full_name, avatar_url')
             .in('id', followerIds);
             
-          if (followerProfilesError) throw followerProfilesError;
-          
-          // Make sure we have valid data before setting state
-          if (followerProfiles) {
-            // Cast to FollowUser[] to avoid TypeScript errors
-            setFollowers(followerProfiles as FollowUser[]);
-          } else {
-            setFollowers([]);
-          }
+          setFollowers(followerProfiles as FollowUser[] || []);
         } else {
           setFollowers([]);
         }
         
-        // Modified approach for fetching following
-        // First get following IDs
-        const { data: followingData, error: followingError } = await supabase
+        // Fetch following - first get following IDs, then get their profile data
+        const { data: followingData } = await supabase
           .from('follows')
           .select('following_id')
           .eq('follower_id', userId);
         
-        if (followingError) throw followingError;
-        
         if (followingData && followingData.length > 0) {
-          // Extract the following IDs
           const followingIds = followingData.map(f => f.following_id);
-          
-          // Then get the profile data for those following
-          const { data: followingProfiles, error: followingProfilesError } = await supabase
+          const { data: followingProfiles } = await supabase
             .from('profiles')
             .select('id, username, full_name, avatar_url')
             .in('id', followingIds);
             
-          if (followingProfilesError) throw followingProfilesError;
-          
-          // Make sure we have valid data before setting state
-          if (followingProfiles) {
-            // Cast to FollowUser[] to avoid TypeScript errors
-            setFollowing(followingProfiles as FollowUser[]);
-          } else {
-            setFollowing([]);
-          }
+          setFollowing(followingProfiles as FollowUser[] || []);
         } else {
           setFollowing([]);
         }
@@ -216,30 +184,6 @@ const UserProfile = () => {
   
   const isOwnProfile = currentUser?.id === userId;
   
-  // Component to display user list (for followers/following)
-  const UserList = ({ users }: { users: FollowUser[] }) => (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {users.map((user) => (
-        <div 
-          key={user.id} 
-          className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer"
-          onClick={() => navigate(`/profile/${user.id}`)}
-        >
-          <Avatar>
-            <AvatarImage src={user.avatar_url} />
-            <AvatarFallback>
-              {(user.full_name?.[0] || user.username?.[0] || 'U').toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">{user.full_name || user.username}</p>
-            <p className="text-sm text-muted-foreground">@{user.username}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-  
   return (
     <div className="min-h-screen flex flex-col pb-16">
       <main className="container flex-1 py-6">
@@ -255,67 +199,12 @@ const UserProfile = () => {
         />
 
         {/* Profile content */}
-        <Tabs defaultValue={activeTab} className="mt-6" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 w-full max-w-md mx-auto md:mx-0">
-            <TabsTrigger value="posts" className="flex gap-2 items-center">
-              <Music className="h-4 w-4" />
-              <span className="hidden sm:inline">Posts</span>
-            </TabsTrigger>
-            <TabsTrigger value="followers" className="flex gap-2 items-center">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Followers</span>
-            </TabsTrigger>
-            <TabsTrigger value="following" className="flex gap-2 items-center">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Following</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="posts" className="mt-6 space-y-6">
-            {displayPosts.length > 0 ? (
-              displayPosts.map((post) => (
-                <PostCard key={post.id} {...post} />
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No posts yet.</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="followers" className="mt-6">
-            {followers.length > 0 ? (
-              <UserList users={followers} />
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  {isOwnProfile 
-                    ? "You don't have any followers yet." 
-                    : "This user doesn't have any followers yet."}
-                </p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="following" className="mt-6">
-            {following.length > 0 ? (
-              <UserList users={following} />
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  {isOwnProfile 
-                    ? "You aren't following anyone yet." 
-                    : "This user isn't following anyone yet."}
-                </p>
-                {isOwnProfile && (
-                  <Button className="mt-4" onClick={() => navigate('/search')}>
-                    Find people to follow
-                  </Button>
-                )}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+        <ProfileContent 
+          posts={displayPosts}
+          followers={followers}
+          following={following}
+          isOwnProfile={isOwnProfile}
+        />
       </main>
     </div>
   );

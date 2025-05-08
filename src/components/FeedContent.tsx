@@ -45,7 +45,7 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
         .from('posts')
         .select(`
           *,
-          profiles:user_id (
+          profiles:user_id(
             full_name,
             username,
             avatar_url
@@ -71,7 +71,7 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
           return;
         }
       } else {
-        // For you tab - show more posts
+        // For you tab - show all posts
         query = query.limit(20);
       }
       

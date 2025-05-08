@@ -1,27 +1,15 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { PostCard } from "@/components/PostCard";
-import { Music, Users, Settings, Key } from "lucide-react";
+import { TabsContent } from "@/components/ui/tabs";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useSupabase } from "@/lib/supabase-provider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "@/components/ui/dialog";
 import { ProfileHeader } from "@/components/ProfileHeader";
 import { ProfileEditor } from "@/components/ProfileEditor";
+import { ProfileContent } from "@/components/ProfileContent";
+import { ProfileSettings } from "@/components/ProfileSettings";
 
 interface FormattedPost {
   id: string;
@@ -45,7 +33,6 @@ interface FormattedPost {
   };
 }
 
-// Define the profile interface to match what's in the database
 interface ProfileType {
   id: string;
   full_name: string | null;
@@ -78,11 +65,6 @@ const Profile = () => {
     avatar_url: "",
     user_type: undefined as 'musician' | 'listener' | undefined
   });
-  
-  // Password change states
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -143,66 +125,38 @@ const Profile = () => {
         if (postsError) throw postsError;
         setUserPosts(postsData || []);
         
-        // Modified approach for fetching followers
-        // First get follower IDs
-        const { data: followersData, error: followersError } = await supabase
+        // Fetch followers - first get follower IDs, then get their profile data
+        const { data: followersData } = await supabase
           .from('follows')
           .select('follower_id')
           .eq('following_id', user.id);
         
-        if (followersError) throw followersError;
-        
         if (followersData && followersData.length > 0) {
-          // Extract the follower IDs
           const followerIds = followersData.map(f => f.follower_id);
-          
-          // Then get the profile data for those followers
-          const { data: followerProfiles, error: followerProfilesError } = await supabase
+          const { data: followerProfiles } = await supabase
             .from('profiles')
             .select('id, username, full_name, avatar_url')
             .in('id', followerIds);
             
-          if (followerProfilesError) throw followerProfilesError;
-          
-          // Make sure we have valid data before setting state
-          if (followerProfiles) {
-            // Cast to FollowUser[] to avoid TypeScript errors
-            setFollowers(followerProfiles as FollowUser[]);
-          } else {
-            setFollowers([]);
-          }
+          setFollowers(followerProfiles as FollowUser[] || []);
         } else {
           setFollowers([]);
         }
         
-        // Modified approach for fetching following
-        // First get following IDs
-        const { data: followingData, error: followingError } = await supabase
+        // Fetch following - first get following IDs, then get their profile data
+        const { data: followingData } = await supabase
           .from('follows')
           .select('following_id')
           .eq('follower_id', user.id);
         
-        if (followingError) throw followingError;
-        
         if (followingData && followingData.length > 0) {
-          // Extract the following IDs
           const followingIds = followingData.map(f => f.following_id);
-          
-          // Then get the profile data for those following
-          const { data: followingProfiles, error: followingProfilesError } = await supabase
+          const { data: followingProfiles } = await supabase
             .from('profiles')
             .select('id, username, full_name, avatar_url')
             .in('id', followingIds);
             
-          if (followingProfilesError) throw followingProfilesError;
-          
-          // Make sure we have valid data before setting state
-          if (followingProfiles) {
-            // Cast to FollowUser[] to avoid TypeScript errors
-            setFollowing(followingProfiles as FollowUser[]);
-          } else {
-            setFollowing([]);
-          }
+          setFollowing(followingProfiles as FollowUser[] || []);
         } else {
           setFollowing([]);
         }
@@ -296,54 +250,6 @@ const Profile = () => {
     }
   };
   
-  const handlePasswordChange = async () => {
-    if (!newPassword || newPassword !== confirmPassword) {
-      toast({
-        title: "Password error",
-        description: "New passwords do not match.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      // First authenticate with current password
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: supabaseUser?.email || '',
-        password: currentPassword
-      });
-      
-      if (signInError) {
-        throw new Error("Current password is incorrect");
-      }
-      
-      // Then update to the new password
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Password updated",
-        description: "Your password has been changed successfully."
-      });
-      
-      // Reset form
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      
-    } catch (error: any) {
-      console.error('Error changing password:', error);
-      toast({
-        title: "Error changing password",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-  
   // Format posts for display
   const displayPosts: FormattedPost[] = userPosts.map((post) => {
     return {
@@ -368,30 +274,6 @@ const Profile = () => {
       },
     };
   });
-  
-  // Component to display user list (for followers/following)
-  const UserList = ({ users }: { users: FollowUser[] }) => (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {users.map((user) => (
-        <div 
-          key={user.id} 
-          className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer"
-          onClick={() => navigate(`/profile/${user.id}`)}
-        >
-          <Avatar>
-            <AvatarImage src={user.avatar_url} />
-            <AvatarFallback>
-              {(user.full_name?.[0] || user.username?.[0] || 'U').toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium">{user.full_name || user.username}</p>
-            <p className="text-sm text-muted-foreground">@{user.username}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
   
   if (authLoading || isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
@@ -421,6 +303,7 @@ const Profile = () => {
             isOwnProfile={true}
             onAvatarClick={() => fileInputRef.current?.click()}
             isUploadingAvatar={uploadingAvatar}
+            onEditClick={() => setIsEditing(true)}
           />
         )}
         
@@ -433,136 +316,19 @@ const Profile = () => {
           disabled={uploadingAvatar}
         />
 
-        {/* Profile content */}
-        <Tabs defaultValue={activeTab} className="mt-6" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-4 w-full max-w-md mx-auto md:mx-0">
-            <TabsTrigger value="posts" className="flex gap-2 items-center">
-              <Music className="h-4 w-4" />
-              <span className="hidden sm:inline">Posts</span>
-            </TabsTrigger>
-            <TabsTrigger value="followers" className="flex gap-2 items-center">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Followers</span>
-            </TabsTrigger>
-            <TabsTrigger value="following" className="flex gap-2 items-center">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Following</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex gap-2 items-center">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Settings</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="posts" className="mt-6 space-y-6">
-            {displayPosts.length > 0 ? (
-              displayPosts.map((post) => (
-                <PostCard key={post.id} {...post} />
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">You haven't posted anything yet.</p>
-                <Button className="mt-4" onClick={() => navigate("/create-post")}>Create Your First Post</Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="followers" className="mt-6">
-            {followers.length > 0 ? (
-              <UserList users={followers} />
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">You don't have any followers yet.</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="following" className="mt-6">
-            {following.length > 0 ? (
-              <UserList users={following} />
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">You aren't following anyone yet.</p>
-                <Button className="mt-4" onClick={() => navigate("/search")}>Find People to Follow</Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="settings" className="mt-6">
-            <div className="max-w-md space-y-4">
-              <div className="space-y-1">
-                <h3 className="font-medium">Account Settings</h3>
-                <p className="text-sm text-muted-foreground">Manage your account preferences and settings.</p>
-              </div>
-              <div className="border rounded-lg divide-y">
-                <div className="p-4">
-                  <h4 className="font-medium">Profile Information</h4>
-                  <p className="text-sm text-muted-foreground mt-1">Update how others see you on the platform</p>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="mt-2" 
-                    onClick={() => setIsEditing(true)}
-                  >
-                    Edit Profile
-                  </Button>
-                </div>
-                <div className="p-4">
-                  <h4 className="font-medium">Email & Password</h4>
-                  <p className="text-sm text-muted-foreground mt-1">Current email: {supabaseUser?.email}</p>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="mt-2">Change Password</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Change Password</DialogTitle>
-                        <DialogDescription>
-                          Enter your current password and a new password below.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="current-password-dialog">Current Password</Label>
-                          <Input 
-                            id="current-password-dialog" 
-                            type="password" 
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            placeholder="••••••••" 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="new-password-dialog">New Password</Label>
-                          <Input 
-                            id="new-password-dialog" 
-                            type="password" 
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="••••••••" 
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm-password-dialog">Confirm New Password</Label>
-                          <Input 
-                            id="confirm-password-dialog" 
-                            type="password" 
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="••••••••" 
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button type="submit" onClick={handlePasswordChange}>Save Changes</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+        {/* Profile content with settings tab */}
+        <ProfileContent 
+          posts={displayPosts}
+          followers={followers}
+          following={following}
+          isOwnProfile={true}
+          showSettings={true}
+          defaultTab={activeTab}
+        />
+
+        <TabsContent value="settings" className="mt-6">
+          <ProfileSettings />
+        </TabsContent>
       </main>
     </div>
   );
