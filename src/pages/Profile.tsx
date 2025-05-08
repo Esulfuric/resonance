@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -98,7 +97,7 @@ const Profile = () => {
             username: profileData.username || "",
             bio: profileData.bio || "",
             avatar_url: profileData.avatar_url || "",
-            user_type: profileData.user_type
+            user_type: profileData.user_type as 'musician' | 'listener' | undefined
           });
         } else {
           // Set default values from Supabase auth if profile doesn't exist
@@ -108,7 +107,7 @@ const Profile = () => {
             username: supabaseUser?.user_metadata?.username || supabaseUser?.email?.split("@")[0] || "",
             bio: supabaseUser?.user_metadata?.bio || "",
             avatar_url: supabaseUser?.user_metadata?.avatar_url || "",
-            user_type: supabaseUser?.user_metadata?.user_type
+            user_type: supabaseUser?.user_metadata?.user_type as 'musician' | 'listener' | undefined
           });
         }
         

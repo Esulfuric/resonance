@@ -6,6 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Label } from "@/components/ui/label";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 interface ProfileEditProps {
   profileData: {
@@ -29,6 +36,10 @@ export function ProfileEditor({ profileData, onSave, onCancel }: ProfileEditProp
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleUserTypeChange = (value: string) => {
+    setFormData(prev => ({ ...prev, user_type: value as 'musician' | 'listener' }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -40,6 +51,7 @@ export function ProfileEditor({ profileData, onSave, onCancel }: ProfileEditProp
           full_name: formData.full_name,
           username: formData.username,
           bio: formData.bio,
+          user_type: formData.user_type,
           updated_at: new Date().toISOString(),
         })
         .eq('id', profileData.id);
@@ -86,6 +98,22 @@ export function ProfileEditor({ profileData, onSave, onCancel }: ProfileEditProp
           onChange={handleChange}
           placeholder="Your username" 
         />
+      </div>
+      
+      <div>
+        <Label htmlFor="user_type">I am a</Label>
+        <Select 
+          value={formData.user_type} 
+          onValueChange={handleUserTypeChange}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select user type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="musician">Musician</SelectItem>
+            <SelectItem value="listener">Listener</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       
       <div>

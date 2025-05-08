@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { PostCard } from "@/components/PostCard";
 import { Music, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
