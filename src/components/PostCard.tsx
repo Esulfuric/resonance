@@ -28,6 +28,7 @@ interface PostCardProps {
   };
 }
 
+// Changed export to named export to match imports in other files
 export function PostCard(props: PostCardProps) {
   const { id, user, timestamp, content, imageUrl, songInfo, stats } = props;
   const [liked, setLiked] = useState(false);

@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import PostCard from "@/components/PostCard";
+import { PostCard } from "@/components/PostCard";
 import { Music, Users } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -126,7 +125,8 @@ const UserProfile = () => {
           
           // Make sure we have valid data before setting state
           if (followerProfiles) {
-            setFollowers(followerProfiles);
+            // Cast to FollowUser[] to avoid TypeScript errors
+            setFollowers(followerProfiles as FollowUser[]);
           } else {
             setFollowers([]);
           }
@@ -157,7 +157,8 @@ const UserProfile = () => {
           
           // Make sure we have valid data before setting state
           if (followingProfiles) {
-            setFollowing(followingProfiles);
+            // Cast to FollowUser[] to avoid TypeScript errors
+            setFollowing(followingProfiles as FollowUser[]);
           } else {
             setFollowing([]);
           }

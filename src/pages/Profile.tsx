@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import PostCard from "@/components/PostCard";
+import { PostCard } from "@/components/PostCard";
 import { Music, Users, Settings, Key } from "lucide-react";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useSupabase } from "@/lib/supabase-provider";
@@ -166,7 +166,8 @@ const Profile = () => {
           
           // Make sure we have valid data before setting state
           if (followerProfiles) {
-            setFollowers(followerProfiles);
+            // Cast to FollowUser[] to avoid TypeScript errors
+            setFollowers(followerProfiles as FollowUser[]);
           } else {
             setFollowers([]);
           }
@@ -197,7 +198,8 @@ const Profile = () => {
           
           // Make sure we have valid data before setting state
           if (followingProfiles) {
-            setFollowing(followingProfiles);
+            // Cast to FollowUser[] to avoid TypeScript errors
+            setFollowing(followingProfiles as FollowUser[]);
           } else {
             setFollowing([]);
           }
