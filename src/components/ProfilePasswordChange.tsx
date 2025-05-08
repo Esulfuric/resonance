@@ -32,9 +32,17 @@ export function ProfilePasswordChange() {
     }
     
     try {
-      // First authenticate with current password
+      // First get the user's email from the session
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userEmail = sessionData?.session?.user?.email;
+      
+      if (!userEmail) {
+        throw new Error("Unable to get user email");
+      }
+      
+      // Then authenticate with current password
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: supabase.auth.getSession().then(({ data }) => data.session?.user.email || ''),
+        email: userEmail,
         password: currentPassword
       });
       

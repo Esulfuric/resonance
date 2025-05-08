@@ -115,7 +115,7 @@ export function ProfileHeader({
         
         {isOwnProfile && (
           <div className="md:self-start">
-            <Button onClick={onEditClick || (() => setIsEditing(true))} className="flex gap-2 items-center">
+            <Button onClick={onEditClick} className="flex gap-2 items-center">
               <Edit className="h-4 w-4" /> Edit Profile
             </Button>
           </div>
