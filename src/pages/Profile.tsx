@@ -180,13 +180,7 @@ const Profile = () => {
     try {
       setUploadingAvatar(true);
       
-      // Check if the storage bucket exists and create it if it doesn't
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const profilesBucket = buckets?.find(b => b.name === 'profiles');
-      
-      if (!profilesBucket) {
-        await supabase.storage.createBucket('profiles', { public: true });
-      }
+      console.log("Uploading avatar to profiles bucket");
       
       // Generate unique file name
       const fileExt = file.name.split('.').pop();
@@ -208,6 +202,7 @@ const Profile = () => {
         .getPublicUrl(filePath);
         
       const avatarUrl = urlData.publicUrl;
+      console.log("Avatar uploaded successfully:", avatarUrl);
       
       // Update profile with new avatar URL
       setProfileData({

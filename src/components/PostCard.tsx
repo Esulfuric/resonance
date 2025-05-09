@@ -12,6 +12,7 @@ interface PostCardProps {
     name: string;
     username: string;
     avatar: string;
+    user_type?: 'musician' | 'listener';
   };
   timestamp: string;
   content: string;
@@ -59,6 +60,11 @@ export function PostCard(props: PostCardProps) {
               <div onClick={handleUserClick} className="cursor-pointer">
                 <span className="font-semibold">{user.name}</span>
                 <span className="text-muted-foreground ml-1">@{user.username}</span>
+                {user.user_type && (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
+                  </span>
+                )}
                 <span className="text-muted-foreground text-sm ml-2">{timestamp}</span>
               </div>
               <Button variant="ghost" size="icon" className="rounded-full">

@@ -19,6 +19,7 @@ interface Post {
     full_name?: string;
     username?: string;
     avatar_url?: string;
+    user_type?: 'musician' | 'listener';
   };
 }
 
@@ -48,7 +49,8 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
           profiles:user_id(
             full_name,
             username,
-            avatar_url
+            avatar_url,
+            user_type
           )
         `)
         .order('created_at', { ascending: false });
@@ -81,6 +83,8 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
         throw error;
       }
       
+      console.log("Posts fetched:", data);
+      
       // Safely cast the data to our Post interface
       const typedPosts = (data || []) as Post[];
       setPosts(typedPosts);
@@ -109,6 +113,7 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
         name: profile.full_name || profile.username || "User",
         username: profile.username || "user",
         avatar: profile.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg",
+        user_type: profile.user_type
       },
       timestamp: new Date(post.created_at).toLocaleDateString(),
       content: post.content,

@@ -19,13 +19,6 @@ const Feed = () => {
   if (!user) {
     return <div className="flex items-center justify-center h-screen">Redirecting...</div>;
   }
-
-  // Real trending topics data
-  const trendingTopics = [
-    { id: 1, name: "#NewMusicFriday", postCount: "24.5K posts" },
-    { id: 2, name: "#SummerHits", postCount: "12.1K posts" },
-    { id: 3, name: "#MusicProducer", postCount: "8.7K posts" },
-  ];
   
   return (
     <div className="min-h-screen flex flex-col pb-16">
@@ -48,9 +41,9 @@ const Feed = () => {
             />
           </div>
           
-          {/* Sidebar */}
+          {/* Sidebar - removed "What's happening" section */}
           {!isMobile && (
-            <Sidebar trendingTopics={trendingTopics} />
+            <Sidebar trendingTopics={[]} />
           )}
         </div>
       </div>

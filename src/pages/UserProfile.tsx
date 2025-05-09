@@ -162,9 +162,10 @@ const UserProfile = () => {
     return {
       id: post.id,
       user: {
-        name: profile.full_name || profile.username || "User",
-        username: profile.username || "user",
-        avatar: profile.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg",
+        name: profile?.full_name || profile?.username || "User",
+        username: profile?.username || "user",
+        avatar: profile?.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg",
+        user_type: profile?.user_type,
       },
       timestamp: new Date(post.created_at).toLocaleDateString(),
       content: post.content,
