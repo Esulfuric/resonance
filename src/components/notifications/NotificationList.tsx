@@ -1,19 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Bell, Heart, MessageCircle, UserPlus } from "lucide-react";
-import { fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead } from "@/services/postService";
-import { Notification } from "@/types/post";
-import { useSupabase } from "@/lib/supabase-provider";
+import { useSupabase } from '@/lib/supabase-provider';
+import { fetchNotifications, markNotificationAsRead } from '@/services/postService';
+import { Notification } from '@/types/post';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
-interface NotificationListProps {
-  onClose?: () => void;
-}
-
-export const NotificationList: React.FC<NotificationListProps> = ({ onClose }) => {
+export const NotificationList: React.FC<{ onClose?: () => void }> = ({ 
+  onClose 
+}) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useSupabase();
@@ -28,62 +23,45 @@ export const NotificationList: React.FC<NotificationListProps> = ({ onClose }) =
   const loadNotifications = async () => {
     if (!user) return;
     
-    setIsLoading(true);
     try {
-      const notificationData = await fetchNotifications(user.id);
-      setNotifications(notificationData);
+      setIsLoading(true);
+      const fetchedNotifications = await fetchNotifications(user.id);
+      setNotifications(fetchedNotifications);
     } catch (error) {
-      console.error('Error loading notifications:', error);
+      console.error('Error fetching notifications:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleReadNotification = async (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
     // Mark notification as read
-    await markNotificationAsRead(notification.id);
-    
-    // Update local state
-    setNotifications(prev => prev.map(n => 
-      n.id === notification.id ? { ...n, is_read: true } : n
-    ));
+    if (!notification.is_read) {
+      await markNotificationAsRead(notification.id);
+      
+      // Update state to reflect the read status
+      setNotifications(prevNotifications => 
+        prevNotifications.map(n => 
+          n.id === notification.id ? { ...n, is_read: true } : n
+        )
+      );
+    }
     
     // Navigate based on notification type
-    if (onClose) onClose();
-    
     if (notification.type === 'follow') {
+      // Navigate to user profile
       navigate(`/profile/${notification.actor_id}`);
     } else if (notification.type === 'like' || notification.type === 'comment') {
-      // Navigate to the post
-      if (notification.post_id) {
-        // Ideally we'd navigate to a specific post view
-        // For now, navigate to the actor's profile
-        navigate(`/profile/${notification.actor_id}`);
-      }
+      // Navigate to post
+      // Note: In a real app, you might want to navigate to the specific post
+      navigate(`/profile/${notification.actor_id}`);
     }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    if (!user) return;
     
-    await markAllNotificationsAsRead(user.id);
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    // Close the notification panel
+    if (onClose) onClose();
   };
 
-  const renderNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'like':
-        return <Heart className="h-4 w-4 text-red-500" />;
-      case 'comment':
-        return <MessageCircle className="h-4 w-4 text-blue-500" />;
-      case 'follow':
-        return <UserPlus className="h-4 w-4 text-green-500" />;
-      default:
-        return <Bell className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getNotificationText = (notification: Notification) => {
+  const getNotificationText = (notification: Notification): string => {
     const actorName = notification.actor?.full_name || notification.actor?.username || 'Someone';
     
     switch (notification.type) {
@@ -98,96 +76,84 @@ export const NotificationList: React.FC<NotificationListProps> = ({ onClose }) =
     }
   };
 
-  const getTimeAgo = (timestamp: string) => {
+  const formatDate = (dateString: string): string => {
     const now = new Date();
-    const notifTime = new Date(timestamp);
-    const diff = now.getTime() - notifTime.getTime();
+    const date = new Date(dateString);
+    const diff = now.getTime() - date.getTime();
     
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 60) return `${minutes}m ago`;
+    // Within last hour
+    if (diff < 3600000) {
+      const minutes = Math.floor(diff / 60000);
+      return `${minutes}m ago`;
+    }
     
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
+    // Within last day
+    if (diff < 86400000) {
+      const hours = Math.floor(diff / 3600000);
+      return `${hours}h ago`;
+    }
     
-    const days = Math.floor(hours / 24);
-    if (days < 30) return `${days}d ago`;
+    // Within last week
+    if (diff < 604800000) {
+      const days = Math.floor(diff / 86400000);
+      return `${days}d ago`;
+    }
     
-    return notifTime.toLocaleDateString();
+    // Otherwise, return date
+    return date.toLocaleDateString();
   };
 
   if (isLoading) {
-    return <div className="p-4 text-center">Loading notifications...</div>;
-  }
-
-  if (notifications.length === 0) {
     return (
-      <div className="p-8 text-center">
-        <Bell className="mx-auto h-12 w-12 text-muted-foreground opacity-20" />
-        <h3 className="mt-4 text-lg font-medium">No notifications</h3>
-        <p className="text-sm text-muted-foreground">When someone interacts with your posts or profile, you'll see it here.</p>
+      <div className="p-4 text-center">
+        Loading notifications...
       </div>
     );
   }
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  if (notifications.length === 0) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-muted-foreground">No notifications yet</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full max-w-sm">
-      <div className="flex items-center justify-between p-4 border-b">
-        <h3 className="text-lg font-medium">Notifications</h3>
-        {unreadCount > 0 && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleMarkAllAsRead}
-            className="text-xs"
-          >
-            Mark all as read
-          </Button>
-        )}
+    <div className="max-h-[400px] overflow-y-auto">
+      <div className="p-2 border-b">
+        <h3 className="font-semibold">Notifications</h3>
       </div>
       
-      <ScrollArea className="h-[70vh] md:h-[50vh]">
-        <div className="p-4 space-y-4">
-          {notifications.map(notification => (
-            <div 
-              key={notification.id}
-              className={`flex gap-3 p-3 rounded-md cursor-pointer transition-colors ${
-                notification.is_read ? 'bg-background' : 'bg-muted'
-              }`}
-              onClick={() => handleReadNotification(notification)}
-            >
-              <Avatar className="h-10 w-10">
-                <AvatarImage 
-                  src={notification.actor?.avatar_url} 
-                  alt={notification.actor?.full_name || ''} 
-                />
-                <AvatarFallback>
-                  {notification.actor?.full_name?.[0] || notification.actor?.username?.[0] || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <p className="text-sm font-medium line-clamp-2">
-                    {getNotificationText(notification)}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    {renderNotificationIcon(notification.type)}
-                    <span className="text-xs text-muted-foreground">
-                      {getTimeAgo(notification.created_at)}
-                    </span>
-                  </div>
-                </div>
-                {!notification.is_read && (
-                  <div className="h-2 w-2 bg-blue-500 rounded-full absolute top-1 right-1" />
-                )}
-              </div>
-            </div>
-          ))}
+      {notifications.map(notification => (
+        <div 
+          key={notification.id} 
+          className={`p-3 border-b flex items-center gap-3 cursor-pointer transition-colors hover:bg-muted ${
+            !notification.is_read ? 'bg-muted/50' : ''
+          }`}
+          onClick={() => handleNotificationClick(notification)}
+        >
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={notification.actor?.avatar_url} />
+            <AvatarFallback>
+              {notification.actor?.full_name?.[0] || notification.actor?.username?.[0] || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-1 min-w-0">
+            <p className="text-sm">
+              {getNotificationText(notification)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {formatDate(notification.created_at)}
+            </p>
+          </div>
+          
+          {!notification.is_read && (
+            <div className="h-2 w-2 bg-blue-500 rounded-full shrink-0"></div>
+          )}
         </div>
-      </ScrollArea>
+      ))}
     </div>
   );
 };
-
-export default NotificationList;

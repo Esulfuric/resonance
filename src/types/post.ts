@@ -111,4 +111,5 @@ export interface PostCardProps {
   isLiked?: boolean;
   onLike?: () => void;
   onComment?: () => void;
+  onRefreshFeed?: () => void;
 }

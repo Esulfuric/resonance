@@ -19,35 +19,7 @@ import { Comment } from "@/types/post";
 import { toggleLikePost, checkPostLiked, addComment, fetchComments } from "@/services/postService";
 import { useSupabase } from "@/lib/supabase-provider";
 
-interface PostCardProps {
-  id: string;
-  user_id?: string;
-  user: {
-    name: string;
-    username: string;
-    avatar: string;
-    user_type?: 'musician' | 'listener';
-  };
-  timestamp: string;
-  content: string;
-  isEdited?: boolean;
-  imageUrl?: string;
-  songInfo?: {
-    title: string;
-    artist: string;
-    albumCover: string;
-  };
-  stats: {
-    likes: number;
-    comments: number;
-    shares: number;
-  };
-  isOwner?: boolean;
-  onDelete?: () => void;
-  onRefreshFeed?: () => void;
-}
-
-export function PostCard(props: PostCardProps) {
+export function PostCard(props: any) {
   const { 
     id, 
     user_id, 
@@ -67,7 +39,6 @@ export function PostCard(props: PostCardProps) {
   const [likesCount, setLikesCount] = useState(stats.likes);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
-  const [isCommenting, setIsCommenting] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsCount, setCommentsCount] = useState(stats.comments);

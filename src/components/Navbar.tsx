@@ -1,7 +1,3 @@
-
-// This file is actually read-only but I'm showing how we'd update it to include notifications
-// In your implementation, you'll need to use a copy of the original Navbar code and add the notification bell
-
 import React, { useState, useEffect } from 'react';
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
@@ -20,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { fetchNotifications } from '@/services/postService';
+import { fetchNotifications, markAllNotificationsAsRead } from '@/services/postService';
 import { Bell } from 'lucide-react';
 import NotificationList from './notifications/NotificationList';
 
@@ -52,6 +48,16 @@ const Navbar = () => {
       console.error('Error loading notifications count:', error);
     }
   };
+  
+  const handleNotificationsOpen = (open: boolean) => {
+    setNotificationsOpen(open);
+    if (!open && user && unreadCount > 0) {
+      // Mark all as read when closing the notifications panel
+      markAllNotificationsAsRead(user.id)
+        .then(() => setUnreadCount(0))
+        .catch(error => console.error('Error marking notifications as read:', error));
+    }
+  };
 
   // Hide navbar on certain pages
   if (['/login', '/signup', '/forgot-password'].includes(location.pathname)) {
@@ -69,7 +75,7 @@ const Navbar = () => {
           <ThemeToggle />
           
           {user && (
-            <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+            <Popover open={notificationsOpen} onOpenChange={handleNotificationsOpen}>
               <PopoverTrigger asChild>
                 <div className="relative">
                   <button className="p-2 rounded-full hover:bg-muted">
