@@ -54,7 +54,6 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
           created_at,
           updated_at,
           song_title,
-          image_url,
           profiles:user_id(
             full_name,
             username,
@@ -94,15 +93,19 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
       
       console.log("Posts fetched:", data);
       
-      // Add is_edited flag based on created_at and updated_at timestamps
-      const postsWithEditFlag = (data || []).map(post => {
-        const createdDate = new Date(post.created_at).getTime();
-        const updatedDate = new Date(post.updated_at).getTime();
-        const isEdited = updatedDate - createdDate > 1000; // If more than 1 second difference, consider it edited
-        return { ...post, is_edited: isEdited };
-      });
+      if (data) {
+        // Add is_edited flag based on created_at and updated_at timestamps
+        const postsWithEditFlag = data.map(post => {
+          const createdDate = new Date(post.created_at).getTime();
+          const updatedDate = new Date(post.updated_at).getTime();
+          const isEdited = updatedDate - createdDate > 1000; // If more than 1 second difference, consider it edited
+          return { ...post, is_edited: isEdited };
+        });
 
-      setPosts(postsWithEditFlag);
+        setPosts(postsWithEditFlag);
+      } else {
+        setPosts([]);
+      }
     } catch (error: any) {
       console.error('Error fetching posts:', error);
       toast({
@@ -110,6 +113,7 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
         description: error.message,
         variant: "destructive",
       });
+      setPosts([]);
     } finally {
       setIsLoading(false);
     }
