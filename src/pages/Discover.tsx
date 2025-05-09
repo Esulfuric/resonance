@@ -5,10 +5,11 @@ import { MusicPlayer } from "@/components/MusicPlayer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Card } from "@/components/ui/card";
 import { Heart, MessageCircle, Share, Play, Pause } from "lucide-react";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface MusicReel {
   id: number;
@@ -28,64 +29,6 @@ interface MusicReel {
   likes: number;
   comments: number;
 }
-
-// Initial sample data
-const musicReels: MusicReel[] = [
-  {
-    id: 1,
-    user: {
-      id: "user1",
-      name: "Emma Davis",
-      username: "emmad",
-      avatar: "https://randomuser.me/api/portraits/women/65.jpg",
-    },
-    song: {
-      title: "Midnight Serenade",
-      artist: "The Dreamers",
-      coverArt: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400&auto=format&fit=crop",
-      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-    },
-    description: "This track gives me all the vibes! 🎵✨ #NewMusic #MustListen",
-    likes: 423,
-    comments: 57,
-  },
-  {
-    id: 2,
-    user: {
-      id: "user2",
-      name: "Jordan Lee",
-      username: "jlee_music",
-      avatar: "https://randomuser.me/api/portraits/men/62.jpg",
-    },
-    song: {
-      title: "Electric Dreams",
-      artist: "Neon Collective",
-      coverArt: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=400&auto=format&fit=crop",
-      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
-    },
-    description: "Found this hidden gem today! The production is insane 🔥 #ElectronicMusic",
-    likes: 872,
-    comments: 124,
-  },
-  {
-    id: 3,
-    user: {
-      id: "user3",
-      name: "Mia Johnson",
-      username: "mia_vibes",
-      avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-    },
-    song: {
-      title: "Sunset Boulevard",
-      artist: "Coastal Waves",
-      coverArt: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=400&auto=format&fit=crop",
-      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
-    },
-    description: "This is the perfect summer anthem! Been on repeat all day 🌊☀️ #SummerVibes",
-    likes: 651,
-    comments: 83,
-  },
-];
 
 const MusicReelCard = ({ 
   reel,
@@ -158,22 +101,26 @@ const MusicReelCard = ({
       <div className="relative h-full flex flex-col justify-between p-4 text-white">
         {/* User info and description */}
         <div>
-          <div className="flex items-center gap-2 mb-4">
-            <Avatar 
-              className="h-8 w-8 border border-white cursor-pointer" 
-              onClick={() => handleUserClick(reel.user.id)}
-            >
-              <AvatarImage src={reel.user.avatar} alt={reel.user.name} />
-              <AvatarFallback>{reel.user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="cursor-pointer" onClick={() => handleUserClick(reel.user.id)}>
-              <p className="font-semibold">{reel.user.name}</p>
-              <p className="text-xs text-gray-300">@{reel.user.username}</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Avatar 
+                className="h-8 w-8 border border-white cursor-pointer" 
+                onClick={() => handleUserClick(reel.user.id)}
+              >
+                <AvatarImage src={reel.user.avatar} alt={reel.user.name} />
+                <AvatarFallback>{reel.user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div className="cursor-pointer" onClick={() => handleUserClick(reel.user.id)}>
+                <p className="font-semibold">{reel.user.name}</p>
+                <p className="text-xs text-gray-300">@{reel.user.username}</p>
+              </div>
             </div>
+            
+            {/* Moved Follow button to the right */}
             <Button 
               variant="default" 
               size="sm" 
-              className="ml-2 bg-resonance-green hover:bg-resonance-green/90"
+              className="bg-resonance-green hover:bg-resonance-green/90"
               onClick={(e) => {
                 e.stopPropagation();
                 handleUserClick(reel.user.id);
@@ -239,6 +186,28 @@ const Discover = () => {
   const navigate = useNavigate();
   const [activeReelIndex, setActiveReelIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [musicReels, setMusicReels] = useState<MusicReel[]>([]);
+  const { toast } = useToast();
+
+  // Fetch music reels from Supabase (for now, return an empty array)
+  useEffect(() => {
+    const fetchMusicReels = async () => {
+      try {
+        // For now, returning an empty array
+        // In the future, we would implement real data fetching from Supabase
+        setMusicReels([]);
+      } catch (error: any) {
+        console.error('Error fetching music reels:', error);
+        toast({
+          title: "Error loading content",
+          description: "Could not load music reels. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    fetchMusicReels();
+  }, []);
 
   // Handle scroll events to determine which reel is active
   useEffect(() => {
@@ -256,7 +225,7 @@ const Discover = () => {
     return () => {
       container.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [musicReels.length]);
 
   const handleUserClick = (userId: string) => {
     // Navigate to user profile
@@ -274,14 +243,26 @@ const Discover = () => {
         className="flex-1 overflow-y-auto overflow-x-hidden snap-y snap-mandatory"
         style={{ scrollSnapType: 'y mandatory' }}
       >
-        {musicReels.map((reel, index) => (
-          <MusicReelCard 
-            key={reel.id} 
-            reel={reel} 
-            isActive={index === activeReelIndex}
-            handleUserClick={handleUserClick}
-          />
-        ))}
+        {musicReels.length > 0 ? (
+          musicReels.map((reel, index) => (
+            <MusicReelCard 
+              key={reel.id} 
+              reel={reel} 
+              isActive={index === activeReelIndex}
+              handleUserClick={handleUserClick}
+            />
+          ))
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center max-w-md mx-auto p-4">
+              <h2 className="text-2xl font-bold mb-3">Coming Soon</h2>
+              <p className="text-muted-foreground">
+                We're working on bringing you the best music content.
+                Check back later for exciting music reels!
+              </p>
+            </div>
+          </div>
+        )}
       </div>
       
       {!isMobile && <MusicPlayer />}

@@ -13,6 +13,8 @@ interface Post {
   user_id: string;
   content: string;
   created_at: string;
+  updated_at: string;
+  is_edited?: boolean;
   song_title?: string;
   image_url?: string;
   profiles?: {
@@ -42,10 +44,17 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
     try {
       setIsLoading(true);
       
+      // Start with a base query
       let query = supabase
         .from('posts')
         .select(`
-          *,
+          id,
+          user_id,
+          content,
+          created_at,
+          updated_at,
+          song_title,
+          image_url,
           profiles:user_id(
             full_name,
             username,
@@ -85,9 +94,15 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
       
       console.log("Posts fetched:", data);
       
-      // Safely cast the data to our Post interface
-      const typedPosts = (data || []) as Post[];
-      setPosts(typedPosts);
+      // Add is_edited flag based on created_at and updated_at timestamps
+      const postsWithEditFlag = (data || []).map(post => {
+        const createdDate = new Date(post.created_at).getTime();
+        const updatedDate = new Date(post.updated_at).getTime();
+        const isEdited = updatedDate - createdDate > 1000; // If more than 1 second difference, consider it edited
+        return { ...post, is_edited: isEdited };
+      });
+
+      setPosts(postsWithEditFlag);
     } catch (error: any) {
       console.error('Error fetching posts:', error);
       toast({
@@ -104,11 +119,39 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
     fetchPosts();
   };
 
+  const handleDeletePost = async (postId: string) => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Post deleted",
+        description: "Your post has been deleted successfully.",
+      });
+
+      // Refresh posts after deletion
+      fetchPosts();
+
+    } catch (error: any) {
+      console.error('Error deleting post:', error);
+      toast({
+        title: "Error deleting post",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   // Map the posts data to the format expected by PostCard component
   const displayPosts = posts.map((post) => {
     const profile = post.profiles || {};
     return {
       id: post.id,
+      user_id: post.user_id,
       user: {
         name: profile.full_name || profile.username || "User",
         username: profile.username || "user",
@@ -117,6 +160,7 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
       },
       timestamp: new Date(post.created_at).toLocaleDateString(),
       content: post.content,
+      isEdited: post.is_edited,
       songInfo: post.song_title ? {
         title: post.song_title,
         artist: "Unknown Artist",
@@ -128,6 +172,8 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
         comments: 0,
         shares: 0,
       },
+      isOwner: user?.id === post.user_id,
+      onDelete: () => handleDeletePost(post.id),
     };
   });
 

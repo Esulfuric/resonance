@@ -1,13 +1,23 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Music } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Music, Pencil, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface PostCardProps {
   id: string;
+  user_id?: string;
   user: {
     name: string;
     username: string;
@@ -16,6 +26,7 @@ interface PostCardProps {
   };
   timestamp: string;
   content: string;
+  isEdited?: boolean;
   imageUrl?: string;
   songInfo?: {
     title: string;
@@ -27,13 +38,18 @@ interface PostCardProps {
     comments: number;
     shares: number;
   };
+  isOwner?: boolean;
+  onDelete?: () => void;
 }
 
-// Changed export to named export to match imports in other files
 export function PostCard(props: PostCardProps) {
-  const { id, user, timestamp, content, imageUrl, songInfo, stats } = props;
+  const { id, user_id, user, timestamp, content, imageUrl, songInfo, stats, isEdited = false, isOwner = false, onDelete } = props;
   const [liked, setLiked] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(content);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleLike = () => {
     setLiked(!liked);
@@ -41,7 +57,53 @@ export function PostCard(props: PostCardProps) {
 
   const handleUserClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/profile/${id.split('-')[0]}`); // Using part of the post ID as user ID for demo
+    navigate(`/profile/${user_id || id.split('-')[0]}`);
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    // Focus the textarea and set cursor at the end when it becomes visible
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(
+          editedContent.length,
+          editedContent.length
+        );
+      }
+    }, 0);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedContent(content);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ content: editedContent, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setIsEditing(false);
+      toast({
+        title: "Post updated",
+        description: "Your changes have been saved.",
+      });
+
+      // Update the local state
+      // We don't reload the whole feed but update just what we need
+    } catch (error: any) {
+      console.error('Error updating post:', error);
+      toast({
+        title: "Error updating post",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -67,14 +129,59 @@ export function PostCard(props: PostCardProps) {
                 )}
                 <span className="text-muted-foreground text-sm ml-2">{timestamp}</span>
               </div>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">More options</span>
-              </Button>
+              
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">More options</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleEdit}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onDelete) onDelete();
+                      }}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
             
             <div className="mt-2">
-              <p className="text-sm whitespace-pre-wrap">{content}</p>
+              {isEditing ? (
+                <div className="space-y-2">
+                  <Textarea 
+                    ref={textareaRef}
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleSaveEdit}>
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm whitespace-pre-wrap">{content}</p>
+                  {isEdited && <p className="text-xs text-green-500 mt-1">Edited</p>}
+                </>
+              )}
               
               {/* Song info */}
               {songInfo && (
