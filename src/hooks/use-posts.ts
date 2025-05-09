@@ -64,6 +64,7 @@ export const usePosts = (userId?: string) => {
     posts,
     isLoading,
     fetchPosts,
-    handleDeletePost
+    handleDeletePost,
+    setPosts
   };
 };

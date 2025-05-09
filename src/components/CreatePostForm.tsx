@@ -7,10 +7,10 @@ import { Music, Image, Smile, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSupabase } from "@/lib/supabase-provider";
-import { supabase } from "@/lib/supabase";
+import { createPost } from "@/services/postService";
 import { useQueryClient } from "@tanstack/react-query";
 
-export function CreatePostForm() {
+export function CreatePostForm({ onPostCreated }: { onPostCreated?: () => void }) {
   const [content, setContent] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [attachedSong, setAttachedSong] = useState<string | null>(null);
@@ -26,16 +26,11 @@ export function CreatePostForm() {
     setIsPosting(true);
     
     try {
-      // Create post in Supabase
-      const { error } = await supabase
-        .from('posts')
-        .insert({
-          user_id: user.id,
-          content,
-          song_title: attachedSong || null
-        });
+      const result = await createPost(content, user.id, attachedSong);
       
-      if (error) throw error;
+      if (!result.success) {
+        throw result.error;
+      }
       
       toast({
         title: "Post created!",
@@ -51,8 +46,10 @@ export function CreatePostForm() {
       setAttachedSong(null);
       setIsFocused(false);
       
-      // Force refresh the current page to show the new post
-      window.location.reload();
+      // Call the callback if provided
+      if (onPostCreated) {
+        onPostCreated();
+      }
       
     } catch (error: any) {
       console.error("Error creating post:", error);

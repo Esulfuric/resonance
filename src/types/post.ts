@@ -16,6 +16,71 @@ export interface Post {
   song_title?: string;
   image_url?: string;
   profiles?: Profile;
+  likes_count?: number;
+  comments_count?: number;
+}
+
+export interface Comment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  user?: {
+    id: string;
+    full_name: string;
+    username: string;
+    avatar_url: string;
+  };
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  actor_id: string;
+  type: 'like' | 'comment' | 'follow';
+  post_id?: string;
+  comment_id?: string;
+  created_at: string;
+  is_read: boolean;
+  actor?: {
+    id: string;
+    full_name?: string;
+    username?: string;
+    avatar_url?: string;
+  };
+}
+
+export interface Message {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  content: string;
+  created_at: string;
+  sender?: {
+    id: string;
+    full_name?: string;
+    username?: string;
+    avatar_url?: string;
+  };
+  recipient?: {
+    id: string;
+    full_name?: string;
+    username?: string;
+    avatar_url?: string;
+  };
+}
+
+export interface Conversation {
+  other_user: {
+    id: string;
+    full_name: string;
+    username: string;
+    avatar_url: string;
+  };
+  last_message: string;
+  created_at: string;
+  unread_count: number;
 }
 
 export interface PostCardProps {
@@ -43,4 +108,7 @@ export interface PostCardProps {
   };
   isOwner?: boolean;
   onDelete?: () => void;
+  isLiked?: boolean;
+  onLike?: () => void;
+  onComment?: () => void;
 }

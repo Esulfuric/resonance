@@ -15,6 +15,7 @@ import Discover from "./pages/Discover";
 import SearchPage from "./pages/Search";
 import NotFound from "./pages/NotFound";
 import CreatePost from "./pages/CreatePost";
+import Messages from "./pages/Messages";
 import { BottomNavigation } from "./components/BottomNavigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
@@ -127,6 +128,14 @@ const App = () => {
                 <Route path="/create-post" element={
                   <AuthenticatedRoute>
                     <CreatePost />
+                  </AuthenticatedRoute>
+                } />
+                <Route path="/messages" element={
+                  <AuthenticatedRoute>
+                    <>
+                      <Navbar />
+                      <Messages />
+                    </>
                   </AuthenticatedRoute>
                 } />
                 

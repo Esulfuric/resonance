@@ -5,6 +5,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { PostList } from "@/components/feed/PostList";
 import { EmptyFollowingState } from "@/components/feed/EmptyFollowingState";
 import { FeedTabs } from "@/components/feed/FeedTabs";
+import { CreatePostForm } from "@/components/CreatePostForm";
 
 interface FeedContentProps {
   activeTab: string;
@@ -29,23 +30,31 @@ export const FeedContent: React.FC<FeedContentProps> = ({
 
   // Prepare content for each tab
   const forYouContent = (
-    <PostList 
-      posts={posts} 
-      currentUserId={user?.id} 
-      onDeletePost={handleDeletePost}
-      isLoading={isLoading}
-    />
+    <>
+      {user && <CreatePostForm onPostCreated={handleRefresh} />}
+      <PostList 
+        posts={posts} 
+        currentUserId={user?.id} 
+        onDeletePost={handleDeletePost}
+        isLoading={isLoading}
+        onRefreshFeed={handleRefresh}
+      />
+    </>
   );
 
   const followingContent = isLoading ? (
     <div className="text-center py-8">Loading posts...</div>
   ) : posts.length > 0 ? (
-    <PostList 
-      posts={posts} 
-      currentUserId={user?.id} 
-      onDeletePost={handleDeletePost}
-      isLoading={false}
-    />
+    <>
+      {user && <CreatePostForm onPostCreated={handleRefresh} />}
+      <PostList 
+        posts={posts} 
+        currentUserId={user?.id} 
+        onDeletePost={handleDeletePost}
+        isLoading={false}
+        onRefreshFeed={handleRefresh}
+      />
+    </>
   ) : (
     <EmptyFollowingState />
   );

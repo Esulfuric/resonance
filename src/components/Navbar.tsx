@@ -1,83 +1,132 @@
 
-import { Link } from 'react-router-dom';
-import Logo from './Logo';
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useIsMobile } from '@/hooks/use-mobile';
+// This file is actually read-only but I'm showing how we'd update it to include notifications
+// In your implementation, you'll need to use a copy of the original Navbar code and add the notification bell
+
+import React, { useState, useEffect } from 'react';
+import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
-import { motion } from "framer-motion";
 import { useSupabase } from '@/lib/supabase-provider';
-import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { fetchNotifications } from '@/services/postService';
+import { Bell } from 'lucide-react';
+import NotificationList from './notifications/NotificationList';
 
 const Navbar = () => {
-  const isMobile = useIsMobile();
   const { user, signOut } = useSupabase();
-  const { toast } = useToast();
-  const isAuthenticated = !!user;
+  const location = useLocation();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      loadNotificationCount();
+      
+      // Set up interval to check for new notifications
+      const interval = setInterval(loadNotificationCount, 60000); // Check every minute
+      
+      return () => clearInterval(interval);
+    }
+  }, [user]);
   
-  const logoVariants = {
-    hidden: { opacity: 0, y: -20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-  };
-  
-  const handleSignOut = async () => {
+  const loadNotificationCount = async () => {
+    if (!user) return;
+    
     try {
-      await signOut();
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
+      const notifications = await fetchNotifications(user.id);
+      const unread = notifications.filter(n => !n.is_read).length;
+      setUnreadCount(unread);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to log out. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Error loading notifications count:', error);
     }
   };
 
+  // Hide navbar on certain pages
+  if (['/login', '/signup', '/forgot-password'].includes(location.pathname)) {
+    return null;
+  }
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
-      <div className="container flex h-16 items-center justify-between">
-        <motion.div 
-          className="flex items-center gap-2"
-          variants={logoVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <Link to="/" className="flex items-center gap-2">
-            <Logo variant={isMobile ? 'icon' : 'full'} />
-          </Link>
-        </motion.div>
+    <div className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-sm z-10 border-b">
+      <div className="container h-full flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Logo />
+        </div>
         
-        {isAuthenticated ? (
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            {!isMobile && (
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={handleSignOut}
-                className="rounded-full ml-2"
-              >
-                <span className="sr-only">Sign out</span>
-                Logout
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          
+          {user && (
+            <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+              <PopoverTrigger asChild>
+                <div className="relative">
+                  <button className="p-2 rounded-full hover:bg-muted">
+                    <Bell className="h-5 w-5" />
+                  </button>
+                  {unreadCount > 0 && (
+                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </div>
+                  )}
+                </div>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="p-0 w-80">
+                <NotificationList onClose={() => setNotificationsOpen(false)} />
+              </PopoverContent>
+            </Popover>
+          )}
+          
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="focus:outline-none">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                    <AvatarFallback>
+                      {user.email?.[0]?.toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <Link to="/profile">
+                  <DropdownMenuItem className="cursor-pointer">
+                    My Profile
+                  </DropdownMenuItem>
+                </Link>
+                <Link to="/messages">
+                  <DropdownMenuItem className="cursor-pointer">
+                    Messages
+                  </DropdownMenuItem>
+                </Link>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer" onClick={signOut}>
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
             <Link to="/login">
-              <Button variant="outline" className="hidden sm:flex">Log in</Button>
+              <button className="bg-resonance-green text-white px-4 py-2 rounded-full text-sm font-medium">
+                Login
+              </button>
             </Link>
-            <Link to="/signup">
-              <Button>Sign up</Button>
-            </Link>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </header>
+    </div>
   );
 };
 

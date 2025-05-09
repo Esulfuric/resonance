@@ -2,19 +2,22 @@
 import React from "react";
 import { Post } from "@/types/post";
 import { PostCard } from "@/components/PostCard";
+import { useSupabase } from "@/lib/supabase-provider";
 
 interface PostListProps {
   posts: Post[];
   currentUserId?: string;
   onDeletePost: (postId: string) => void;
   isLoading: boolean;
+  onRefreshFeed: () => void;
 }
 
 export const PostList: React.FC<PostListProps> = ({ 
   posts, 
   currentUserId, 
   onDeletePost,
-  isLoading 
+  isLoading,
+  onRefreshFeed
 }) => {
   if (isLoading) {
     return <div className="text-center py-8">Loading posts...</div>;
@@ -50,12 +53,13 @@ export const PostList: React.FC<PostListProps> = ({
       } : undefined,
       imageUrl: post.image_url,
       stats: {
-        likes: 0,
-        comments: 0,
+        likes: post.likes_count || 0,
+        comments: post.comments_count || 0,
         shares: 0,
       },
       isOwner: currentUserId === post.user_id,
       onDelete: () => onDeletePost(post.id),
+      onRefreshFeed: onRefreshFeed
     };
   });
 
