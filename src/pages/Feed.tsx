@@ -41,9 +41,9 @@ const Feed = () => {
             />
           </div>
           
-          {/* Sidebar - removed "What's happening" section */}
+          {/* Sidebar - removed "What's happening" section and trendingTopics prop */}
           {!isMobile && (
-            <Sidebar trendingTopics={[]} />
+            <Sidebar />
           )}
         </div>
       </div>
