@@ -8,6 +8,13 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useSupabase } from "@/lib/supabase-provider";
 
+interface Profile {
+  full_name?: string;
+  username?: string;
+  avatar_url?: string;
+  user_type?: 'musician' | 'listener';
+}
+
 interface Post {
   id: string;
   user_id: string;
@@ -17,12 +24,7 @@ interface Post {
   is_edited?: boolean;
   song_title?: string;
   image_url?: string;
-  profiles?: {
-    full_name?: string;
-    username?: string;
-    avatar_url?: string;
-    user_type?: 'musician' | 'listener';
-  };
+  profiles?: Profile;
 }
 
 interface FeedContentProps {
@@ -90,26 +92,48 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
       if (data) {
         // After fetching posts, get the profile data separately
         const postsWithProfiles = await Promise.all(data.map(async (post) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('full_name, username, avatar_url, user_type')
-            .eq('id', post.user_id)
-            .single();
-          
-          const createdDate = new Date(post.created_at).getTime();
-          const updatedDate = new Date(post.updated_at).getTime();
-          const isEdited = updatedDate - createdDate > 1000; // If more than 1 second difference, consider it edited
-          
-          return { 
-            ...post, 
-            is_edited: isEdited,
-            profiles: profileData || {
-              full_name: undefined,
-              username: undefined,
-              avatar_url: undefined,
-              user_type: undefined
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('full_name, username, avatar_url')
+              .eq('id', post.user_id)
+              .single();
+            
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+              // Return a default profile if there's an error
+              return {
+                ...post,
+                is_edited: isPostEdited(post),
+                profiles: {
+                  full_name: undefined,
+                  username: undefined,
+                  avatar_url: undefined
+                }
+              };
             }
-          };
+            
+            return { 
+              ...post, 
+              is_edited: isPostEdited(post),
+              profiles: profileData || {
+                full_name: undefined,
+                username: undefined,
+                avatar_url: undefined
+              }
+            };
+          } catch (err) {
+            console.error('Error processing profile:', err);
+            return {
+              ...post,
+              is_edited: isPostEdited(post),
+              profiles: {
+                full_name: undefined,
+                username: undefined,
+                avatar_url: undefined
+              }
+            };
+          }
         }));
 
         setPosts(postsWithProfiles);
@@ -127,6 +151,14 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to determine if a post was edited
+  const isPostEdited = (post: any): boolean => {
+    if (!post.created_at || !post.updated_at) return false;
+    const createdDate = new Date(post.created_at).getTime();
+    const updatedDate = new Date(post.updated_at).getTime();
+    return updatedDate - createdDate > 1000; // If more than 1 second difference, consider it edited
   };
 
   const handleRefresh = () => {
