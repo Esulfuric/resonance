@@ -53,13 +53,7 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
           content,
           created_at,
           updated_at,
-          song_title,
-          profiles:user_id(
-            full_name,
-            username,
-            avatar_url,
-            user_type
-          )
+          song_title
         `)
         .order('created_at', { ascending: false });
       
@@ -94,15 +88,31 @@ export const FeedContent = ({ activeTab, setActiveTab }: FeedContentProps) => {
       console.log("Posts fetched:", data);
       
       if (data) {
-        // Add is_edited flag based on created_at and updated_at timestamps
-        const postsWithEditFlag = data.map(post => {
+        // After fetching posts, get the profile data separately
+        const postsWithProfiles = await Promise.all(data.map(async (post) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, username, avatar_url, user_type')
+            .eq('id', post.user_id)
+            .single();
+          
           const createdDate = new Date(post.created_at).getTime();
           const updatedDate = new Date(post.updated_at).getTime();
           const isEdited = updatedDate - createdDate > 1000; // If more than 1 second difference, consider it edited
-          return { ...post, is_edited: isEdited };
-        });
+          
+          return { 
+            ...post, 
+            is_edited: isEdited,
+            profiles: profileData || {
+              full_name: undefined,
+              username: undefined,
+              avatar_url: undefined,
+              user_type: undefined
+            }
+          };
+        }));
 
-        setPosts(postsWithEditFlag);
+        setPosts(postsWithProfiles);
       } else {
         setPosts([]);
       }
