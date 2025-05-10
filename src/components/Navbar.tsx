@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Logo from './Logo';
 import { ThemeToggle } from './ThemeToggle';
@@ -17,7 +18,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { fetchNotifications, markAllNotificationsAsRead } from '@/services/postService';
-import { Bell } from 'lucide-react';
+import { Bell, MessageCircle } from 'lucide-react';
 import { NotificationList } from './notifications/NotificationList';
 
 const Navbar = () => {
@@ -75,23 +76,29 @@ const Navbar = () => {
           <ThemeToggle />
           
           {user && (
-            <Popover open={notificationsOpen} onOpenChange={handleNotificationsOpen}>
-              <PopoverTrigger asChild>
-                <div className="relative">
-                  <button className="p-2 rounded-full hover:bg-muted">
-                    <Bell className="h-5 w-5" />
-                  </button>
-                  {unreadCount > 0 && (
-                    <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </div>
-                  )}
-                </div>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="p-0 w-80">
-                <NotificationList onClose={() => setNotificationsOpen(false)} />
-              </PopoverContent>
-            </Popover>
+            <>
+              <Link to="/messages" className="p-2 rounded-full hover:bg-muted">
+                <MessageCircle className="h-5 w-5" />
+              </Link>
+              
+              <Popover open={notificationsOpen} onOpenChange={handleNotificationsOpen}>
+                <PopoverTrigger asChild>
+                  <div className="relative">
+                    <button className="p-2 rounded-full hover:bg-muted">
+                      <Bell className="h-5 w-5" />
+                    </button>
+                    {unreadCount > 0 && (
+                      <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </div>
+                    )}
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="p-0 w-80">
+                  <NotificationList onClose={() => setNotificationsOpen(false)} />
+                </PopoverContent>
+              </Popover>
+            </>
           )}
           
           {user ? (

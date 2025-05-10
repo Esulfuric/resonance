@@ -4,7 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useFollow } from "@/hooks/use-follow";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useNavigate } from "react-router-dom";
-import { Camera, Edit } from "lucide-react";
+import { Camera, Edit, MessageCircle } from "lucide-react";
 
 interface ProfileData {
   id: string;
@@ -46,6 +46,10 @@ export function ProfileHeader({
   // Use provided counts if available, otherwise use values from useFollow
   const displayFollowerCount = profile.follower_count !== undefined ? profile.follower_count : followerCount;
   const displayFollowingCount = profile.following_count !== undefined ? profile.following_count : followingCount;
+
+  const handleMessageClick = () => {
+    navigate(`/messages?user=${profile.id}`);
+  };
 
   return (
     <div className="mb-8">
@@ -102,13 +106,22 @@ export function ProfileHeader({
         </div>
         
         {!isOwnProfile && currentUser && (
-          <div className="md:self-start">
+          <div className="md:self-start flex gap-2">
             <Button 
               variant={isFollowing ? "outline" : "default"}
               onClick={handleFollowToggle}
               disabled={isFollowLoading}
             >
               {isFollowing ? "Following" : "Follow"}
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={handleMessageClick}
+              className="flex gap-2 items-center"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Message
             </Button>
           </div>
         )}
