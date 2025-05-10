@@ -60,13 +60,14 @@ export function useProfileData(userId: string) {
         }
         
         if (profileData) {
+          // Make sure we explicitly cast or add missing properties that might not be in the database yet
           setProfileData({
             id: profileData.id,
             full_name: profileData.full_name || "",
             username: profileData.username || "",
             bio: profileData.bio || "",
             avatar_url: profileData.avatar_url || "",
-            user_type: profileData.user_type,
+            user_type: (profileData as any).user_type as 'musician' | 'listener' | undefined,
             post_count: 0, // Will be updated later
             follower_count: 0, // Will be updated later
             following_count: 0 // Will be updated later

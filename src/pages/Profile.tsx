@@ -76,7 +76,6 @@ const Profile = () => {
               full_name: profileData.full_name,
               username: profileData.username,
               bio: profileData.bio,
-              avatar_url: profileData.avatar_url,
               user_type: profileData.user_type
             }}
             onSave={() => setIsEditing(false)}

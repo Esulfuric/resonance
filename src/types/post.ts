@@ -83,6 +83,37 @@ export interface Conversation {
   unread_count: number;
 }
 
+export interface FormattedPost {
+  id: string;
+  user_id?: string;
+  user: {
+    name: string;
+    username: string;
+    avatar: string;
+    user_type?: 'musician' | 'listener';
+  };
+  timestamp: string;
+  content: string;
+  isEdited?: boolean;
+  imageUrl?: string;
+  songInfo?: {
+    title: string;
+    artist: string;
+    albumCover: string;
+  };
+  stats: {
+    likes: number;
+    comments: number;
+    shares: number;
+  };
+  isOwner?: boolean;
+  onDelete?: () => void;
+  isLiked?: boolean;
+  onLike?: () => void;
+  onComment?: () => void;
+  onRefreshFeed?: () => void;
+}
+
 export interface PostCardProps {
   id: string;
   user_id?: string;

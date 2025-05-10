@@ -21,6 +21,7 @@ interface ProfileEditProps {
     username: string;
     bio: string;
     user_type?: 'musician' | 'listener';
+    avatar_url?: string;
   };
   onSave: () => void;
   onCancel: () => void;
