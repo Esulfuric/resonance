@@ -4,7 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useFollow } from "@/hooks/use-follow";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useNavigate } from "react-router-dom";
-import { Camera, Edit, MessageCircle } from "lucide-react";
+import { Camera, Edit, MessageCircle, Music } from "lucide-react";
 
 interface ProfileData {
   id: string;
@@ -81,14 +81,21 @@ export function ProfileHeader({
           <p className="text-muted-foreground">@{profile.username || "user"}</p>
           <div className="mt-2 flex items-center gap-2 justify-center md:justify-start">
             {profile.user_type && (
-              <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                profile.user_type === 'musician' 
+                  ? 'bg-resonance-green/10 text-resonance-green flex gap-1' 
+                  : 'bg-muted text-muted-foreground'
+              }`}>
+                {profile.user_type === 'musician' && <Music className="h-3 w-3" />}
                 {profile.user_type.charAt(0).toUpperCase() + profile.user_type.slice(1)}
               </span>
             )}
           </div>
           <p className="mt-2 max-w-xl">
-            {profile.bio || (profile.user_type === 'musician' ? 'Musician' : 'Music enthusiast')}
+            {profile.bio || (profile.user_type === 'musician' ? 'Musician sharing their musical journey.' : 'Music enthusiast')}
           </p>
+          
+          {/* Stats row */}
           <div className="flex gap-4 mt-4 justify-center md:justify-start">
             <div className="cursor-pointer" onClick={() => navigate(`/profile/${profile.id}?tab=posts`)}>
               <span className="font-bold">{profile.post_count}</span>{" "}
@@ -102,6 +109,14 @@ export function ProfileHeader({
               <span className="font-bold">{displayFollowerCount}</span>{" "}
               <span className="text-muted-foreground">Followers</span>
             </div>
+            
+            {/* Music tracks count for musicians */}
+            {profile.user_type === 'musician' && (
+              <div className="cursor-pointer" onClick={() => navigate(`/profile/${profile.id}?tab=music`)}>
+                <span className="font-bold">0</span>{" "}
+                <span className="text-muted-foreground">Tracks</span>
+              </div>
+            )}
           </div>
         </div>
         

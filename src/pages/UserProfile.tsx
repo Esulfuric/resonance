@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
@@ -49,6 +48,7 @@ interface FollowUser {
 const UserProfile = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user: currentUser } = useSupabase();
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -59,6 +59,9 @@ const UserProfile = () => {
   
   // Use auth guard to protect this route
   useAuthGuard();
+  
+  // Get the active tab from URL params
+  const defaultTab = searchParams.get('tab') || 'posts';
   
   useEffect(() => {
     if (!userId || !currentUser) {
@@ -98,7 +101,7 @@ const UserProfile = () => {
         if (postsError) throw postsError;
         setPosts(postsData || []);
         
-        // Fetch followers - first get follower IDs, then get their profile data
+        // Fetch followers
         const { data: followersData } = await supabase
           .from('follows')
           .select('follower_id')
@@ -116,7 +119,7 @@ const UserProfile = () => {
           setFollowers([]);
         }
         
-        // Fetch following - first get following IDs, then get their profile data
+        // Fetch following
         const { data: followingData } = await supabase
           .from('follows')
           .select('following_id')
@@ -186,7 +189,7 @@ const UserProfile = () => {
   const isOwnProfile = currentUser?.id === userId;
   
   return (
-    <div className="min-h-screen flex flex-col pb-16">
+    <div className="min-h-screen flex flex-col">
       <main className="container flex-1 py-6">
         {/* Profile header */}
         <ProfileHeader 
@@ -205,6 +208,8 @@ const UserProfile = () => {
           followers={followers}
           following={following}
           isOwnProfile={isOwnProfile}
+          defaultTab={defaultTab}
+          userType={profile.user_type}
         />
       </main>
     </div>

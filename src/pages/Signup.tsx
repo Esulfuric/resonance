@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -34,7 +35,8 @@ const Signup = () => {
       const { error } = await signUp(email, password, {
         full_name: name,
         username: username,
-        bio: bio
+        bio: bio,
+        user_type: userType as 'musician' | 'listener'
       });
       
       if (error) throw error;
@@ -127,11 +129,15 @@ const Signup = () => {
                 <RadioGroup defaultValue="listener" onValueChange={setUserType} value={userType}>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="musician" id="musician" />
-                    <Label htmlFor="musician" className="cursor-pointer">Musician</Label>
+                    <Label htmlFor="musician" className="cursor-pointer">
+                      Musician - I want to share and promote my music
+                    </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="listener" id="listener" />
-                    <Label htmlFor="listener" className="cursor-pointer">Listener</Label>
+                    <Label htmlFor="listener" className="cursor-pointer">
+                      Listener - I'm here to discover and enjoy music
+                    </Label>
                   </div>
                 </RadioGroup>
               </div>

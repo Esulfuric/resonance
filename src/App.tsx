@@ -72,7 +72,7 @@ const App = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="min-h-screen pb-16"
+            className="min-h-screen pb-20" /* Increased bottom padding to accommodate fixed bottom navigation */
           >
             <Toaster />
             <Sonner />
@@ -89,7 +89,9 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <Feed />
+                      <div className="pb-16">
+                        <Feed />
+                      </div>
                     </>
                   </AuthenticatedRoute>
                 } />
@@ -97,7 +99,9 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <Discover />
+                      <div className="pb-16">
+                        <Discover />
+                      </div>
                     </>
                   </AuthenticatedRoute>
                 } />
@@ -105,7 +109,9 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <SearchPage />
+                      <div className="pb-16">
+                        <SearchPage />
+                      </div>
                     </>
                   </AuthenticatedRoute>
                 } />
@@ -113,7 +119,9 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <Profile />
+                      <div className="pb-16">
+                        <Profile />
+                      </div>
                     </>
                   </AuthenticatedRoute>
                 } />
@@ -121,7 +129,9 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <UserProfile />
+                      <div className="pb-16">
+                        <UserProfile />
+                      </div>
                     </>
                   </AuthenticatedRoute>
                 } />
@@ -134,7 +144,9 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <Messages />
+                      <div className="pb-16">
+                        <Messages />
+                      </div>
                     </>
                   </AuthenticatedRoute>
                 } />

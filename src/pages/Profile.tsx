@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useSupabase } from "@/lib/supabase-provider";
 import { supabase } from "@/lib/supabase";
@@ -14,6 +14,7 @@ interface FormattedPost {
     name: string;
     username: string;
     avatar: string;
+    user_type?: 'musician' | 'listener';
   };
   timestamp: string;
   content: string;
@@ -51,6 +52,7 @@ const Profile = () => {
   const { isLoading: authLoading, user } = useAuthGuard();
   const { user: supabaseUser } = useSupabase();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   
   const [isEditing, setIsEditing] = useState(false);
@@ -66,9 +68,11 @@ const Profile = () => {
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [activeTab, setActiveTab] = useState("posts");
   const [followers, setFollowers] = useState<FollowUser[]>([]);
   const [following, setFollowing] = useState<FollowUser[]>([]);
+  
+  // Get the active tab from URL params
+  const activeTab = searchParams.get('tab') || 'posts';
   
   // For avatar upload
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -250,6 +254,7 @@ const Profile = () => {
         name: profileData.full_name || profileData.username || "User",
         username: profileData.username || "user",
         avatar: profileData.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg",
+        user_type: profileData.user_type,
       },
       timestamp: new Date(post.created_at).toLocaleDateString(),
       content: post.content,
@@ -272,7 +277,7 @@ const Profile = () => {
   }
   
   return (
-    <div className="min-h-screen flex flex-col pb-16">
+    <div className="min-h-screen flex flex-col">
       <main className="container flex-1 py-6">
         {/* Profile header or editor */}
         {isEditing ? (
@@ -316,6 +321,7 @@ const Profile = () => {
           isOwnProfile={true}
           showSettings={true}
           defaultTab={activeTab}
+          userType={profileData.user_type}
         />
       </main>
     </div>
