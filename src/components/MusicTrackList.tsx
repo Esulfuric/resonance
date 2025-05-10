@@ -3,7 +3,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useSupabase } from "@/lib/supabase-provider";
 import { Card, CardContent } from "@/components/ui/card";
-import { Play } from "lucide-react";
+import { Play, Upload, Plus } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 interface MusicTrack {
   id: string;
@@ -15,9 +17,24 @@ interface MusicTrack {
   play_count: number;
 }
 
-export function MusicTrackList() {
+interface MusicTrackListProps {
+  isOwnProfile?: boolean;
+  userId?: string;
+}
+
+export function MusicTrackList({ isOwnProfile = false, userId }: MusicTrackListProps) {
   const { user } = useSupabase();
+  const { toast } = useToast();
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const handleUploadMusic = () => {
+    // For now we'll just show a toast as this would require implementing a music upload feature
+    toast({
+      title: "Coming Soon",
+      description: "Music upload functionality will be available in a future update!"
+    });
+  };
   
   // This would typically fetch music tracks from Supabase
   // For now, we're showing a placeholder state
@@ -33,11 +50,19 @@ export function MusicTrackList() {
           </div>
           <h3 className="text-lg font-semibold mb-2">No tracks yet</h3>
           <p className="text-muted-foreground mb-4">
-            When tracks are uploaded, they'll appear here.
+            {isOwnProfile 
+              ? "Upload your music to share it with your followers." 
+              : "This artist hasn't uploaded any tracks yet."}
           </p>
-          {user && (
-            <Button variant="outline" className="mt-2">
-              Learn how to upload music
+          {isOwnProfile && (
+            <Button 
+              variant="default" 
+              className="mt-2 flex items-center gap-2"
+              onClick={handleUploadMusic}
+              disabled={isUploading}
+            >
+              <Upload className="h-4 w-4" />
+              Upload Music
             </Button>
           )}
         </CardContent>
@@ -47,6 +72,18 @@ export function MusicTrackList() {
 
   return (
     <div className="space-y-4">
+      {isOwnProfile && (
+        <div className="flex justify-end mb-4">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={handleUploadMusic}
+          >
+            <Plus className="h-4 w-4" />
+            Add New Track
+          </Button>
+        </div>
+      )}
       {tracks.map((track) => (
         <Card key={track.id} className="overflow-hidden">
           <CardContent className="p-0">

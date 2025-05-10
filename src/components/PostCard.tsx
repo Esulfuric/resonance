@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -35,13 +34,13 @@ export function PostCard(props: any) {
     onRefreshFeed
   } = props;
   
-  const [liked, setLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(stats.likes);
+  const [liked, setLiked] = useState<boolean>(false);
+  const [likesCount, setLikesCount] = useState(stats?.likes || 0);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
-  const [commentsCount, setCommentsCount] = useState(stats.comments);
+  const [commentsCount, setCommentsCount] = useState(stats?.comments || 0);
   const [showComments, setShowComments] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   
@@ -53,11 +52,14 @@ export function PostCard(props: any) {
 
   // Check if the current user has liked this post
   useEffect(() => {
-    if (currentUser) {
-      checkPostLiked(id, currentUser.id).then(isLiked => {
+    const checkLiked = async () => {
+      if (currentUser && id) {
+        const isLiked = await checkPostLiked(id, currentUser.id);
         setLiked(isLiked);
-      });
-    }
+      }
+    };
+
+    checkLiked();
   }, [id, currentUser]);
 
   const handleLike = async () => {
@@ -80,7 +82,7 @@ export function PostCard(props: any) {
     if (!result.success) {
       // Revert on failure
       setLiked(liked);
-      setLikesCount(stats.likes);
+      setLikesCount(likesCount);
       toast({
         title: "Error",
         description: "Could not update like status.",
@@ -195,7 +197,7 @@ export function PostCard(props: any) {
   };
 
   return (
-    <Card className="overflow-hidden hover:bg-accent/50 transition-colors cursor-pointer">
+    <Card className="overflow-hidden hover:bg-accent/50 transition-colors cursor-pointer mb-4">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           {/* User avatar */}

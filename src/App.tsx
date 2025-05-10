@@ -72,7 +72,7 @@ const App = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="min-h-screen pb-20" /* Increased bottom padding to accommodate fixed bottom navigation */
+            className="min-h-screen pb-20" 
           >
             <Toaster />
             <Sonner />
@@ -89,7 +89,7 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <div className="pb-16">
+                      <div className="pt-16 pb-16">
                         <Feed />
                       </div>
                     </>
@@ -99,7 +99,7 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <div className="pb-16">
+                      <div className="pt-16 pb-16">
                         <Discover />
                       </div>
                     </>
@@ -109,7 +109,7 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <div className="pb-16">
+                      <div className="pt-16 pb-16">
                         <SearchPage />
                       </div>
                     </>
@@ -119,7 +119,7 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <div className="pb-16">
+                      <div className="pt-16 pb-16">
                         <Profile />
                       </div>
                     </>
@@ -129,7 +129,7 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <div className="pb-16">
+                      <div className="pt-16 pb-16">
                         <UserProfile />
                       </div>
                     </>
@@ -144,7 +144,7 @@ const App = () => {
                   <AuthenticatedRoute>
                     <>
                       <Navbar />
-                      <div className="pb-16">
+                      <div className="pt-16 pb-16">
                         <Messages />
                       </div>
                     </>
