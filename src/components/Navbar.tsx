@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Logo } from './Logo';
+import Logo from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 import { useSupabase } from '@/lib/supabase-provider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/popover';
 import { fetchNotifications, markAllNotificationsAsRead } from '@/services/postService';
 import { Bell } from 'lucide-react';
-import NotificationList from './notifications/NotificationList';
+import { NotificationList } from './notifications/NotificationList';
 
 const Navbar = () => {
   const { user, signOut } = useSupabase();
