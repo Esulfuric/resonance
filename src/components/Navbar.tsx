@@ -17,7 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { fetchNotifications, markAllNotificationsAsRead } from '@/services/postService';
+import { fetchNotifications, markAllNotificationsAsRead } from '@/services/notifications';
 import { Bell, MessageCircle } from 'lucide-react';
 import { NotificationList } from './notifications/NotificationList';
 

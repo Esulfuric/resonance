@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,8 @@ const Messages = () => {
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  // Add location to get URL params
+  const location = useLocation();
 
   // Load conversations when component mounts
   useEffect(() => {
@@ -30,6 +32,66 @@ const Messages = () => {
       loadConversations();
     }
   }, [user]);
+
+  // Handle URL parameter for opening specific conversation
+  useEffect(() => {
+    if (user) {
+      const params = new URLSearchParams(location.search);
+      const userId = params.get('user');
+      
+      if (userId) {
+        // Find conversation with this user or create a temp one to load their messages
+        const existingConversation = conversations.find(
+          conv => conv.other_user.id === userId
+        );
+        
+        if (existingConversation) {
+          setActiveConversation(existingConversation);
+        } else if (userId) {
+          // If conversation doesn't exist yet, fetch user profile to create a temporary conversation
+          const fetchUserProfile = async () => {
+            try {
+              const { data: userData, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+              
+              if (error) {
+                throw error;
+              }
+              
+              if (userData) {
+                const tempConversation: Conversation = {
+                  other_user: {
+                    id: userData.id,
+                    full_name: userData.full_name || '',
+                    username: userData.username || '',
+                    avatar_url: userData.avatar_url || '',
+                  },
+                  last_message: '',
+                  created_at: new Date().toISOString(),
+                  unread_count: 0,
+                };
+                
+                setActiveConversation(tempConversation);
+                loadMessages(userId);
+              }
+            } catch (error) {
+              console.error('Error fetching user profile:', error);
+              toast({
+                title: 'Error',
+                description: 'Could not load the conversation with this user',
+                variant: 'destructive',
+              });
+            }
+          };
+          
+          fetchUserProfile();
+        }
+      }
+    }
+  }, [user, conversations, location.search]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -86,6 +148,22 @@ const Messages = () => {
       setIsLoading(true);
       const conversationData = await fetchConversations(user.id);
       setConversations(conversationData);
+      
+      // Get URL param if exists
+      const params = new URLSearchParams(location.search);
+      const userId = params.get('user');
+      
+      // If URL param exists and we have conversations, set the active one
+      if (userId && conversationData.length > 0) {
+        const targetConversation = conversationData.find(
+          conv => conv.other_user.id === userId
+        );
+        
+        if (targetConversation) {
+          setActiveConversation(targetConversation);
+          return; // Skip setting to first conversation
+        }
+      }
       
       // Set active conversation to the first one if none is selected
       if (!activeConversation && conversationData.length > 0) {
@@ -231,7 +309,11 @@ const Messages = () => {
                         ? 'bg-muted' 
                         : 'hover:bg-muted/50'
                     }`}
-                    onClick={() => setActiveConversation(conversation)}
+                    onClick={() => {
+                      setActiveConversation(conversation);
+                      // Update URL without reloading the page
+                      navigate(`/messages?user=${conversation.other_user.id}`, { replace: true });
+                    }}
                   >
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={conversation.other_user.avatar_url} />
@@ -378,3 +460,4 @@ const Messages = () => {
 };
 
 export default Messages;
+
