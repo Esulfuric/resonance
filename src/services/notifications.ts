@@ -9,7 +9,7 @@ export const fetchNotifications = async (userId: string): Promise<Notification[]
       .from('notifications')
       .select(`
         *,
-        actor:actor_id(id, full_name, username, avatar_url)
+        actor:profiles!actor_id(id, full_name, username, avatar_url)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
@@ -17,7 +17,8 @@ export const fetchNotifications = async (userId: string): Promise<Notification[]
     
     if (error) throw error;
     
-    return data as Notification[];
+    // Use type assertion to handle the type mismatch
+    return data as unknown as Notification[];
   } catch (error) {
     console.error('Error fetching notifications:', error);
     throw error;

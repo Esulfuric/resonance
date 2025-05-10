@@ -59,8 +59,8 @@ export const fetchMessages = async (userId: string, otherUserId: string): Promis
       .from('messages')
       .select(`
         *,
-        sender:sender_id(id, full_name, username, avatar_url),
-        recipient:recipient_id(id, full_name, username, avatar_url)
+        sender:profiles!sender_id(id, full_name, username, avatar_url),
+        recipient:profiles!recipient_id(id, full_name, username, avatar_url)
       `)
       .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
       .or(`sender_id.eq.${otherUserId},recipient_id.eq.${otherUserId}`)
@@ -74,7 +74,8 @@ export const fetchMessages = async (userId: string, otherUserId: string): Promis
       (msg.sender_id === otherUserId && msg.recipient_id === userId)
     );
     
-    return filteredMessages as Message[];
+    // Use type assertion to handle the type mismatch
+    return filteredMessages as unknown as Message[];
   } catch (error) {
     console.error('Error fetching messages:', error);
     throw error;
