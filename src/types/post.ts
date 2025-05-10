@@ -38,7 +38,7 @@ export interface Notification {
   id: string;
   user_id: string;
   actor_id: string;
-  type: 'like' | 'comment' | 'follow';
+  type: 'like' | 'comment' | 'follow' | 'message';
   post_id?: string;
   comment_id?: string;
   created_at: string;
@@ -57,6 +57,7 @@ export interface Message {
   recipient_id: string;
   content: string;
   created_at: string;
+  is_read: boolean;
   sender?: {
     id: string;
     full_name?: string;

@@ -1,128 +1,148 @@
 
-import { Button } from "@/components/ui/button";
+import React from "react";
 import { Link } from "react-router-dom";
-import Logo from "@/components/Logo";
-import Navbar from "@/components/Navbar";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Footer } from "@/components/Footer";
 
+// This is the landing page component
 const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <main className="flex-1">
-        <section className="resonance-hero py-20 md:py-32">
+        {/* Hero Section */}
+        <section className="py-20 md:py-32 bg-gradient-to-b from-background to-muted">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
-                <Logo className="h-16 md:h-20 mx-auto mb-4" />
-                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                  Music Lives Here
+                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
+                  Connect Through Music
                 </h1>
-                <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl">
-                  Connect with friends, share your favorite tracks, and discover new music from around the world.
+                <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
+                  Share your musical journey, discover new artists, and connect with others who share your passion for sound.
                 </p>
               </div>
-              <div className="space-x-4">
+              <motion.div 
+                className="flex flex-col sm:flex-row gap-4 mt-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
                 <Link to="/signup">
-                  <Button className="bg-resonance-green hover:bg-resonance-green/90">Get Started</Button>
+                  <Button size="lg" className="bg-resonance-green hover:bg-resonance-green/90">Get Started</Button>
                 </Link>
                 <Link to="/login">
-                  <Button variant="outline">Log in</Button>
+                  <Button size="lg" variant="outline">Log In</Button>
                 </Link>
-              </div>
+              </motion.div>
             </div>
           </div>
         </section>
-
-        <section className="py-12 md:py-20">
+        
+        {/* Features Section */}
+        <section className="py-16 md:py-24">
           <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-3 lg:gap-12">
-              <div className="flex flex-col items-center space-y-4 text-center">
-                <div className="rounded-full bg-resonance-green p-3 text-white">
-                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+              <motion.div 
+                className="flex flex-col items-center text-center space-y-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <div className="bg-muted p-4 rounded-full">
+                  <svg
+                    className=" h-6 w-6"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="10" r="3" />
+                    <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
+                  </svg>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold">Connect with Artists & Fans</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Follow your favorite artists and connect with fans who share your musical taste.
+                  </p>
+                </div>
+              </motion.div>
+              <motion.div 
+                className="flex flex-col items-center text-center space-y-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <div className="bg-muted p-4 rounded-full">
+                  <svg
+                    className=" h-6 w-6"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M2 17 17 2" />
+                    <path d="m2 14 8 8" />
+                    <path d="m5 14 3.5 2" />
+                    <path d="M10 16c.5.6 1.1 1.1 1.7 1.7M14 12c.6.5 1.1 1.1 1.7 1.7M16 10c.6.5 1.1 1.1 1.7 1.7M20 7c.5.6 1.1 1.1 1.7 1.7" />
                   </svg>
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-xl font-bold">Share Your Music</h3>
-                  <p className="text-gray-500">
-                    Post your favorite songs, albums, and playlists for friends to discover.
+                  <p className="text-sm text-muted-foreground">
+                    Post your tracks, albums, and musical journey for others to enjoy and discover.
                   </p>
                 </div>
-              </div>
-              <div className="flex flex-col items-center space-y-4 text-center">
-                <div className="rounded-full bg-resonance-green p-3 text-white">
-                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </motion.div>
+              <motion.div 
+                className="flex flex-col items-center text-center space-y-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <div className="bg-muted p-4 rounded-full">
+                  <svg
+                    className=" h-6 w-6"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="m9 12 2 2 4-4" />
+                    <path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z" />
+                    <path d="M22 19H2" />
                   </svg>
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-bold">Connect with Friends</h3>
-                  <p className="text-gray-500">
-                    Follow your friends and favorite artists to see what they're listening to.
+                  <h3 className="text-xl font-bold">Discover New Music</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Explore a curated feed of music based on your preferences and connections.
                   </p>
                 </div>
-              </div>
-              <div className="flex flex-col items-center space-y-4 text-center">
-                <div className="rounded-full bg-resonance-green p-3 text-white">
-                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold">Discover New Sounds</h3>
-                  <p className="text-gray-500">
-                    Explore trending music and get personalized recommendations.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-secondary py-12 md:py-20">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl">
-                  Join the Community
-                </h2>
-                <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl">
-                  Join thousands of music lovers sharing their passion every day.
-                </p>
-              </div>
-              <div className="mx-auto w-full max-w-sm space-y-2">
-                <Link to="/signup">
-                  <Button className="w-full bg-resonance-green hover:bg-resonance-green/90">
-                    Sign Up Now
-                  </Button>
-                </Link>
-                <p className="text-xs text-gray-500">
-                  Already have an account?{" "}
-                  <Link to="/login" className="text-resonance-green underline underline-offset-2">
-                    Log in
-                  </Link>
-                </p>
-              </div>
+              </motion.div>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="border-t py-6 md:py-0">
-        <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
-          <p className="text-center text-sm text-gray-500 md:text-left">
-            © 2025 Resonance. All rights reserved.
-          </p>
-          <div className="flex gap-4">
-            <Link to="/terms" className="text-sm text-gray-500 underline underline-offset-2">
-              Terms
-            </Link>
-            <Link to="/privacy" className="text-sm text-gray-500 underline underline-offset-2">
-              Privacy
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

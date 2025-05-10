@@ -16,6 +16,8 @@ import SearchPage from "./pages/Search";
 import NotFound from "./pages/NotFound";
 import CreatePost from "./pages/CreatePost";
 import Messages from "./pages/Messages";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import { BottomNavigation } from "./components/BottomNavigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
@@ -83,6 +85,8 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
                 
                 {/* Protected routes with Navbar */}
                 <Route path="/feed" element={

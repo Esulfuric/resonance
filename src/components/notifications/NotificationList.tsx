@@ -1,10 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabase } from '@/lib/supabase-provider';
-import { fetchNotifications, markNotificationAsRead } from '@/services/postService';
+import { fetchNotifications, markNotificationAsRead } from '@/services/notifications';
 import { Notification } from '@/types/post';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export const NotificationList: React.FC<{ onClose?: () => void }> = ({ 
   onClose 
@@ -18,6 +21,33 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
     if (user) {
       loadNotifications();
     }
+  }, [user]);
+
+  // Subscribe to new notifications
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('notifications-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          // Add new notification to state
+          const newNotification = payload.new as Notification;
+          setNotifications(prev => [newNotification, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const loadNotifications = async () => {
@@ -52,9 +82,11 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
       // Navigate to user profile
       navigate(`/profile/${notification.actor_id}`);
     } else if (notification.type === 'like' || notification.type === 'comment') {
-      // Navigate to post
-      // Note: In a real app, you might want to navigate to the specific post
+      // Navigate to post (if we had post detail pages)
       navigate(`/profile/${notification.actor_id}`);
+    } else if (notification.type === 'message') {
+      // Navigate to messages with this user
+      navigate(`/messages?user=${notification.actor_id}`);
     }
     
     // Close the notification panel
@@ -71,6 +103,8 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
         return `${actorName} commented on your post`;
       case 'follow':
         return `${actorName} started following you`;
+      case 'message':
+        return `${actorName} sent you a message`;
       default:
         return 'You have a new notification';
     }
@@ -105,15 +139,15 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
 
   if (isLoading) {
     return (
-      <div className="p-4 text-center">
-        Loading notifications...
+      <div className="p-8 flex justify-center items-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (notifications.length === 0) {
     return (
-      <div className="p-4 text-center">
+      <div className="p-8 text-center">
         <p className="text-muted-foreground">No notifications yet</p>
       </div>
     );
@@ -121,8 +155,17 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
 
   return (
     <div className="max-h-[400px] overflow-y-auto">
-      <div className="p-2 border-b">
+      <div className="p-2 border-b flex justify-between items-center">
         <h3 className="font-semibold">Notifications</h3>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={loadNotifications}
+          className="h-8 w-8 p-0"
+        >
+          <Loader2 className="h-4 w-4" />
+          <span className="sr-only">Refresh</span>
+        </Button>
       </div>
       
       {notifications.map(notification => (
@@ -150,7 +193,7 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
           </div>
           
           {!notification.is_read && (
-            <div className="h-2 w-2 bg-blue-500 rounded-full shrink-0"></div>
+            <div className="h-2 w-2 bg-resonance-green rounded-full shrink-0"></div>
           )}
         </div>
       ))}

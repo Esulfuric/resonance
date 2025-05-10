@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthGuard } from '@/hooks/use-auth-guard';
-import { fetchConversations, fetchMessages, sendMessage } from '@/services/postService';
+import { fetchConversations, fetchMessages, sendMessage } from '@/services/messages';
 import { Message, Conversation } from '@/types/post';
 import { Send } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 const Messages = () => {
   const { user } = useAuthGuard();
@@ -42,6 +43,42 @@ const Messages = () => {
     }
   }, [activeConversation, user]);
 
+  // Subscribe to new messages
+  useEffect(() => {
+    if (!user) return;
+
+    // Set up a subscription to listen for new messages
+    const channel = supabase
+      .channel('messages-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          
+          // If this message belongs to the active conversation, add it to the messages state
+          if (activeConversation && 
+              (newMessage.sender_id === activeConversation.other_user.id || 
+               newMessage.recipient_id === activeConversation.other_user.id)) {
+            setMessages(prev => [...prev, newMessage]);
+          }
+          
+          // Refresh conversations to update the last message and unread counts
+          loadConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, activeConversation]);
+
   const loadConversations = async () => {
     if (!user) return;
     
@@ -73,6 +110,9 @@ const Messages = () => {
       setIsLoading(true);
       const messagesData = await fetchMessages(user.id, otherUserId);
       setMessages(messagesData);
+      
+      // Mark messages as read when loaded
+      markMessagesAsRead(otherUserId);
     } catch (error) {
       console.error('Error loading messages:', error);
       toast({
@@ -85,42 +125,58 @@ const Messages = () => {
     }
   };
 
+  const markMessagesAsRead = async (otherUserId: string) => {
+    if (!user) return;
+    
+    try {
+      // Update all unread messages from this sender to read
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .match({ sender_id: otherUserId, recipient_id: user.id, is_read: false });
+      
+      if (error) throw error;
+      
+      // Refresh conversations to update unread counts
+      loadConversations();
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!user || !activeConversation || !newMessage.trim()) return;
     
     try {
       const result = await sendMessage(user.id, activeConversation.other_user.id, newMessage);
       
-      if (result.success && result.data) {
-        // Optimistically add message to UI
-        const newMsg = {
-          id: result.data.id,
-          sender_id: user.id,
-          recipient_id: activeConversation.other_user.id,
-          content: newMessage,
-          created_at: new Date().toISOString(),
-          sender: {
-            id: user.id,
-            full_name: user.user_metadata?.full_name,
-            username: user.user_metadata?.username,
-            avatar_url: user.user_metadata?.avatar_url,
-          },
-          recipient: {
-            id: activeConversation.other_user.id,
-            full_name: activeConversation.other_user.full_name,
-            username: activeConversation.other_user.username,
-            avatar_url: activeConversation.other_user.avatar_url,
-          }
-        };
-        
-        setMessages([...messages, newMsg]);
-        setNewMessage('');
-        
-        // Refresh conversations to update last message
-        loadConversations();
-      } else {
-        throw result.error;
-      }
+      // Optimistically add message to UI
+      const newMsg: Message = {
+        id: result.id || Date.now().toString(),
+        sender_id: user.id,
+        recipient_id: activeConversation.other_user.id,
+        content: newMessage,
+        created_at: new Date().toISOString(),
+        is_read: false,
+        sender: {
+          id: user.id,
+          full_name: user.user_metadata?.full_name,
+          username: user.user_metadata?.username,
+          avatar_url: user.user_metadata?.avatar_url,
+        },
+        recipient: {
+          id: activeConversation.other_user.id,
+          full_name: activeConversation.other_user.full_name,
+          username: activeConversation.other_user.username,
+          avatar_url: activeConversation.other_user.avatar_url,
+        }
+      };
+      
+      setMessages([...messages, newMsg]);
+      setNewMessage('');
+      
+      // Refresh conversations to update last message
+      loadConversations();
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
@@ -145,7 +201,7 @@ const Messages = () => {
   }
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-20">
       <div className="container py-6">
         <h1 className="text-2xl font-bold mb-6">Messages</h1>
         
@@ -180,7 +236,7 @@ const Messages = () => {
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={conversation.other_user.avatar_url} />
                       <AvatarFallback>
-                        {conversation.other_user.full_name[0] || conversation.other_user.username[0]}
+                        {conversation.other_user.full_name?.[0] || conversation.other_user.username?.[0] || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
@@ -197,7 +253,9 @@ const Messages = () => {
                       </p>
                     </div>
                     {conversation.unread_count > 0 && (
-                      <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+                      <div className="h-5 w-5 bg-resonance-green rounded-full flex items-center justify-center text-white text-xs">
+                        {conversation.unread_count}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -214,7 +272,7 @@ const Messages = () => {
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={activeConversation.other_user.avatar_url} />
                     <AvatarFallback>
-                      {activeConversation.other_user.full_name[0] || activeConversation.other_user.username[0]}
+                      {activeConversation.other_user.full_name?.[0] || activeConversation.other_user.username?.[0] || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
