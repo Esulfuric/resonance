@@ -89,7 +89,13 @@ const UserProfile = () => {
           return;
         }
         
-        setProfile(profileData);
+        // Cast user_type to the correct union type
+        const userType = profileData.user_type as 'musician' | 'listener' | undefined;
+        
+        setProfile({
+          ...profileData,
+          user_type: userType
+        });
         
         // Fetch user posts
         const { data: postsData, error: postsError } = await supabase

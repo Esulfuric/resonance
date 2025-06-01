@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { Post, Profile, Comment } from "@/types/post";
 
@@ -79,7 +78,7 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
             full_name: profileData?.full_name || undefined,
             username: profileData?.username || undefined,
             avatar_url: profileData?.avatar_url || undefined,
-            user_type: profileData?.user_type || undefined
+            user_type: (profileData?.user_type as 'musician' | 'listener') || undefined
           },
           likes_count: Math.max(0, likesError ? 0 : likesCount || 0),
           comments_count: Math.max(0, commentsError ? 0 : commentsCount || 0),
@@ -394,7 +393,7 @@ const enhancePost = (post: any, profileData: any): Post => {
       full_name: profileData.full_name || undefined,
       username: profileData.username || undefined,
       avatar_url: profileData.avatar_url || undefined,
-      user_type: profileData.user_type || undefined
+      user_type: (profileData.user_type as 'musician' | 'listener') || undefined
     } : {
       full_name: undefined,
       username: undefined,
