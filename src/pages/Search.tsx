@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -10,6 +11,8 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
+import { searchUsersAndPosts } from "@/services/postService";
+import { PostCard } from "@/components/PostCard";
 
 interface UserProfile {
   id: string;
@@ -22,7 +25,7 @@ interface UserProfile {
 
 const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
+  const [searchResults, setSearchResults] = useState<{ users: UserProfile[], posts: any[] }>({ users: [], posts: [] });
   const [suggestedUsers, setSuggestedUsers] = useState<UserProfile[]>([]);
   const [recentlyActive, setRecentlyActive] = useState<UserProfile[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -30,7 +33,6 @@ const SearchPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Use auth guard to protect this route
   const { user } = useAuthGuard();
   
   useEffect(() => {
@@ -48,7 +50,6 @@ const SearchPage = () => {
         
       if (error) throw error;
       
-      // Cast with type assertion to ensure user_type is optional
       setSuggestedUsers(data as UserProfile[]);
     } catch (error: any) {
       console.error('Error fetching profiles:', error);
@@ -59,14 +60,13 @@ const SearchPage = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*, posts(count)')
+        .select('*')
         .neq('id', user?.id || '')
         .order('updated_at', { ascending: false })
         .limit(8);
         
       if (error) throw error;
       
-      // Cast with type assertion to ensure user_type is optional
       setRecentlyActive(data as UserProfile[]);
     } catch (error: any) {
       console.error('Error fetching recent profiles:', error);
@@ -80,29 +80,19 @@ const SearchPage = () => {
     setIsSearching(true);
     
     try {
-      // Search for users by username, name, or bio containing the search query
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`username.ilike.%${searchQuery}%,full_name.ilike.%${searchQuery}%,bio.ilike.%${searchQuery}%`)
-        .neq('id', user?.id || '') // Exclude the current user
-        .limit(20);
-        
-      if (error) throw error;
+      const results = await searchUsersAndPosts(searchQuery);
+      setSearchResults(results);
       
-      // Cast with type assertion to ensure user_type is optional
-      setSearchResults(data as UserProfile[]);
-      
-      if (data?.length === 0) {
+      if (results.users.length === 0 && results.posts.length === 0) {
         toast({
           title: "No results found",
           description: "Try a different search term",
         });
       }
     } catch (error: any) {
-      console.error('Error searching users:', error);
+      console.error('Error searching:', error);
       toast({
-        title: "Error searching users",
+        title: "Error searching",
         description: error.message,
         variant: "destructive",
       });
@@ -151,6 +141,29 @@ const SearchPage = () => {
     </Card>
   );
 
+  const formatPostForDisplay = (post: any) => ({
+    id: post.id,
+    user: {
+      name: post.profiles?.full_name || post.profiles?.username || "User",
+      username: post.profiles?.username || "user",
+      avatar: post.profiles?.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg",
+      user_type: post.profiles?.user_type,
+    },
+    timestamp: new Date(post.created_at).toLocaleDateString(),
+    content: post.content,
+    imageUrl: post.image_url,
+    songInfo: post.song_title ? {
+      title: post.song_title,
+      artist: "Unknown Artist",
+      albumCover: "https://images.unsplash.com/photo-1598387993441-a364f854c3e1?q=80&w=200&auto=format&fit=crop",
+    } : undefined,
+    stats: {
+      likes: post.likes_count || 0,
+      comments: post.comments_count || 0,
+      shares: 0,
+    },
+  });
+
   return (
     <div className="min-h-screen flex flex-col pb-16">
       <main className="container flex-1 py-6">
@@ -174,13 +187,23 @@ const SearchPage = () => {
           </Button>
         </form>
         
-        {searchResults.length > 0 ? (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Search Results</h2>
-            <div className="space-y-3">
-              {searchResults.map(renderUserCard)}
-            </div>
-          </div>
+        {searchResults.users.length > 0 || searchResults.posts.length > 0 ? (
+          <Tabs defaultValue="users" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="users">Users ({searchResults.users.length})</TabsTrigger>
+              <TabsTrigger value="posts">Posts ({searchResults.posts.length})</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="users" className="space-y-3">
+              {searchResults.users.map(renderUserCard)}
+            </TabsContent>
+            
+            <TabsContent value="posts" className="space-y-4">
+              {searchResults.posts.map(post => (
+                <PostCard key={post.id} {...formatPostForDisplay(post)} />
+              ))}
+            </TabsContent>
+          </Tabs>
         ) : (
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">

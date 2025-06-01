@@ -25,7 +25,6 @@ export const fetchLatestPosts = async (limit: number = 20): Promise<Post[]> => {
 
 export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promise<Post[]> => {
   try {
-    // Start with a base query
     let query = supabase
       .from('posts')
       .select(`
@@ -39,7 +38,6 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
       `)
       .order('created_at', { ascending: false });
     
-    // Apply user filter if provided
     if (userIds && userIds.length > 0) {
       query = query.in('user_id', userIds);
     } else {
@@ -48,19 +46,14 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
     
     const { data, error } = await query;
     
-    if (error) {
-      throw error;
-    }
-    
+    if (error) throw error;
     if (!data) return [];
     
-    // Enhance posts with profile data and like counts
     const postsWithProfiles = await Promise.all(data.map(async (post) => {
       try {
-        // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('full_name, username, avatar_url')
+          .select('full_name, username, avatar_url, user_type')
           .eq('id', post.user_id)
           .single();
         
@@ -69,13 +62,11 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
           return enhancePost(post, undefined);
         }
         
-        // Fetch likes count
         const { count: likesCount, error: likesError } = await supabase
           .from('post_likes')
           .select('*', { count: 'exact', head: true })
           .eq('post_id', post.id);
           
-        // Fetch comments count
         const { count: commentsCount, error: commentsError } = await supabase
           .from('post_comments')
           .select('*', { count: 'exact', head: true })
@@ -83,7 +74,6 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
         
         const enhancedPost = enhancePost(post, profileData);
         
-        // Add like and comment counts to the post
         return {
           ...enhancedPost,
           likes_count: likesError ? 0 : likesCount || 0,
@@ -142,10 +132,8 @@ export const createPost = async (content: string, userId: string, songTitle?: st
   }
 };
 
-// Like/unlike a post
 export const toggleLikePost = async (postId: string, userId: string): Promise<{ success: boolean, isLiked: boolean, error?: any }> => {
   try {
-    // Check if the post is already liked
     const { data: existingLike, error: checkError } = await supabase
       .from('post_likes')
       .select('*')
@@ -155,7 +143,6 @@ export const toggleLikePost = async (postId: string, userId: string): Promise<{ 
       
     if (checkError) throw checkError;
     
-    // If already liked, unlike it
     if (existingLike) {
       const { error: unlikeError } = await supabase
         .from('post_likes')
@@ -167,7 +154,6 @@ export const toggleLikePost = async (postId: string, userId: string): Promise<{ 
       return { success: true, isLiked: false };
     }
     
-    // If not liked, like it
     const { error: likeError } = await supabase
       .from('post_likes')
       .insert({
@@ -188,8 +174,8 @@ export const toggleLikePost = async (postId: string, userId: string): Promise<{ 
       await supabase
         .from('notifications')
         .insert({
-          user_id: postData.user_id, // Post owner
-          actor_id: userId, // User who liked
+          user_id: postData.user_id,
+          actor_id: userId,
           type: 'like',
           post_id: postId,
           is_read: false
@@ -203,7 +189,6 @@ export const toggleLikePost = async (postId: string, userId: string): Promise<{ 
   }
 };
 
-// Check if a user liked a post
 export const checkPostLiked = async (postId: string, userId: string): Promise<boolean> => {
   try {
     if (!userId) return false;
@@ -224,7 +209,6 @@ export const checkPostLiked = async (postId: string, userId: string): Promise<bo
   }
 };
 
-// Add comment to a post
 export const addComment = async (postId: string, userId: string, content: string): Promise<{ success: boolean, data?: Comment, error?: any }> => {
   try {
     const { data, error } = await supabase
@@ -239,7 +223,6 @@ export const addComment = async (postId: string, userId: string, content: string
       
     if (error) throw error;
     
-    // Fetch the user profile for the comment
     const { data: profileData } = await supabase
       .from('profiles')
       .select('full_name, username, avatar_url')
@@ -257,8 +240,8 @@ export const addComment = async (postId: string, userId: string, content: string
       await supabase
         .from('notifications')
         .insert({
-          user_id: postData.user_id, // Post owner
-          actor_id: userId, // User who commented
+          user_id: postData.user_id,
+          actor_id: userId,
           type: 'comment',
           post_id: postId,
           comment_id: data.id,
@@ -266,7 +249,6 @@ export const addComment = async (postId: string, userId: string, content: string
         });
     }
     
-    // Format the comment with user profile data
     const commentWithUser: Comment = {
       ...data,
       user: {
@@ -284,7 +266,6 @@ export const addComment = async (postId: string, userId: string, content: string
   }
 };
 
-// Fetch comments for a post
 export const fetchComments = async (postId: string): Promise<Comment[]> => {
   try {
     const { data, error } = await supabase
@@ -297,7 +278,6 @@ export const fetchComments = async (postId: string): Promise<Comment[]> => {
     
     if (!data || data.length === 0) return [];
     
-    // Fetch user profiles for each comment
     const commentsWithUsers = await Promise.all(data.map(async (comment) => {
       const { data: profileData } = await supabase
         .from('profiles')
@@ -323,154 +303,69 @@ export const fetchComments = async (postId: string): Promise<Comment[]> => {
   }
 };
 
-// Fetch notifications for a user
-export const fetchNotifications = async (userId: string): Promise<any[]> => {
+// Enhanced search function for both users and posts
+export const searchUsersAndPosts = async (query: string): Promise<{ users: any[], posts: Post[] }> => {
   try {
-    const { data, error } = await supabase
-      .from('notifications')
+    // Search for users
+    const { data: usersData, error: usersError } = await supabase
+      .from('profiles')
+      .select('*')
+      .or(`username.ilike.%${query}%,full_name.ilike.%${query}%,bio.ilike.%${query}%`)
+      .limit(20);
+    
+    if (usersError) throw usersError;
+    
+    // Search for posts
+    const { data: postsData, error: postsError } = await supabase
+      .from('posts')
       .select(`
-        *,
-        actor:actor_id(id, full_name, username, avatar_url)
-      `)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(50);
-      
-    if (error) throw error;
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
-    return [];
-  }
-};
-
-// Mark notification as read
-export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('id', notificationId);
-      
-    if (error) throw error;
-    
-    return true;
-  } catch (error) {
-    console.error('Error marking notification as read:', error);
-    return false;
-  }
-};
-
-// Mark all user notifications as read
-export const markAllNotificationsAsRead = async (userId: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('user_id', userId)
-      .eq('is_read', false);
-      
-    if (error) throw error;
-    
-    return true;
-  } catch (error) {
-    console.error('Error marking all notifications as read:', error);
-    return false;
-  }
-};
-
-// Messages API
-export const sendMessage = async (senderId: string, recipientId: string, content: string): Promise<{ success: boolean, data?: any, error?: any }> => {
-  try {
-    const { data, error } = await supabase
-      .from('messages')
-      .insert({
-        sender_id: senderId,
-        recipient_id: recipientId,
+        id,
+        user_id,
         content,
-      })
-      .select();
-      
-    if (error) throw error;
-    
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error sending message:', error);
-    return { success: false, error };
-  }
-};
-
-export const fetchMessages = async (userId: string, otherUserId: string): Promise<any[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('messages')
-      .select(`
-        *,
-        sender:sender_id(id, full_name, username, avatar_url),
-        recipient:recipient_id(id, full_name, username, avatar_url)
+        created_at,
+        updated_at,
+        song_title,
+        image_url
       `)
-      .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-      .or(`sender_id.eq.${otherUserId},recipient_id.eq.${otherUserId}`)
-      .order('created_at', { ascending: true });
-      
-    if (error) throw error;
+      .or(`content.ilike.%${query}%,song_title.ilike.%${query}%`)
+      .order('created_at', { ascending: false })
+      .limit(20);
     
-    // Filter to ensure only messages between these two users
-    const filteredMessages = data?.filter(msg => 
-      (msg.sender_id === userId && msg.recipient_id === otherUserId) || 
-      (msg.sender_id === otherUserId && msg.recipient_id === userId)
-    ) || [];
+    if (postsError) throw postsError;
     
-    return filteredMessages;
-  } catch (error) {
-    console.error('Error fetching messages:', error);
-    return [];
-  }
-};
-
-export const fetchConversations = async (userId: string): Promise<any[]> => {
-  try {
-    // This query gets the most recent message for each conversation
-    const { data, error } = await supabase
-      .rpc('get_user_conversations', { user_id_param: userId });
-      
-    if (error) throw error;
-    
-    // Fetch profiles for each conversation
-    const conversationsWithProfiles = await Promise.all((data || []).map(async (conversation) => {
-      const otherUserId = conversation.sender_id === userId ? conversation.recipient_id : conversation.sender_id;
-      
+    // Enhance posts with profile data
+    const enhancedPosts = await Promise.all((postsData || []).map(async (post) => {
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, username, avatar_url')
-        .eq('id', otherUserId)
+        .select('full_name, username, avatar_url, user_type')
+        .eq('id', post.user_id)
         .single();
         
+      const { count: likesCount } = await supabase
+        .from('post_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', post.id);
+        
+      const { count: commentsCount } = await supabase
+        .from('post_comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', post.id);
+      
       return {
-        ...conversation,
-        other_user: {
-          id: otherUserId,
-          full_name: profileData?.full_name || 'User',
-          username: profileData?.username || 'user',
-          avatar_url: profileData?.avatar_url || '',
-        }
+        ...enhancePost(post, profileData),
+        likes_count: likesCount || 0,
+        comments_count: commentsCount || 0,
       };
     }));
     
-    return conversationsWithProfiles;
+    return {
+      users: usersData || [],
+      posts: enhancedPosts
+    };
   } catch (error) {
-    console.error('Error fetching conversations:', error);
-    return [];
+    console.error('Error searching:', error);
+    return { users: [], posts: [] };
   }
-};
-
-// Helper function to determine if a post was edited
-export const isPostEdited = (post: any): boolean => {
-  if (!post.created_at || !post.updated_at) return false;
-  const createdDate = new Date(post.created_at).getTime();
-  const updatedDate = new Date(post.updated_at).getTime();
-  return updatedDate - createdDate > 1000; // If more than 1 second difference, consider it edited
 };
 
 // Helper to enhance a post with profile data and edited status
@@ -481,7 +376,16 @@ const enhancePost = (post: any, profileData: any): Post => {
     profiles: profileData || {
       full_name: undefined,
       username: undefined,
-      avatar_url: undefined
+      avatar_url: undefined,
+      user_type: undefined
     }
   };
+};
+
+// Helper function to determine if a post was edited
+export const isPostEdited = (post: any): boolean => {
+  if (!post.created_at || !post.updated_at) return false;
+  const createdDate = new Date(post.created_at).getTime();
+  const updatedDate = new Date(post.updated_at).getTime();
+  return updatedDate - createdDate > 1000;
 };
