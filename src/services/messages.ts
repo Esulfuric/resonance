@@ -1,59 +1,10 @@
+
 import { supabase } from '@/lib/supabase';
 import { Conversation, Message } from '@/types/post';
 
-// Fetch all conversations for a user
+// Fetch all conversations for a user with improved persistence
 export const fetchConversations = async (userId: string): Promise<Conversation[]> => {
   try {
-    // Using a DB function to get conversations with last message and unread count
-    const { data, error } = await supabase.rpc('get_user_conversations', {
-      user_id_param: userId
-    });
-    
-    if (error) throw error;
-    
-    // Format the data to match our Conversation type
-    const conversations: Conversation[] = [];
-    
-    // Group messages by user to create conversations
-    for (const item of data) {
-      const otherId = item.sender_id === userId ? item.recipient_id : item.sender_id;
-      
-      // Get user details for the other person in the conversation
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', otherId)
-        .single();
-      
-      if (userError) {
-        console.error('Error fetching user data:', userError);
-        continue;
-      }
-      
-      conversations.push({
-        other_user: {
-          id: otherId,
-          full_name: userData.full_name || '',
-          username: userData.username || '',
-          avatar_url: userData.avatar_url || '',
-        },
-        last_message: item.content,
-        created_at: item.created_at,
-        unread_count: Number(item.unread_count) || 0,
-      });
-    }
-    
-    return conversations;
-  } catch (error) {
-    console.error('Error fetching conversations:', error);
-    throw error;
-  }
-};
-
-// Fetch messages between two users
-export const fetchMessages = async (userId: string, otherUserId: string): Promise<Message[]> => {
-  try {
-    // Get messages between these two users in either direction
     const { data, error } = await supabase
       .from('messages')
       .select(`
@@ -62,29 +13,88 @@ export const fetchMessages = async (userId: string, otherUserId: string): Promis
         recipient:profiles!recipient_id(id, full_name, username, avatar_url)
       `)
       .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-      .or(`sender_id.eq.${otherUserId},recipient_id.eq.${otherUserId}`)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    // Group messages by conversation partner
+    const conversationMap = new Map<string, any>();
+    
+    for (const message of data || []) {
+      const otherUserId = message.sender_id === userId ? message.recipient_id : message.sender_id;
+      const otherUser = message.sender_id === userId ? message.recipient : message.sender;
+      
+      if (!conversationMap.has(otherUserId)) {
+        // Count unread messages
+        const unreadCount = data?.filter(m => 
+          m.sender_id === otherUserId && 
+          m.recipient_id === userId && 
+          !m.is_read
+        ).length || 0;
+        
+        conversationMap.set(otherUserId, {
+          other_user: {
+            id: otherUserId,
+            full_name: otherUser?.full_name || '',
+            username: otherUser?.username || '',
+            avatar_url: otherUser?.avatar_url || '',
+          },
+          last_message: message.content,
+          created_at: message.created_at,
+          unread_count: unreadCount,
+        });
+      }
+    }
+    
+    return Array.from(conversationMap.values());
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    return [];
+  }
+};
+
+// Fetch ALL messages between two users (no limit)
+export const fetchMessages = async (userId: string, otherUserId: string): Promise<Message[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('messages')
+      .select(`
+        *,
+        sender:profiles!sender_id(id, full_name, username, avatar_url),
+        recipient:profiles!recipient_id(id, full_name, username, avatar_url)
+      `)
+      .or(`and(sender_id.eq.${userId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${userId})`)
       .order('created_at', { ascending: true });
     
     if (error) throw error;
     
-    // Filter to only include messages between these two specific users
-    const filteredMessages = data.filter(msg => 
-      (msg.sender_id === userId && msg.recipient_id === otherUserId) ||
-      (msg.sender_id === otherUserId && msg.recipient_id === userId)
-    );
+    // Mark messages as read
+    await markMessagesAsRead(userId, otherUserId);
     
-    // Use type assertion to handle the type mismatch
-    return filteredMessages as unknown as Message[];
+    return (data || []) as unknown as Message[];
   } catch (error) {
     console.error('Error fetching messages:', error);
-    throw error;
+    return [];
   }
 };
 
-// Send a new message
+// Mark messages as read
+export const markMessagesAsRead = async (userId: string, senderId: string) => {
+  try {
+    await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('recipient_id', userId)
+      .eq('sender_id', senderId)
+      .eq('is_read', false);
+  } catch (error) {
+    console.error('Error marking messages as read:', error);
+  }
+};
+
+// Send a new message with notification
 export const sendMessage = async (senderId: string, recipientId: string, content: string) => {
   try {
-    // Insert the message
     const { data, error } = await supabase
       .from('messages')
       .insert({
@@ -93,7 +103,11 @@ export const sendMessage = async (senderId: string, recipientId: string, content
         content,
         is_read: false
       })
-      .select()
+      .select(`
+        *,
+        sender:profiles!sender_id(id, full_name, username, avatar_url),
+        recipient:profiles!recipient_id(id, full_name, username, avatar_url)
+      `)
       .single();
     
     if (error) throw error;
@@ -121,6 +135,5 @@ const createMessageNotification = async (senderId: string, recipientId: string) 
       });
   } catch (error) {
     console.error('Error creating message notification:', error);
-    // Don't throw - we don't want to fail the message send if notification fails
   }
 };

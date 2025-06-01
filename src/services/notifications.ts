@@ -2,7 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import { Notification } from '@/types/post';
 
-// Fetch all notifications for a user
+// Fetch all notifications for a user with proper error handling
 export const fetchNotifications = async (userId: string): Promise<Notification[]> => {
   try {
     const { data, error } = await supabase
@@ -15,13 +15,15 @@ export const fetchNotifications = async (userId: string): Promise<Notification[]
       .order('created_at', { ascending: false })
       .limit(50);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching notifications:', error);
+      throw error;
+    }
     
-    // Use type assertion to handle the type mismatch
-    return data as unknown as Notification[];
+    return (data || []) as unknown as Notification[];
   } catch (error) {
-    console.error('Error fetching notifications:', error);
-    throw error;
+    console.error('Error in fetchNotifications:', error);
+    return [];
   }
 };
 
@@ -33,10 +35,12 @@ export const markNotificationAsRead = async (notificationId: string): Promise<vo
       .update({ is_read: true })
       .eq('id', notificationId);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
   } catch (error) {
-    console.error('Error marking notification as read:', error);
-    throw error;
+    console.error('Error in markNotificationAsRead:', error);
   }
 };
 
@@ -49,9 +53,46 @@ export const markAllNotificationsAsRead = async (userId: string): Promise<void> 
       .eq('user_id', userId)
       .eq('is_read', false);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error marking all notifications as read:', error);
+      throw error;
+    }
   } catch (error) {
-    console.error('Error marking all notifications as read:', error);
-    throw error;
+    console.error('Error in markAllNotificationsAsRead:', error);
   }
+};
+
+// Subscribe to real-time notifications
+export const subscribeToNotifications = (userId: string, callback: (notification: Notification) => void) => {
+  const channel = supabase
+    .channel(`notifications-${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`,
+      },
+      async (payload) => {
+        // Fetch the complete notification with actor data
+        const { data } = await supabase
+          .from('notifications')
+          .select(`
+            *,
+            actor:profiles!actor_id(id, full_name, username, avatar_url)
+          `)
+          .eq('id', payload.new.id)
+          .single();
+        
+        if (data) {
+          callback(data as unknown as Notification);
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 };

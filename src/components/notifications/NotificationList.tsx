@@ -2,12 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSupabase } from '@/lib/supabase-provider';
-import { fetchNotifications, markNotificationAsRead } from '@/services/notifications';
+import { fetchNotifications, markNotificationAsRead, subscribeToNotifications } from '@/services/notifications';
 import { Notification } from '@/types/post';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 
 export const NotificationList: React.FC<{ onClose?: () => void }> = ({ 
   onClose 
@@ -20,34 +19,14 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
   useEffect(() => {
     if (user) {
       loadNotifications();
+      
+      // Subscribe to real-time notifications
+      const unsubscribe = subscribeToNotifications(user.id, (newNotification) => {
+        setNotifications(prev => [newNotification, ...prev]);
+      });
+      
+      return unsubscribe;
     }
-  }, [user]);
-
-  // Subscribe to new notifications
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel('notifications-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          // Add new notification to state
-          const newNotification = payload.new as Notification;
-          setNotifications(prev => [newNotification, ...prev]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [user]);
 
   const loadNotifications = async () => {
@@ -69,7 +48,6 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
     if (!notification.is_read) {
       await markNotificationAsRead(notification.id);
       
-      // Update state to reflect the read status
       setNotifications(prevNotifications => 
         prevNotifications.map(n => 
           n.id === notification.id ? { ...n, is_read: true } : n
@@ -79,17 +57,13 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
     
     // Navigate based on notification type
     if (notification.type === 'follow') {
-      // Navigate to user profile
       navigate(`/profile/${notification.actor_id}`);
     } else if (notification.type === 'like' || notification.type === 'comment') {
-      // Navigate to post (if we had post detail pages)
       navigate(`/profile/${notification.actor_id}`);
     } else if (notification.type === 'message') {
-      // Navigate to messages with this user
       navigate(`/messages?user=${notification.actor_id}`);
     }
     
-    // Close the notification panel
     if (onClose) onClose();
   };
 
@@ -115,25 +89,21 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
     const date = new Date(dateString);
     const diff = now.getTime() - date.getTime();
     
-    // Within last hour
     if (diff < 3600000) {
       const minutes = Math.floor(diff / 60000);
       return `${minutes}m ago`;
     }
     
-    // Within last day
     if (diff < 86400000) {
       const hours = Math.floor(diff / 3600000);
       return `${hours}h ago`;
     }
     
-    // Within last week
     if (diff < 604800000) {
       const days = Math.floor(diff / 86400000);
       return `${days}d ago`;
     }
     
-    // Otherwise, return date
     return date.toLocaleDateString();
   };
 

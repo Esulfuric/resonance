@@ -1,12 +1,12 @@
 
-import { TrendingMusic } from "@/components/TrendingMusic";
-import { SuggestedUsers } from "@/components/SuggestedUsers";
+import { BillboardChart } from "@/components/BillboardChart";
+import { LocationChart } from "@/components/LocationChart";
 
 export const Sidebar = () => {
   return (
     <div className="space-y-6">
-      <TrendingMusic />
-      <SuggestedUsers />
+      <BillboardChart />
+      <LocationChart />
     </div>
   );
 };
