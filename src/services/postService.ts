@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { Post, Profile, Comment } from "@/types/post";
 
@@ -34,7 +33,13 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
         created_at,
         updated_at,
         song_title,
-        image_url
+        image_url,
+        profiles!inner(
+          full_name,
+          username,
+          avatar_url,
+          user_type
+        )
       `)
       .order('created_at', { ascending: false });
     
@@ -49,19 +54,8 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
     if (error) throw error;
     if (!data) return [];
     
-    const postsWithProfiles = await Promise.all(data.map(async (post) => {
+    const postsWithCounts = await Promise.all(data.map(async (post) => {
       try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('full_name, username, avatar_url, user_type')
-          .eq('id', post.user_id)
-          .single();
-        
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-          return enhancePost(post, undefined);
-        }
-        
         const { count: likesCount, error: likesError } = await supabase
           .from('post_likes')
           .select('*', { count: 'exact', head: true })
@@ -72,20 +66,24 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
           .select('*', { count: 'exact', head: true })
           .eq('post_id', post.id);
         
-        const enhancedPost = enhancePost(post, profileData);
-        
         return {
-          ...enhancedPost,
-          likes_count: likesError ? 0 : likesCount || 0,
-          comments_count: commentsError ? 0 : commentsCount || 0,
+          ...post,
+          likes_count: Math.max(0, likesError ? 0 : likesCount || 0),
+          comments_count: Math.max(0, commentsError ? 0 : commentsCount || 0),
+          is_edited: isPostEdited(post),
         };
       } catch (err) {
-        console.error('Error processing profile:', err);
-        return enhancePost(post, undefined);
+        console.error('Error processing post counts:', err);
+        return {
+          ...post,
+          likes_count: 0,
+          comments_count: 0,
+          is_edited: isPostEdited(post),
+        };
       }
     }));
 
-    return postsWithProfiles;
+    return postsWithCounts;
   } catch (error: any) {
     console.error('Error fetching posts:', error);
     return [];

@@ -1,18 +1,12 @@
 
 import { useState, useEffect } from "react";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Search } from "lucide-react";
-import { Link } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 import { searchUsersAndPosts } from "@/services/postService";
-import { PostCard } from "@/components/PostCard";
+import { SearchInput } from "@/components/search/SearchInput";
+import { SearchResults } from "@/components/search/SearchResults";
+import { SuggestedContent } from "@/components/search/SuggestedContent";
 
 interface UserProfile {
   id: string;
@@ -31,7 +25,6 @@ const SearchPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState("suggested");
   const { toast } = useToast();
-  const navigate = useNavigate();
   
   const { user } = useAuthGuard();
   
@@ -101,46 +94,6 @@ const SearchPage = () => {
     }
   };
   
-  if (!user) {
-    return <div className="flex items-center justify-center h-screen">Redirecting...</div>;
-  }
-
-  const renderUserCard = (profile: UserProfile) => (
-    <Card 
-      key={profile.id} 
-      className="hover:bg-accent transition-colors cursor-pointer"
-      onClick={() => navigate(`/profile/${profile.id}`)}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={profile.avatar_url || undefined} />
-            <AvatarFallback>
-              {(profile.full_name?.[0] || profile.username?.[0] || 'U').toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium truncate">{profile.full_name || profile.username || "User"}</p>
-            <p className="text-sm text-muted-foreground truncate">
-              @{profile.username || "user"}{" "}
-              {profile.user_type && (
-                <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground ml-1">
-                  {profile.user_type}
-                </span>
-              )}
-            </p>
-            {profile.bio && (
-              <p className="text-sm truncate mt-1">{profile.bio}</p>
-            )}
-          </div>
-          <Button variant="outline" size="sm" className="whitespace-nowrap">
-            View Profile
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   const formatPostForDisplay = (post: any) => ({
     id: post.id,
     user: {
@@ -163,76 +116,35 @@ const SearchPage = () => {
       shares: 0,
     },
   });
+  
+  if (!user) {
+    return <div className="flex items-center justify-center h-screen">Redirecting...</div>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col pb-16">
       <main className="container flex-1 py-6">
         <h1 className="text-2xl font-bold mb-6">Search</h1>
         
-        <form onSubmit={handleSearch} className="relative mb-6 max-w-lg">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search for users, music, or posts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-20 py-6"
-          />
-          <Button 
-            type="submit"
-            variant="default" 
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-resonance-green hover:bg-resonance-green/90" 
-            disabled={isSearching || !searchQuery.trim()}
-          >
-            {isSearching ? "Searching..." : "Search"}
-          </Button>
-        </form>
+        <SearchInput 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSearch={handleSearch}
+          isSearching={isSearching}
+        />
         
         {searchResults.users.length > 0 || searchResults.posts.length > 0 ? (
-          <Tabs defaultValue="users" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="users">Users ({searchResults.users.length})</TabsTrigger>
-              <TabsTrigger value="posts">Posts ({searchResults.posts.length})</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="users" className="space-y-3">
-              {searchResults.users.map(renderUserCard)}
-            </TabsContent>
-            
-            <TabsContent value="posts" className="space-y-4">
-              {searchResults.posts.map(post => (
-                <PostCard key={post.id} {...formatPostForDisplay(post)} />
-              ))}
-            </TabsContent>
-          </Tabs>
+          <SearchResults 
+            searchResults={searchResults}
+            formatPostForDisplay={formatPostForDisplay}
+          />
         ) : (
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="suggested">Suggested Users</TabsTrigger>
-              <TabsTrigger value="active">Recently Active</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="suggested" className="space-y-4">
-              <h2 className="text-lg font-semibold">Suggested Users</h2>
-              <div className="space-y-3">
-                {suggestedUsers.length > 0 ? (
-                  suggestedUsers.map(renderUserCard)
-                ) : (
-                  <p className="text-muted-foreground">No suggested users found</p>
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="active" className="space-y-4">
-              <h2 className="text-lg font-semibold">Recently Active</h2>
-              <div className="space-y-3">
-                {recentlyActive.length > 0 ? (
-                  recentlyActive.map(renderUserCard)
-                ) : (
-                  <p className="text-muted-foreground">No recently active users found</p>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
+          <SuggestedContent 
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            suggestedUsers={suggestedUsers}
+            recentlyActive={recentlyActive}
+          />
         )}
       </main>
     </div>

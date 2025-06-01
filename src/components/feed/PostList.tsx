@@ -2,7 +2,6 @@
 import React from "react";
 import { Post } from "@/types/post";
 import { PostCard } from "@/components/PostCard";
-import { useSupabase } from "@/lib/supabase-provider";
 
 interface PostListProps {
   posts: Post[];
@@ -34,12 +33,17 @@ export const PostList: React.FC<PostListProps> = ({
   // Map the posts data to the format expected by PostCard component
   const mappedPosts = posts.map((post) => {
     const profile = post.profiles || {};
+    
+    // Ensure we show proper names instead of just "User"
+    const displayName = profile.full_name || profile.username || "Anonymous User";
+    const displayUsername = profile.username || "anonymous";
+    
     return {
       id: post.id,
       user_id: post.user_id,
       user: {
-        name: profile.full_name || profile.username || "User",
-        username: profile.username || "user",
+        name: displayName,
+        username: displayUsername,
         avatar: profile.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg",
         user_type: profile.user_type
       },
@@ -53,8 +57,8 @@ export const PostList: React.FC<PostListProps> = ({
       } : undefined,
       imageUrl: post.image_url,
       stats: {
-        likes: post.likes_count || 0,
-        comments: post.comments_count || 0,
+        likes: Math.max(0, post.likes_count || 0), // Ensure non-negative likes
+        comments: Math.max(0, post.comments_count || 0), // Ensure non-negative comments
         shares: 0,
       },
       isOwner: currentUserId === post.user_id,

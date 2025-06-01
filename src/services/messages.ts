@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { Conversation, Message } from '@/types/post';
 
