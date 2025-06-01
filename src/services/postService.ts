@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import { Post, Profile, Comment } from "@/types/post";
 
@@ -33,13 +34,7 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
         created_at,
         updated_at,
         song_title,
-        image_url,
-        profiles!inner(
-          full_name,
-          username,
-          avatar_url,
-          user_type
-        )
+        image_url
       `)
       .order('created_at', { ascending: false });
     
@@ -54,8 +49,15 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
     if (error) throw error;
     if (!data) return [];
     
-    const postsWithCounts = await Promise.all(data.map(async (post) => {
+    const postsWithProfilesAndCounts = await Promise.all(data.map(async (post) => {
       try {
+        // Fetch profile data separately
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name, username, avatar_url, user_type')
+          .eq('id', post.user_id)
+          .single();
+
         const { count: likesCount, error: likesError } = await supabase
           .from('post_likes')
           .select('*', { count: 'exact', head: true })
@@ -68,14 +70,26 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
         
         return {
           ...post,
+          profiles: profileData || {
+            full_name: undefined,
+            username: undefined,
+            avatar_url: undefined,
+            user_type: undefined
+          },
           likes_count: Math.max(0, likesError ? 0 : likesCount || 0),
           comments_count: Math.max(0, commentsError ? 0 : commentsCount || 0),
           is_edited: isPostEdited(post),
         };
       } catch (err) {
-        console.error('Error processing post counts:', err);
+        console.error('Error processing post data:', err);
         return {
           ...post,
+          profiles: {
+            full_name: undefined,
+            username: undefined,
+            avatar_url: undefined,
+            user_type: undefined
+          },
           likes_count: 0,
           comments_count: 0,
           is_edited: isPostEdited(post),
@@ -83,7 +97,7 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
       }
     }));
 
-    return postsWithCounts;
+    return postsWithProfilesAndCounts;
   } catch (error: any) {
     console.error('Error fetching posts:', error);
     return [];
@@ -351,8 +365,8 @@ export const searchUsersAndPosts = async (query: string): Promise<{ users: any[]
       
       return {
         ...enhancePost(post, profileData),
-        likes_count: likesCount || 0,
-        comments_count: commentsCount || 0,
+        likes_count: Math.max(0, likesCount || 0),
+        comments_count: Math.max(0, commentsCount || 0),
       };
     }));
     
