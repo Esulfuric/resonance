@@ -52,7 +52,7 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
     const postsWithProfilesAndCounts = await Promise.all(data.map(async (post) => {
       try {
         // Fetch profile data separately
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('full_name, username, avatar_url, user_type')
           .eq('id', post.user_id)
@@ -70,11 +70,16 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
         
         return {
           ...post,
-          profiles: profileData || {
+          profiles: profileError ? {
             full_name: undefined,
             username: undefined,
             avatar_url: undefined,
             user_type: undefined
+          } : {
+            full_name: profileData?.full_name || undefined,
+            username: profileData?.username || undefined,
+            avatar_url: profileData?.avatar_url || undefined,
+            user_type: profileData?.user_type || undefined
           },
           likes_count: Math.max(0, likesError ? 0 : likesCount || 0),
           comments_count: Math.max(0, commentsError ? 0 : commentsCount || 0),
@@ -347,7 +352,7 @@ export const searchUsersAndPosts = async (query: string): Promise<{ users: any[]
     
     // Enhance posts with profile data
     const enhancedPosts = await Promise.all((postsData || []).map(async (post) => {
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('full_name, username, avatar_url, user_type')
         .eq('id', post.user_id)
@@ -364,7 +369,7 @@ export const searchUsersAndPosts = async (query: string): Promise<{ users: any[]
         .eq('post_id', post.id);
       
       return {
-        ...enhancePost(post, profileData),
+        ...enhancePost(post, profileError ? null : profileData),
         likes_count: Math.max(0, likesCount || 0),
         comments_count: Math.max(0, commentsCount || 0),
       };
@@ -385,7 +390,12 @@ const enhancePost = (post: any, profileData: any): Post => {
   return { 
     ...post, 
     is_edited: isPostEdited(post),
-    profiles: profileData || {
+    profiles: profileData ? {
+      full_name: profileData.full_name || undefined,
+      username: profileData.username || undefined,
+      avatar_url: profileData.avatar_url || undefined,
+      user_type: profileData.user_type || undefined
+    } : {
       full_name: undefined,
       username: undefined,
       avatar_url: undefined,
