@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
-import { scrapeSpotifyCharts, getUserLocation } from "@/services/webScraping";
+import { scrapeSpotifyChartsOfficial, getUserLocation } from "@/services/webScraping";
 
 interface SpotifyTrack {
   rank: number;
@@ -38,11 +38,11 @@ export function LocationChart() {
       setLocation(userLocation);
       
       // Try to scrape Spotify charts for the user's country
-      console.log('Attempting to scrape Spotify charts for:', userLocation.countryCode);
-      const scrapedTracks = await scrapeSpotifyCharts(userLocation.countryCode);
+      console.log('Attempting to scrape Spotify Charts for:', userLocation.countryCode);
+      const scrapedTracks = await scrapeSpotifyChartsOfficial(userLocation.countryCode);
       
       if (scrapedTracks && scrapedTracks.length > 0) {
-        console.log('Successfully scraped Spotify data:', scrapedTracks);
+        console.log('Successfully scraped Spotify Charts data:', scrapedTracks);
         setTracks(scrapedTracks);
         setIsUsingDemoData(false);
       } else {
@@ -105,11 +105,6 @@ export function LocationChart() {
         </CardTitle>
         {isUsingDemoData && (
           <p className="text-xs text-muted-foreground">Using demo data - live scraping temporarily unavailable</p>
-        )}
-        {!isUsingDemoData && !isLoading && (
-          <p className="text-xs text-muted-foreground">
-            Live data scraped from Spotify Charts • Based on your location
-          </p>
         )}
       </CardHeader>
       <CardContent className="p-0">

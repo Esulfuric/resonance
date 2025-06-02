@@ -1,6 +1,6 @@
 
 // Simple web scraping functions for publicly available chart data
-export const scrapeBillboardHot100 = async () => {
+export const scrapeKworbTop100 = async () => {
   try {
     // Try multiple CORS proxy services for better reliability
     const proxies = [
@@ -9,24 +9,24 @@ export const scrapeBillboardHot100 = async () => {
       'https://cors-anywhere.herokuapp.com/',
     ];
     
-    const billboardUrl = 'https://www.billboard.com/charts/hot-100/';
+    const kworbUrl = 'https://kworb.net/pop/';
     
     for (const proxy of proxies) {
       try {
-        console.log(`Trying proxy: ${proxy}`);
-        const response = await fetch(proxy + encodeURIComponent(billboardUrl), {
+        console.log(`Trying kworb proxy: ${proxy}`);
+        const response = await fetch(proxy + encodeURIComponent(kworbUrl), {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
           }
         });
         
         if (!response.ok) {
-          console.log(`Proxy ${proxy} failed with status:`, response.status);
+          console.log(`Kworb proxy ${proxy} failed with status:`, response.status);
           continue;
         }
         
         const html = await response.text();
-        console.log('Successfully fetched HTML, length:', html.length);
+        console.log('Successfully fetched kworb HTML, length:', html.length);
         
         // Parse the HTML content to extract chart data
         const parser = new DOMParser();
@@ -34,137 +34,82 @@ export const scrapeBillboardHot100 = async () => {
         
         const songs = [];
         
-        // Try multiple selectors that Billboard might use
-        const selectors = [
-          '.chart-list__element',
-          '.o-chart-results-list__item',
-          '.chart-element',
-          '.lrv-u-padding-tb-1'
-        ];
-        
-        let chartItems = null;
-        for (const selector of selectors) {
-          chartItems = doc.querySelectorAll(selector);
-          if (chartItems.length > 0) {
-            console.log(`Found ${chartItems.length} items with selector: ${selector}`);
-            break;
-          }
-        }
-        
-        if (!chartItems || chartItems.length === 0) {
-          console.log('No chart items found, trying alternative approach');
-          // Try to find any element that might contain song data
-          const allElements = doc.querySelectorAll('*');
-          const possibleSongs = [];
+        // Look for the main table with chart data
+        const table = doc.querySelector('table');
+        if (table) {
+          const rows = table.querySelectorAll('tr');
+          console.log(`Found ${rows.length} table rows on kworb`);
           
-          for (let i = 0; i < Math.min(allElements.length, 1000); i++) {
-            const element = allElements[i];
-            const text = element.textContent?.trim() || '';
+          for (let i = 1; i < Math.min(rows.length, 11); i++) { // Skip header row, get top 10
+            const row = rows[i];
+            const cells = row.querySelectorAll('td');
             
-            // Look for patterns that might indicate song titles
-            if (text.length > 10 && text.length < 100 && 
-                !text.includes('Billboard') && 
-                !text.includes('Chart') &&
-                text.match(/^[A-Za-z0-9\s\-'".()]+$/)) {
-              possibleSongs.push(text);
-            }
-          }
-          
-          // Create some songs from potential matches
-          for (let i = 0; i < Math.min(possibleSongs.length, 10); i++) {
-            if (possibleSongs[i]) {
-              songs.push({
-                rank: i + 1,
-                title: possibleSongs[i],
-                artist: 'Various Artists',
-                peak_position: i + 1,
-                weeks_on_chart: Math.floor(Math.random() * 20) + 1
-              });
-            }
-          }
-        } else {
-          // Parse structured chart data
-          for (let i = 0; i < Math.min(chartItems.length, 10); i++) {
-            const item = chartItems[i];
-            const rank = i + 1;
-            
-            const titleSelectors = [
-              '.c-title a',
-              '.a-no-trucate',
-              '.chart-element__information__song',
-              'h3'
-            ];
-            
-            const artistSelectors = [
-              '.c-label a',
-              '.a-no-trucate',
-              '.chart-element__information__artist',
-              '.chart-list__element__artist'
-            ];
-            
-            let title = '';
-            let artist = '';
-            
-            for (const selector of titleSelectors) {
-              const titleElement = item.querySelector(selector);
-              if (titleElement && titleElement.textContent?.trim()) {
-                title = titleElement.textContent.trim();
-                break;
+            if (cells.length >= 3) {
+              const rank = i;
+              const artistTitle = cells[1]?.textContent?.trim() || '';
+              
+              // Parse "Artist - Title" format
+              let artist = '';
+              let title = '';
+              
+              if (artistTitle.includes(' - ')) {
+                const parts = artistTitle.split(' - ');
+                artist = parts[0].trim();
+                title = parts.slice(1).join(' - ').trim();
+              } else {
+                // Fallback if format is different
+                artist = 'Various Artists';
+                title = artistTitle;
               }
-            }
-            
-            for (const selector of artistSelectors) {
-              const artistElement = item.querySelector(selector);
-              if (artistElement && artistElement.textContent?.trim()) {
-                artist = artistElement.textContent.trim();
-                break;
+              
+              const weeksStr = cells[2]?.textContent?.trim() || '1';
+              const weeks = parseInt(weeksStr) || 1;
+              
+              if (title && artist) {
+                songs.push({
+                  rank,
+                  title,
+                  artist,
+                  peak_position: rank,
+                  weeks_on_chart: weeks
+                });
               }
-            }
-            
-            if (title && artist) {
-              songs.push({
-                rank,
-                title,
-                artist,
-                peak_position: rank,
-                weeks_on_chart: Math.floor(Math.random() * 20) + 1
-              });
             }
           }
         }
         
         if (songs.length > 0) {
-          console.log('Successfully scraped Billboard data:', songs);
+          console.log('Successfully scraped kworb data:', songs);
           return songs;
         }
         
       } catch (proxyError) {
-        console.log(`Proxy ${proxy} failed:`, proxyError);
+        console.log(`Kworb proxy ${proxy} failed:`, proxyError);
         continue;
       }
     }
     
-    throw new Error('All proxies failed');
+    throw new Error('All kworb proxies failed');
     
   } catch (error) {
-    console.error('Error scraping Billboard data:', error);
+    console.error('Error scraping kworb data:', error);
     return null;
   }
 };
 
-export const scrapeSpotifyCharts = async (country: string = 'US') => {
+export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
   try {
-    // Try multiple approaches for Spotify data
+    // Try multiple approaches for Spotify Charts
     const proxies = [
       'https://corsproxy.io/?',
       'https://api.codetabs.com/v1/proxy?quest=',
     ];
     
-    const spotifyUrl = `https://charts.spotify.com/charts/view/regional-${country.toLowerCase()}-weekly/latest`;
+    const spotifyUrl = `https://spotifycharts.com/regional/${country.toLowerCase()}/daily/latest`;
     
     for (const proxy of proxies) {
       try {
-        console.log(`Trying Spotify proxy: ${proxy}`);
+        console.log(`Trying Spotify Charts proxy: ${proxy} for country: ${country}`);
         const response = await fetch(proxy + encodeURIComponent(spotifyUrl), {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -172,95 +117,89 @@ export const scrapeSpotifyCharts = async (country: string = 'US') => {
         });
         
         if (!response.ok) {
-          console.log(`Spotify proxy ${proxy} failed with status:`, response.status);
+          console.log(`Spotify Charts proxy ${proxy} failed with status:`, response.status);
           continue;
         }
         
         const html = await response.text();
-        console.log('Successfully fetched Spotify HTML, length:', html.length);
+        console.log('Successfully fetched Spotify Charts HTML, length:', html.length);
         
         // Parse the HTML content
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         
         const tracks = [];
+        
+        // Look for chart entries - try multiple selectors
         const selectors = [
-          '[data-testid="track-item"]',
-          '.tracklist-row',
-          '.chart-table-track',
+          '.chart-table tbody tr',
+          '.chart-list tr',
+          'tbody tr',
           'tr'
         ];
         
-        let trackItems = null;
+        let trackRows = null;
         for (const selector of selectors) {
-          trackItems = doc.querySelectorAll(selector);
-          if (trackItems.length > 0) {
-            console.log(`Found ${trackItems.length} Spotify tracks with selector: ${selector}`);
+          trackRows = doc.querySelectorAll(selector);
+          if (trackRows.length > 0) {
+            console.log(`Found ${trackRows.length} Spotify chart rows with selector: ${selector}`);
             break;
           }
         }
         
-        if (trackItems && trackItems.length > 0) {
-          for (let i = 0; i < Math.min(trackItems.length, 5); i++) {
-            const item = trackItems[i];
-            const rank = i + 1;
+        if (trackRows && trackRows.length > 0) {
+          for (let i = 0; i < Math.min(trackRows.length, 5); i++) {
+            const row = trackRows[i];
+            const cells = row.querySelectorAll('td');
             
-            const titleSelectors = [
-              '[data-testid="track-title"]',
-              '.track-name',
-              '.chart-table-track-name'
-            ];
-            
-            const artistSelectors = [
-              '[data-testid="track-artist"]',
-              '.artist-name',
-              '.chart-table-track-artist'
-            ];
-            
-            let title = '';
-            let artist = '';
-            
-            for (const selector of titleSelectors) {
-              const titleElement = item.querySelector(selector);
-              if (titleElement && titleElement.textContent?.trim()) {
-                title = titleElement.textContent.trim();
-                break;
+            if (cells.length >= 3) {
+              const rank = i + 1;
+              
+              // Look for track name and artist in different cell positions
+              let title = '';
+              let artist = '';
+              
+              // Try different cell combinations
+              for (let j = 0; j < cells.length; j++) {
+                const cellText = cells[j]?.textContent?.trim() || '';
+                
+                // Look for patterns that might be song titles or artists
+                if (!title && cellText.length > 2 && cellText.length < 100 && 
+                    !cellText.match(/^\d+$/) && !cellText.includes('spotify:')) {
+                  title = cellText;
+                } else if (!artist && cellText.length > 2 && cellText.length < 100 && 
+                          !cellText.match(/^\d+$/) && !cellText.includes('spotify:') && 
+                          cellText !== title) {
+                  artist = cellText;
+                }
               }
-            }
-            
-            for (const selector of artistSelectors) {
-              const artistElement = item.querySelector(selector);
-              if (artistElement && artistElement.textContent?.trim()) {
-                artist = artistElement.textContent.trim();
-                break;
+              
+              if (title && artist) {
+                tracks.push({
+                  rank,
+                  title,
+                  artist
+                });
               }
-            }
-            
-            if (title && artist) {
-              tracks.push({
-                rank,
-                title,
-                artist
-              });
             }
           }
         }
         
         if (tracks.length > 0) {
-          console.log('Successfully scraped Spotify data:', tracks);
+          console.log('Successfully scraped Spotify Charts data:', tracks);
           return tracks;
         }
         
       } catch (proxyError) {
-        console.log(`Spotify proxy ${proxy} failed:`, proxyError);
+        console.log(`Spotify Charts proxy ${proxy} failed:`, proxyError);
         continue;
       }
     }
     
-    throw new Error('All Spotify proxies failed');
+    throw new Error('All Spotify Charts proxies failed');
     
   } catch (error) {
-    console.error('Error scraping Spotify data:', error);
+    console.error('Error scraping Spotify Charts data:', error);
     return null;
   }
 };

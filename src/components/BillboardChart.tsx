@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Music } from "lucide-react";
-import { scrapeBillboardHot100 } from "@/services/webScraping";
+import { scrapeKworbTop100 } from "@/services/webScraping";
 
 interface BillboardSong {
   rank: number;
@@ -19,19 +19,19 @@ export function BillboardChart() {
   const [isUsingDemoData, setIsUsingDemoData] = useState(false);
 
   useEffect(() => {
-    fetchBillboardChart();
+    fetchWorldwideChart();
   }, []);
 
-  const fetchBillboardChart = async () => {
+  const fetchWorldwideChart = async () => {
     try {
       setIsLoading(true);
       setIsUsingDemoData(false);
       
-      console.log('Attempting to scrape Billboard Hot 100...');
-      const scrapedData = await scrapeBillboardHot100();
+      console.log('Attempting to scrape Top 100 Worldwide from kworb...');
+      const scrapedData = await scrapeKworbTop100();
       
       if (scrapedData && scrapedData.length > 0) {
-        console.log('Successfully scraped Billboard data:', scrapedData);
+        console.log('Successfully scraped kworb data:', scrapedData);
         setSongs(scrapedData);
         setIsUsingDemoData(false);
       } else {
@@ -40,7 +40,7 @@ export function BillboardChart() {
         setSongs(getDemoData());
       }
     } catch (error) {
-      console.error('Error fetching Billboard data:', error);
+      console.error('Error fetching worldwide chart data:', error);
       setIsUsingDemoData(true);
       setSongs(getDemoData());
     } finally {
@@ -66,15 +66,10 @@ export function BillboardChart() {
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Music className="h-5 w-5" />
-          Billboard Hot 100
+          Top 100 Worldwide
         </CardTitle>
         {isUsingDemoData && (
           <p className="text-xs text-muted-foreground">Using demo data - live scraping temporarily unavailable</p>
-        )}
-        {!isUsingDemoData && !isLoading && (
-          <p className="text-xs text-muted-foreground">
-            Live data scraped from Billboard.com
-          </p>
         )}
       </CardHeader>
       <CardContent className="p-0">
