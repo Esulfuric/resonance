@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Music } from "lucide-react";
+import { scrapeBillboardHot100 } from "@/services/webScraping";
 
 interface BillboardSong {
   rank: number;
@@ -24,23 +25,22 @@ export function BillboardChart() {
   const fetchBillboardChart = async () => {
     try {
       setIsLoading(true);
-      // Using a proxy service to fetch Billboard data
-      const response = await fetch('https://billboard-api2.p.rapidapi.com/hot-100', {
-        headers: {
-          'X-RapidAPI-Key': 'RAPIDAPI_KEY', // This will be replaced with the actual key
-          'X-RapidAPI-Host': 'billboard-api2.p.rapidapi.com'
-        }
-      });
+      setError(null);
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch Billboard data');
+      console.log('Attempting to scrape Billboard Hot 100...');
+      const scrapedData = await scrapeBillboardHot100();
+      
+      if (scrapedData && scrapedData.length > 0) {
+        console.log('Successfully scraped Billboard data:', scrapedData);
+        setSongs(scrapedData);
+      } else {
+        console.log('Scraping failed, using demo data');
+        setError('Using demo data - live scraping temporarily unavailable');
+        setSongs(getDemoData());
       }
-      
-      const data = await response.json();
-      setSongs(data.content?.slice(0, 10) || getDemoData());
     } catch (error) {
       console.error('Error fetching Billboard data:', error);
-      setError('Using demo data - connect API key for live data');
+      setError('Using demo data - live scraping temporarily unavailable');
       setSongs(getDemoData());
     } finally {
       setIsLoading(false);
@@ -70,6 +70,9 @@ export function BillboardChart() {
         {error && (
           <p className="text-xs text-muted-foreground">{error}</p>
         )}
+        <p className="text-xs text-muted-foreground">
+          Live data scraped from Billboard.com
+        </p>
       </CardHeader>
       <CardContent className="p-0">
         {isLoading ? (

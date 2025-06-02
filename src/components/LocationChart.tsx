@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
+import { scrapeSpotifyCharts, getUserLocation } from "@/services/webScraping";
 
 interface SpotifyTrack {
   rank: number;
@@ -20,6 +21,7 @@ export function LocationChart() {
   const [tracks, setTracks] = useState<SpotifyTrack[]>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLocationAndCharts();
@@ -28,26 +30,29 @@ export function LocationChart() {
   const fetchLocationAndCharts = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
-      // Get user's location from IP
-      const locationResponse = await fetch('https://ipapi.co/json/');
-      const locationData = await locationResponse.json();
-      
-      const userLocation: LocationData = {
-        country: locationData.country_name || 'United States',
-        countryCode: locationData.country_code || 'US',
-        city: locationData.city
-      };
-      
+      // Get user's location
+      console.log('Fetching user location...');
+      const userLocation = await getUserLocation();
       setLocation(userLocation);
       
-      // For demo purposes, we'll use sample data
-      // In a real implementation, you'd use Spotify Web API
-      const demoTracks = getDemoTracksForCountry(userLocation.countryCode);
-      setTracks(demoTracks);
+      // Try to scrape Spotify charts for the user's country
+      console.log('Attempting to scrape Spotify charts for:', userLocation.countryCode);
+      const scrapedTracks = await scrapeSpotifyCharts(userLocation.countryCode);
+      
+      if (scrapedTracks && scrapedTracks.length > 0) {
+        console.log('Successfully scraped Spotify data:', scrapedTracks);
+        setTracks(scrapedTracks);
+      } else {
+        console.log('Scraping failed, using demo data');
+        setError('Using demo data - live scraping temporarily unavailable');
+        setTracks(getDemoTracksForCountry(userLocation.countryCode));
+      }
       
     } catch (error) {
       console.error('Error fetching location or charts:', error);
+      setError('Using demo data - live scraping temporarily unavailable');
       setLocation({ country: 'United States', countryCode: 'US' });
       setTracks(getDemoTracksForCountry('US'));
     } finally {
@@ -97,8 +102,11 @@ export function LocationChart() {
           <MapPin className="h-5 w-5" />
           Top Songs in {location?.country || 'Your Country'}
         </CardTitle>
+        {error && (
+          <p className="text-xs text-muted-foreground">{error}</p>
+        )}
         <p className="text-xs text-muted-foreground">
-          Based on your location • Connect Spotify API for live data
+          Live data scraped from Spotify Charts • Based on your location
         </p>
       </CardHeader>
       <CardContent className="p-0">
