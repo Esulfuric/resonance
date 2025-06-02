@@ -77,6 +77,13 @@ export function LocationChart() {
         { rank: 3, title: "Kill Bill", artist: "SZA" },
         { rank: 4, title: "Miracle", artist: "Calvin Harris & Ellie Goulding" },
         { rank: 5, title: "Shivers", artist: "Ed Sheeran" }
+      ],
+      'CA': [
+        { rank: 1, title: "Flowers", artist: "Miley Cyrus" },
+        { rank: 2, title: "Kill Bill", artist: "SZA" },
+        { rank: 3, title: "Anti-Hero", artist: "Taylor Swift" },
+        { rank: 4, title: "Made You Look", artist: "Meghan Trainor" },
+        { rank: 5, title: "Creepin'", artist: "Metro Boomin ft. The Weeknd" }
       ]
     };
     
@@ -91,7 +98,7 @@ export function LocationChart() {
           Top Songs in {location?.country || 'Your Country'}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Based on your location • Powered by Spotify
+          Based on your location • Connect Spotify API for live data
         </p>
       </CardHeader>
       <CardContent className="p-0">

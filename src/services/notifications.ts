@@ -5,12 +5,12 @@ import { Notification } from '@/types/post';
 // Fetch all notifications for a user with proper error handling
 export const fetchNotifications = async (userId: string): Promise<Notification[]> => {
   try {
-    const { data, error } = await supabase
+    console.log('Fetching notifications for user:', userId);
+    
+    // First fetch notifications
+    const { data: notificationsData, error } = await supabase
       .from('notifications')
-      .select(`
-        *,
-        actor:profiles!actor_id(id, full_name, username, avatar_url)
-      `)
+      .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -20,7 +20,39 @@ export const fetchNotifications = async (userId: string): Promise<Notification[]
       throw error;
     }
     
-    return (data || []) as unknown as Notification[];
+    if (!notificationsData || notificationsData.length === 0) {
+      console.log('No notifications found');
+      return [];
+    }
+    
+    console.log('Fetched notifications:', notificationsData);
+    
+    // Get unique actor IDs
+    const actorIds = [...new Set(notificationsData.map(n => n.actor_id))];
+    
+    // Fetch profiles for all actors
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, username, avatar_url')
+      .in('id', actorIds);
+    
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+    }
+    
+    console.log('Fetched profiles:', profilesData);
+    
+    // Map profiles to notifications
+    const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+    
+    const notificationsWithActors = notificationsData.map(notification => ({
+      ...notification,
+      actor: profilesMap.get(notification.actor_id) || null
+    }));
+    
+    console.log('Final notifications with actors:', notificationsWithActors);
+    
+    return notificationsWithActors as unknown as Notification[];
   } catch (error) {
     console.error('Error in fetchNotifications:', error);
     return [];
@@ -75,18 +107,24 @@ export const subscribeToNotifications = (userId: string, callback: (notification
         filter: `user_id=eq.${userId}`,
       },
       async (payload) => {
+        console.log('New notification received:', payload);
+        
         // Fetch the complete notification with actor data
-        const { data } = await supabase
-          .from('notifications')
-          .select(`
-            *,
-            actor:profiles!actor_id(id, full_name, username, avatar_url)
-          `)
-          .eq('id', payload.new.id)
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id, full_name, username, avatar_url')
+          .eq('id', payload.new.actor_id)
           .single();
         
-        if (data) {
-          callback(data as unknown as Notification);
+        const notificationWithActor = {
+          ...payload.new,
+          actor: profileData
+        };
+        
+        console.log('Notification with actor:', notificationWithActor);
+        
+        if (notificationWithActor) {
+          callback(notificationWithActor as unknown as Notification);
         }
       }
     )

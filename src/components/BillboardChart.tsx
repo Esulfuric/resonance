@@ -27,7 +27,7 @@ export function BillboardChart() {
       // Using a proxy service to fetch Billboard data
       const response = await fetch('https://billboard-api2.p.rapidapi.com/hot-100', {
         headers: {
-          'X-RapidAPI-Key': 'demo-key', // Users will need to get their own key
+          'X-RapidAPI-Key': 'RAPIDAPI_KEY', // This will be replaced with the actual key
           'X-RapidAPI-Host': 'billboard-api2.p.rapidapi.com'
         }
       });

@@ -6,7 +6,7 @@ import { fetchNotifications, markNotificationAsRead, subscribeToNotifications } 
 import { Notification } from '@/types/post';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 export const NotificationList: React.FC<{ onClose?: () => void }> = ({ 
   onClose 
@@ -133,7 +133,7 @@ export const NotificationList: React.FC<{ onClose?: () => void }> = ({
           onClick={loadNotifications}
           className="h-8 w-8 p-0"
         >
-          <Loader2 className="h-4 w-4" />
+          <RefreshCw className="h-4 w-4" />
           <span className="sr-only">Refresh</span>
         </Button>
       </div>
