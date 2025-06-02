@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Logo from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 import { useSupabase } from '@/lib/supabase-provider';
@@ -17,45 +17,26 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { fetchNotifications, markAllNotificationsAsRead } from '@/services/notifications';
+import { markAllNotificationsAsRead } from '@/services/notifications';
 import { Bell, MessageCircle } from 'lucide-react';
 import { NotificationList } from './notifications/NotificationList';
+import { NotificationBadge } from './ui/notification-badge';
+import { useNotificationCount } from '@/hooks/useNotificationCount';
+import { useMessageCount } from '@/hooks/useMessageCount';
 
 const Navbar = () => {
   const { user, signOut } = useSupabase();
   const location = useLocation();
-  const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { unreadCount: notificationCount, refreshCount: refreshNotificationCount } = useNotificationCount();
+  const { unreadCount: messageCount } = useMessageCount();
 
-  useEffect(() => {
-    if (user) {
-      loadNotificationCount();
-      
-      // Set up interval to check for new notifications
-      const interval = setInterval(loadNotificationCount, 60000); // Check every minute
-      
-      return () => clearInterval(interval);
-    }
-  }, [user]);
-  
-  const loadNotificationCount = async () => {
-    if (!user) return;
-    
-    try {
-      const notifications = await fetchNotifications(user.id);
-      const unread = notifications.filter(n => !n.is_read).length;
-      setUnreadCount(unread);
-    } catch (error) {
-      console.error('Error loading notifications count:', error);
-    }
-  };
-  
   const handleNotificationsOpen = (open: boolean) => {
     setNotificationsOpen(open);
-    if (!open && user && unreadCount > 0) {
+    if (!open && user && notificationCount > 0) {
       // Mark all as read when closing the notifications panel
       markAllNotificationsAsRead(user.id)
-        .then(() => setUnreadCount(0))
+        .then(() => refreshNotificationCount())
         .catch(error => console.error('Error marking notifications as read:', error));
     }
   };
@@ -77,8 +58,9 @@ const Navbar = () => {
           
           {user && (
             <>
-              <Link to="/messages" className="p-2 rounded-full hover:bg-muted">
+              <Link to="/messages" className="p-2 rounded-full hover:bg-muted relative">
                 <MessageCircle className="h-5 w-5" />
+                <NotificationBadge count={messageCount} />
               </Link>
               
               <Popover open={notificationsOpen} onOpenChange={handleNotificationsOpen}>
@@ -87,11 +69,7 @@ const Navbar = () => {
                     <button className="p-2 rounded-full hover:bg-muted">
                       <Bell className="h-5 w-5" />
                     </button>
-                    {unreadCount > 0 && (
-                      <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </div>
-                    )}
+                    <NotificationBadge count={notificationCount} />
                   </div>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="p-0 w-80">

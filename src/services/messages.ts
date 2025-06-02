@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { Conversation, Message } from '@/types/post';
 
@@ -65,6 +64,23 @@ export const fetchConversations = async (userId: string): Promise<Conversation[]
   } catch (error) {
     console.error('Error fetching conversations:', error);
     return [];
+  }
+};
+
+// Get total unread message count for a user
+export const getUnreadMessageCount = async (userId: string): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('recipient_id', userId)
+      .eq('is_read', false);
+    
+    if (error) throw error;
+    return count || 0;
+  } catch (error) {
+    console.error('Error fetching unread message count:', error);
+    return 0;
   }
 };
 
