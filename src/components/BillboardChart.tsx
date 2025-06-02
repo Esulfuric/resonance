@@ -16,7 +16,7 @@ interface BillboardSong {
 export function BillboardChart() {
   const [songs, setSongs] = useState<BillboardSong[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isUsingDemoData, setIsUsingDemoData] = useState(false);
 
   useEffect(() => {
     fetchBillboardChart();
@@ -25,7 +25,7 @@ export function BillboardChart() {
   const fetchBillboardChart = async () => {
     try {
       setIsLoading(true);
-      setError(null);
+      setIsUsingDemoData(false);
       
       console.log('Attempting to scrape Billboard Hot 100...');
       const scrapedData = await scrapeBillboardHot100();
@@ -33,14 +33,15 @@ export function BillboardChart() {
       if (scrapedData && scrapedData.length > 0) {
         console.log('Successfully scraped Billboard data:', scrapedData);
         setSongs(scrapedData);
+        setIsUsingDemoData(false);
       } else {
         console.log('Scraping failed, using demo data');
-        setError('Using demo data - live scraping temporarily unavailable');
+        setIsUsingDemoData(true);
         setSongs(getDemoData());
       }
     } catch (error) {
       console.error('Error fetching Billboard data:', error);
-      setError('Using demo data - live scraping temporarily unavailable');
+      setIsUsingDemoData(true);
       setSongs(getDemoData());
     } finally {
       setIsLoading(false);
@@ -67,12 +68,14 @@ export function BillboardChart() {
           <Music className="h-5 w-5" />
           Billboard Hot 100
         </CardTitle>
-        {error && (
-          <p className="text-xs text-muted-foreground">{error}</p>
+        {isUsingDemoData && (
+          <p className="text-xs text-muted-foreground">Using demo data - live scraping temporarily unavailable</p>
         )}
-        <p className="text-xs text-muted-foreground">
-          Live data scraped from Billboard.com
-        </p>
+        {!isUsingDemoData && !isLoading && (
+          <p className="text-xs text-muted-foreground">
+            Live data scraped from Billboard.com
+          </p>
+        )}
       </CardHeader>
       <CardContent className="p-0">
         {isLoading ? (

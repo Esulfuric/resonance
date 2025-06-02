@@ -21,7 +21,7 @@ export function LocationChart() {
   const [tracks, setTracks] = useState<SpotifyTrack[]>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isUsingDemoData, setIsUsingDemoData] = useState(false);
 
   useEffect(() => {
     fetchLocationAndCharts();
@@ -30,7 +30,7 @@ export function LocationChart() {
   const fetchLocationAndCharts = async () => {
     try {
       setIsLoading(true);
-      setError(null);
+      setIsUsingDemoData(false);
       
       // Get user's location
       console.log('Fetching user location...');
@@ -44,15 +44,16 @@ export function LocationChart() {
       if (scrapedTracks && scrapedTracks.length > 0) {
         console.log('Successfully scraped Spotify data:', scrapedTracks);
         setTracks(scrapedTracks);
+        setIsUsingDemoData(false);
       } else {
         console.log('Scraping failed, using demo data');
-        setError('Using demo data - live scraping temporarily unavailable');
+        setIsUsingDemoData(true);
         setTracks(getDemoTracksForCountry(userLocation.countryCode));
       }
       
     } catch (error) {
       console.error('Error fetching location or charts:', error);
-      setError('Using demo data - live scraping temporarily unavailable');
+      setIsUsingDemoData(true);
       setLocation({ country: 'United States', countryCode: 'US' });
       setTracks(getDemoTracksForCountry('US'));
     } finally {
@@ -102,12 +103,14 @@ export function LocationChart() {
           <MapPin className="h-5 w-5" />
           Top Songs in {location?.country || 'Your Country'}
         </CardTitle>
-        {error && (
-          <p className="text-xs text-muted-foreground">{error}</p>
+        {isUsingDemoData && (
+          <p className="text-xs text-muted-foreground">Using demo data - live scraping temporarily unavailable</p>
         )}
-        <p className="text-xs text-muted-foreground">
-          Live data scraped from Spotify Charts • Based on your location
-        </p>
+        {!isUsingDemoData && !isLoading && (
+          <p className="text-xs text-muted-foreground">
+            Live data scraped from Spotify Charts • Based on your location
+          </p>
+        )}
       </CardHeader>
       <CardContent className="p-0">
         {isLoading ? (
