@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Comment } from "@/types/post";
 import { toggleLikePost, checkPostLiked, addComment, fetchComments } from "@/services/postService";
 import { useSupabase } from "@/lib/supabase-provider";
+import { TranslateButton } from "@/components/TranslateButton";
 
 export function PostCard(props: any) {
   const { 
@@ -43,6 +44,7 @@ export function PostCard(props: any) {
   const [commentsCount, setCommentsCount] = useState(stats?.comments || 0);
   const [showComments, setShowComments] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [displayContent, setDisplayContent] = useState(content);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -268,8 +270,14 @@ export function PostCard(props: any) {
                 </div>
               ) : (
                 <>
-                  <p className="text-sm whitespace-pre-wrap">{content}</p>
+                  <p className="text-sm whitespace-pre-wrap">{displayContent}</p>
                   {isEdited && <p className="text-xs text-green-500 mt-1">Edited</p>}
+                  <div className="mt-2">
+                    <TranslateButton 
+                      content={content}
+                      onTranslate={setDisplayContent}
+                    />
+                  </div>
                 </>
               )}
               

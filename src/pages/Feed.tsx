@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
+import { useSystemTranslation } from "@/hooks/useSystemTranslation";
 import { Sidebar } from "@/components/Sidebar";
 import { FeedContent } from "@/components/FeedContent";
 import { Button } from "@/components/ui/button";
@@ -12,12 +13,16 @@ const Feed = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("foryou");
+  
+  // Translate system text
+  const newPostText = useSystemTranslation("New Post");
+  const redirectingText = useSystemTranslation("Redirecting...");
 
   // Use auth guard to protect this route
   const { user } = useAuthGuard();
   
   if (!user) {
-    return <div className="flex items-center justify-center h-screen">Redirecting...</div>;
+    return <div className="flex items-center justify-center h-screen">{redirectingText}</div>;
   }
   
   return (
@@ -31,7 +36,7 @@ const Feed = () => {
                 onClick={() => navigate('/create-post')}
                 className="bg-resonance-green hover:bg-resonance-green/90 rounded-full"
               >
-                <Plus className="h-5 w-5 mr-1" /> New Post
+                <Plus className="h-5 w-5 mr-1" /> {newPostText}
               </Button>
             </div>
             
@@ -41,7 +46,7 @@ const Feed = () => {
             />
           </div>
           
-          {/* Sidebar - removed "What's happening" section and trendingTopics prop */}
+          {/* Sidebar */}
           {!isMobile && (
             <Sidebar />
           )}

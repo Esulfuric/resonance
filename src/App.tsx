@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +21,7 @@ import { BottomNavigation } from "./components/BottomNavigation";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { SupabaseProvider } from "@/lib/supabase-provider";
+import { TranslationProvider } from "@/contexts/TranslationContext";
 import { toast } from "sonner";
 import Navbar from "./components/Navbar";
 import { AuthenticatedRoute } from "./components/AuthenticatedRoute";
@@ -68,18 +68,18 @@ const App = () => {
 
   return (
     <SupabaseProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="min-h-screen pb-20" 
-          >
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
+      <TranslationProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="min-h-screen pb-20" 
+            >
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
                 {/* Public routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
@@ -159,10 +159,10 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <BottomNavigation />
-            </BrowserRouter>
-          </motion.div>
-        </TooltipProvider>
-      </QueryClientProvider>
+            </motion.div>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </TranslationProvider>
     </SupabaseProvider>
   );
 };
