@@ -57,15 +57,19 @@ export const translateText = async (text: string, targetLanguage: string): Promi
   }
 
   try {
+    console.log(`Translating "${text}" to ${targetLanguage}`);
     const url = `${GOOGLE_TRANSLATE_API}?client=gtx&sl=auto&tl=${targetLanguage}&dt=t&q=${encodeURIComponent(text)}`;
     
     const response = await fetch(url);
     const data = await response.json();
     
     if (data && data[0] && data[0][0] && data[0][0][0]) {
-      return data[0][0][0];
+      const translatedText = data[0][0][0];
+      console.log(`Translation result: "${translatedText}"`);
+      return translatedText;
     }
     
+    console.log('Translation failed: No valid response data');
     return text;
   } catch (error) {
     console.error('Translation failed:', error);
@@ -92,5 +96,6 @@ export const detectLanguage = async (text: string): Promise<string> => {
 };
 
 export const shouldShowTranslateButton = (userLanguage: string, contentLanguage: string): boolean => {
-  return userLanguage !== 'en' && contentLanguage !== userLanguage && contentLanguage !== 'en';
+  // Show translate button if user language is not English and content is not in user's language
+  return userLanguage !== 'en' && contentLanguage !== userLanguage;
 };

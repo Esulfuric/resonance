@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Logo from './Logo';
 import { ThemeToggle } from './ThemeToggle';
+import { LanguageToggle } from './LanguageToggle';
 import { useSupabase } from '@/lib/supabase-provider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Link, useLocation } from 'react-router-dom';
@@ -23,6 +24,7 @@ import { NotificationList } from './notifications/NotificationList';
 import { NotificationBadge } from './ui/notification-badge';
 import { useNotificationCount } from '@/hooks/useNotificationCount';
 import { useMessageCount } from '@/hooks/useMessageCount';
+import { useSystemTranslation } from '@/hooks/useSystemTranslation';
 
 const Navbar = () => {
   const { user, signOut } = useSupabase();
@@ -30,6 +32,12 @@ const Navbar = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { unreadCount: notificationCount, refreshCount: refreshNotificationCount } = useNotificationCount();
   const { unreadCount: messageCount } = useMessageCount();
+
+  // Translate system text
+  const myProfileText = useSystemTranslation("My Profile");
+  const messagesText = useSystemTranslation("Messages");
+  const logoutText = useSystemTranslation("Logout");
+  const loginText = useSystemTranslation("Login");
 
   const handleNotificationsOpen = (open: boolean) => {
     setNotificationsOpen(open);
@@ -54,6 +62,7 @@ const Navbar = () => {
         </div>
         
         <div className="flex items-center gap-4">
+          <LanguageToggle />
           <ThemeToggle />
           
           {user && (
@@ -94,24 +103,24 @@ const Navbar = () => {
               <DropdownMenuContent align="end">
                 <Link to="/profile">
                   <DropdownMenuItem className="cursor-pointer">
-                    My Profile
+                    {myProfileText}
                   </DropdownMenuItem>
                 </Link>
                 <Link to="/messages">
                   <DropdownMenuItem className="cursor-pointer">
-                    Messages
+                    {messagesText}
                   </DropdownMenuItem>
                 </Link>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer" onClick={signOut}>
-                  Logout
+                  {logoutText}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Link to="/login">
               <button className="bg-resonance-green text-white px-4 py-2 rounded-full text-sm font-medium">
-                Login
+                {loginText}
               </button>
             </Link>
           )}

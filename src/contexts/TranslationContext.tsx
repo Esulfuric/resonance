@@ -17,7 +17,7 @@ interface TranslationProviderProps {
 }
 
 export const TranslationProvider: React.FC<TranslationProviderProps> = ({ children }) => {
-  const [currentLanguage, setCurrentLanguage] = useState('en');
+  const [currentLanguage, setCurrentLanguageState] = useState('en');
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationCache, setTranslationCache] = useState<Map<string, string>>(new Map());
 
@@ -27,20 +27,31 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
 
   const detectUserLanguage = async () => {
     try {
+      // Check localStorage first for user preference
+      const savedLanguage = localStorage.getItem('userLanguage');
+      if (savedLanguage) {
+        setCurrentLanguageState(savedLanguage);
+        return;
+      }
+
       const location = await getUserLocation();
       const language = getLanguageFromCountry(location.countryCode);
-      setCurrentLanguage(language);
+      setCurrentLanguageState(language);
       
       // Store in localStorage for persistence
       localStorage.setItem('userLanguage', language);
     } catch (error) {
       console.error('Failed to detect user language:', error);
-      // Check localStorage for previously detected language
-      const savedLanguage = localStorage.getItem('userLanguage');
-      if (savedLanguage) {
-        setCurrentLanguage(savedLanguage);
-      }
+      // Default to English if detection fails
+      setCurrentLanguageState('en');
     }
+  };
+
+  const setCurrentLanguage = (lang: string) => {
+    setCurrentLanguageState(lang);
+    localStorage.setItem('userLanguage', lang);
+    // Clear translation cache when language changes
+    setTranslationCache(new Map());
   };
 
   const translate = async (text: string): Promise<string> => {

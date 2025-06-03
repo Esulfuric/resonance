@@ -33,12 +33,16 @@ export const TranslateButton: React.FC<TranslateButtonProps> = ({
     try {
       // Detect content language
       const contentLanguage = await detectLanguage(content);
+      console.log('Content language detected:', contentLanguage, 'User language:', currentLanguage);
       
       if (shouldShowTranslateButton(currentLanguage, contentLanguage)) {
         setOriginalContent(content);
         const translated = await translateText(content, currentLanguage);
+        console.log('Translated content:', translated);
         onTranslate(translated);
         setIsTranslated(true);
+      } else {
+        console.log('Translation not needed or not available');
       }
     } catch (error) {
       console.error('Translation failed:', error);
@@ -47,7 +51,7 @@ export const TranslateButton: React.FC<TranslateButtonProps> = ({
     }
   };
 
-  // Don't show button if user's language is English
+  // Show button if user's language is not English and content might be translatable
   if (currentLanguage === 'en') {
     return null;
   }
