@@ -129,35 +129,72 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
         
         const tracks = [];
         
-        // Look for the main table with chart data (similar to kworb structure)
-        const table = doc.querySelector('table');
-        if (table) {
+        // Look for the main table with chart data - Kworb uses specific table structure
+        const tables = doc.querySelectorAll('table');
+        let chartTable = null;
+        
+        // Find the correct table (usually the one with the most rows containing chart data)
+        for (const table of tables) {
           const rows = table.querySelectorAll('tr');
+          if (rows.length > 10) { // Chart tables typically have many rows
+            chartTable = table;
+            break;
+          }
+        }
+        
+        if (chartTable) {
+          const rows = chartTable.querySelectorAll('tr');
           console.log(`Found ${rows.length} table rows on Kworb Spotify`);
           
+          // Skip header rows and process data rows
           for (let i = 1; i < Math.min(rows.length, 6); i++) { // Skip header row, get top 5
             const row = rows[i];
             const cells = row.querySelectorAll('td');
             
-            if (cells.length >= 3) {
+            if (cells.length >= 4) { // Kworb typically has: rank, +/-, artist, song, streams
               const rank = i;
-              const artistTitle = cells[1]?.textContent?.trim() || '';
               
-              // Parse "Artist - Title" format (same as kworb format)
+              // Try different cell positions for artist and title
+              // Kworb format: [rank] [+/-] [artist] [song] [streams]
               let artist = '';
               let title = '';
               
-              if (artistTitle.includes(' - ')) {
-                const parts = artistTitle.split(' - ');
-                artist = parts[0].trim();
-                title = parts.slice(1).join(' - ').trim();
-              } else {
-                // Fallback if format is different
-                artist = 'Various Artists';
-                title = artistTitle;
+              // Check if we have artist in cell 2 and title in cell 3
+              if (cells[2] && cells[3]) {
+                artist = cells[2]?.textContent?.trim() || '';
+                title = cells[3]?.textContent?.trim() || '';
               }
               
-              if (title && artist) {
+              // If that doesn't work, try combined format in cell 2 or 3
+              if (!artist || !title || artist === '=' || title === '=' || artist.includes('+') || title.includes('+')) {
+                for (let cellIndex = 1; cellIndex < Math.min(cells.length, 5); cellIndex++) {
+                  const cellText = cells[cellIndex]?.textContent?.trim() || '';
+                  
+                  // Skip cells that contain chart position indicators
+                  if (cellText && !cellText.match(/^[+\-=]\d*$/) && !cellText.match(/^\d+$/) && cellText.length > 2) {
+                    // Check if this cell contains "Artist - Title" format
+                    if (cellText.includes(' - ')) {
+                      const parts = cellText.split(' - ');
+                      artist = parts[0].trim();
+                      title = parts.slice(1).join(' - ').trim();
+                      break;
+                    } else if (!artist && cellText.length > 0) {
+                      artist = cellText;
+                    } else if (!title && cellText.length > 0) {
+                      title = cellText;
+                      break;
+                    }
+                  }
+                }
+              }
+              
+              // Clean up the data
+              artist = artist.replace(/[+\-=]\d*/, '').trim();
+              title = title.replace(/[+\-=]\d*/, '').trim();
+              
+              // Only add if we have valid artist and title
+              if (title && artist && title.length > 1 && artist.length > 1 && 
+                  !title.match(/^[+\-=]\d*$/) && !artist.match(/^[+\-=]\d*$/)) {
                 tracks.push({
                   rank,
                   title,
@@ -171,6 +208,16 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
         if (tracks.length > 0) {
           console.log('Successfully scraped Kworb Spotify Charts data:', tracks);
           return tracks;
+        } else {
+          console.log('No valid tracks found, checking page structure...');
+          // Log some sample cell content for debugging
+          const sampleRows = doc.querySelectorAll('table tr');
+          for (let i = 1; i < Math.min(sampleRows.length, 4); i++) {
+            const cells = sampleRows[i]?.querySelectorAll('td');
+            if (cells) {
+              console.log(`Row ${i} cells:`, Array.from(cells).map(cell => cell.textContent?.trim()).slice(0, 5));
+            }
+          }
         }
         
       } catch (proxyError) {
