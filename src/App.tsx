@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -80,85 +81,87 @@ const App = () => {
               <Toaster />
               <Sonner />
               <BrowserRouter>
-                {/* Public routes */}
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/terms-of-service" element={<TermsOfService />} />
-                
-                {/* Protected routes with Navbar */}
-                <Route path="/feed" element={
-                  <AuthenticatedRoute>
-                    <>
-                      <Navbar />
-                      <div className="pt-16 pb-16">
-                        <Feed />
-                      </div>
-                    </>
-                  </AuthenticatedRoute>
-                } />
-                <Route path="/discover" element={
-                  <AuthenticatedRoute>
-                    <>
-                      <Navbar />
-                      <div className="pt-16 pb-16">
-                        <Discover />
-                      </div>
-                    </>
-                  </AuthenticatedRoute>
-                } />
-                <Route path="/search" element={
-                  <AuthenticatedRoute>
-                    <>
-                      <Navbar />
-                      <div className="pt-16 pb-16">
-                        <SearchPage />
-                      </div>
-                    </>
-                  </AuthenticatedRoute>
-                } />
-                <Route path="/profile" element={
-                  <AuthenticatedRoute>
-                    <>
-                      <Navbar />
-                      <div className="pt-16 pb-16">
-                        <Profile />
-                      </div>
-                    </>
-                  </AuthenticatedRoute>
-                } />
-                <Route path="/profile/:userId" element={
-                  <AuthenticatedRoute>
-                    <>
-                      <Navbar />
-                      <div className="pt-16 pb-16">
-                        <UserProfile />
-                      </div>
-                    </>
-                  </AuthenticatedRoute>
-                } />
-                <Route path="/create-post" element={
-                  <AuthenticatedRoute>
-                    <CreatePost />
-                  </AuthenticatedRoute>
-                } />
-                <Route path="/messages" element={
-                  <AuthenticatedRoute>
-                    <>
-                      <Navbar />
-                      <div className="pt-16 pb-16">
-                        <Messages />
-                      </div>
-                    </>
-                  </AuthenticatedRoute>
-                } />
-                
-                {/* Catch-all route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <BottomNavigation />
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms-of-service" element={<TermsOfService />} />
+                  
+                  {/* Protected routes with Navbar */}
+                  <Route path="/feed" element={
+                    <AuthenticatedRoute>
+                      <>
+                        <Navbar />
+                        <div className="pt-16 pb-16">
+                          <Feed />
+                        </div>
+                      </>
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/discover" element={
+                    <AuthenticatedRoute>
+                      <>
+                        <Navbar />
+                        <div className="pt-16 pb-16">
+                          <Discover />
+                        </div>
+                      </>
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/search" element={
+                    <AuthenticatedRoute>
+                      <>
+                        <Navbar />
+                        <div className="pt-16 pb-16">
+                          <SearchPage />
+                        </div>
+                      </>
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/profile" element={
+                    <AuthenticatedRoute>
+                      <>
+                        <Navbar />
+                        <div className="pt-16 pb-16">
+                          <Profile />
+                        </div>
+                      </>
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/profile/:userId" element={
+                    <AuthenticatedRoute>
+                      <>
+                        <Navbar />
+                        <div className="pt-16 pb-16">
+                          <UserProfile />
+                        </div>
+                      </>
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/create-post" element={
+                    <AuthenticatedRoute>
+                      <CreatePost />
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/messages" element={
+                    <AuthenticatedRoute>
+                      <>
+                        <Navbar />
+                        <div className="pt-16 pb-16">
+                          <Messages />
+                        </div>
+                      </>
+                    </AuthenticatedRoute>
+                  } />
+                  
+                  {/* Catch-all route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <BottomNavigation />
+              </BrowserRouter>
             </motion.div>
           </TooltipProvider>
         </QueryClientProvider>
