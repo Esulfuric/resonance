@@ -1,3 +1,4 @@
+
 // Simple web scraping functions for publicly available chart data
 export const scrapeKworbTop100 = async () => {
   try {
@@ -151,64 +152,42 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
             const row = rows[i];
             const cells = row.querySelectorAll('td');
             
-            if (cells.length >= 3) {
-              let artist = '';
-              let title = '';
+            if (cells.length >= 2) {
+              // Look for the cell that contains the artist and song info
+              // This is typically in the first or second column
+              let artistAndSong = '';
               
-              // Kworb format typically has multiple cells, we need to find the ones with actual song data
-              // Look through cells to find artist and title (skip numeric/chart indicator cells)
-              const cellTexts = Array.from(cells).map(cell => cell.textContent?.trim() || '');
-              
-              // Filter out cells that are clearly not song/artist names
-              const validCells = cellTexts.filter(text => {
-                // Skip empty cells, pure numbers, chart indicators (+, -, =), and very short text
-                return text && 
-                       !text.match(/^\d+$/) && 
-                       !text.match(/^[+\-=]+\d*$/) && 
-                       !text.match(/^[+\-=]$/) &&
-                       text.length > 2 &&
-                       !text.match(/^\d+[,.]?\d*$/) && // Skip numbers with commas/periods (streams)
-                       !text.includes('▲') && 
-                       !text.includes('▼') &&
-                       !text.includes('NEW') &&
-                       !text.includes('RE');
-              });
-              
-              console.log(`Row ${i} valid cells:`, validCells);
-              
-              // Try to identify artist and title from valid cells
-              if (validCells.length >= 2) {
-                // First valid cell is usually artist, second is usually title
-                artist = validCells[0];
-                title = validCells[1];
-              } else if (validCells.length === 1) {
-                // If only one valid cell, check if it contains "Artist - Title" format
-                const combined = validCells[0];
-                if (combined.includes(' - ')) {
-                  const parts = combined.split(' - ');
-                  artist = parts[0].trim();
-                  title = parts.slice(1).join(' - ').trim();
-                } else {
-                  // Fallback: use as title with unknown artist
-                  artist = 'Unknown Artist';
-                  title = combined;
+              // Check first few cells for the one containing artist/song data
+              for (let j = 0; j < Math.min(cells.length, 3); j++) {
+                const cellText = (cells[j] as Element)?.textContent?.trim() || '';
+                
+                // Look for cells that contain " - " which indicates "Artist - Song" format
+                if (cellText.includes(' - ') && cellText.length > 10) {
+                  artistAndSong = cellText;
+                  break;
                 }
               }
               
-              // Final validation and cleanup
-              if (artist && title) {
-                // Remove any remaining chart indicators
-                artist = artist.replace(/[+\-=▲▼]\d*/g, '').trim();
-                title = title.replace(/[+\-=▲▼]\d*/g, '').trim();
+              if (artistAndSong) {
+                console.log(`Row ${i} found artist-song data:`, artistAndSong);
                 
-                // Make sure we still have valid data after cleanup
-                if (artist.length > 0 && title.length > 0 && 
-                    !artist.match(/^\d+$/) && !title.match(/^\d+$/)) {
-                  tracks.push({
-                    rank: i,
-                    title,
-                    artist
-                  });
+                // Split into artist and title
+                const parts = artistAndSong.split(' - ');
+                if (parts.length >= 2) {
+                  const artist = parts[0].trim();
+                  const title = parts.slice(1).join(' - ').trim();
+                  
+                  // Clean up any remaining chart indicators or numbers in parentheses
+                  const cleanArtist = artist.replace(/\([^)]*\)/g, '').trim();
+                  const cleanTitle = title.replace(/\([^)]*\)/g, '').trim();
+                  
+                  if (cleanArtist && cleanTitle) {
+                    tracks.push({
+                      rank: i,
+                      title: cleanTitle,
+                      artist: cleanArtist
+                    });
+                  }
                 }
               }
             }
@@ -226,7 +205,7 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
             for (let i = 1; i < Math.min(debugRows.length, 4); i++) {
               const cells = debugRows[i]?.querySelectorAll('td');
               if (cells) {
-                const cellData = Array.from(cells).map((cell, index) => `[${index}]: "${cell.textContent?.trim()}"`);
+                const cellData = Array.from(cells).map((cell, index) => `[${index}]: "${(cell as Element).textContent?.trim()}"`);
                 console.log(`Debug Row ${i}:`, cellData);
               }
             }
