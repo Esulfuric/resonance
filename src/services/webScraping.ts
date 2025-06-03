@@ -1,4 +1,3 @@
-
 // Simple web scraping functions for publicly available chart data
 export const scrapeKworbTop100 = async () => {
   try {
@@ -99,30 +98,30 @@ export const scrapeKworbTop100 = async () => {
 
 export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
   try {
-    // Try multiple approaches for Spotify Charts
+    // Try multiple approaches for Kworb Spotify country charts
     const proxies = [
       'https://corsproxy.io/?',
       'https://api.codetabs.com/v1/proxy?quest=',
     ];
     
-    const spotifyUrl = `https://spotifycharts.com/regional/${country.toLowerCase()}/daily/latest`;
+    const kworbSpotifyUrl = `https://kworb.net/spotify/country/${country.toLowerCase()}_daily.html`;
     
     for (const proxy of proxies) {
       try {
-        console.log(`Trying Spotify Charts proxy: ${proxy} for country: ${country}`);
-        const response = await fetch(proxy + encodeURIComponent(spotifyUrl), {
+        console.log(`Trying Kworb Spotify Charts proxy: ${proxy} for country: ${country}`);
+        const response = await fetch(proxy + encodeURIComponent(kworbSpotifyUrl), {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
           }
         });
         
         if (!response.ok) {
-          console.log(`Spotify Charts proxy ${proxy} failed with status:`, response.status);
+          console.log(`Kworb Spotify Charts proxy ${proxy} failed with status:`, response.status);
           continue;
         }
         
         const html = await response.text();
-        console.log('Successfully fetched Spotify Charts HTML, length:', html.length);
+        console.log('Successfully fetched Kworb Spotify Charts HTML, length:', html.length);
         
         // Parse the HTML content
         const parser = new DOMParser();
@@ -130,48 +129,32 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
         
         const tracks = [];
         
-        // Look for chart entries - try multiple selectors
-        const selectors = [
-          '.chart-table tbody tr',
-          '.chart-list tr',
-          'tbody tr',
-          'tr'
-        ];
-        
-        let trackRows = null;
-        for (const selector of selectors) {
-          trackRows = doc.querySelectorAll(selector);
-          if (trackRows.length > 0) {
-            console.log(`Found ${trackRows.length} Spotify chart rows with selector: ${selector}`);
-            break;
-          }
-        }
-        
-        if (trackRows && trackRows.length > 0) {
-          for (let i = 0; i < Math.min(trackRows.length, 5); i++) {
-            const row = trackRows[i];
+        // Look for the main table with chart data (similar to kworb structure)
+        const table = doc.querySelector('table');
+        if (table) {
+          const rows = table.querySelectorAll('tr');
+          console.log(`Found ${rows.length} table rows on Kworb Spotify`);
+          
+          for (let i = 1; i < Math.min(rows.length, 6); i++) { // Skip header row, get top 5
+            const row = rows[i];
             const cells = row.querySelectorAll('td');
             
             if (cells.length >= 3) {
-              const rank = i + 1;
+              const rank = i;
+              const artistTitle = cells[1]?.textContent?.trim() || '';
               
-              // Look for track name and artist in different cell positions
-              let title = '';
+              // Parse "Artist - Title" format (same as kworb format)
               let artist = '';
+              let title = '';
               
-              // Try different cell combinations
-              for (let j = 0; j < cells.length; j++) {
-                const cellText = cells[j]?.textContent?.trim() || '';
-                
-                // Look for patterns that might be song titles or artists
-                if (!title && cellText.length > 2 && cellText.length < 100 && 
-                    !cellText.match(/^\d+$/) && !cellText.includes('spotify:')) {
-                  title = cellText;
-                } else if (!artist && cellText.length > 2 && cellText.length < 100 && 
-                          !cellText.match(/^\d+$/) && !cellText.includes('spotify:') && 
-                          cellText !== title) {
-                  artist = cellText;
-                }
+              if (artistTitle.includes(' - ')) {
+                const parts = artistTitle.split(' - ');
+                artist = parts[0].trim();
+                title = parts.slice(1).join(' - ').trim();
+              } else {
+                // Fallback if format is different
+                artist = 'Various Artists';
+                title = artistTitle;
               }
               
               if (title && artist) {
@@ -186,20 +169,20 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
         }
         
         if (tracks.length > 0) {
-          console.log('Successfully scraped Spotify Charts data:', tracks);
+          console.log('Successfully scraped Kworb Spotify Charts data:', tracks);
           return tracks;
         }
         
       } catch (proxyError) {
-        console.log(`Spotify Charts proxy ${proxy} failed:`, proxyError);
+        console.log(`Kworb Spotify Charts proxy ${proxy} failed:`, proxyError);
         continue;
       }
     }
     
-    throw new Error('All Spotify Charts proxies failed');
+    throw new Error('All Kworb Spotify Charts proxies failed');
     
   } catch (error) {
-    console.error('Error scraping Spotify Charts data:', error);
+    console.error('Error scraping Kworb Spotify Charts data:', error);
     return null;
   }
 };
