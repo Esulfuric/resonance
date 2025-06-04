@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -67,7 +66,7 @@ const Signup = () => {
       
       if (error) throw error;
       
-      // The redirect will be handled by Google OAuth flow
+      // OAuth flow will handle the redirect
     } catch (error: any) {
       toast({
         title: "Google signup failed",

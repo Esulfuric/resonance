@@ -61,7 +61,7 @@ const Login = () => {
       
       if (error) throw error;
       
-      // The redirect will be handled by Google OAuth flow
+      // OAuth flow will handle the redirect
     } catch (error: any) {
       toast({
         title: "Google login failed",
