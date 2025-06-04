@@ -28,20 +28,20 @@ export function BillboardChart() {
       setIsLoading(true);
       setIsUsingDemoData(false);
       
-      console.log('Fetching latest Top 100 Worldwide chart data...');
+      console.log('Fetching latest Worldwide chart data...');
       const scrapedData = await scrapeKworbTop100();
       
       if (scrapedData && scrapedData.length > 0) {
-        console.log('Successfully fetched latest chart data:', scrapedData);
+        console.log('Successfully fetched latest worldwide chart data:', scrapedData);
         setSongs(scrapedData);
         setIsUsingDemoData(false);
       } else {
-        console.log('Chart scraping failed, using demo data');
+        console.log('Worldwide chart scraping failed, using demo data');
         setIsUsingDemoData(true);
         setSongs(getDemoData());
       }
     } catch (error) {
-      console.error('Error fetching latest chart data:', error);
+      console.error('Error fetching latest worldwide chart data:', error);
       setIsUsingDemoData(true);
       setSongs(getDemoData());
     } finally {
@@ -67,7 +67,7 @@ export function BillboardChart() {
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Music className="h-5 w-5" />
-          Top 100 Worldwide
+          Top Songs Worldwide
         </CardTitle>
         {isUsingDemoData && (
           <p className="text-xs text-muted-foreground">Using demo data - live scraping temporarily unavailable</p>

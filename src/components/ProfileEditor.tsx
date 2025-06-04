@@ -114,80 +114,85 @@ export function ProfileEditor({ profileData, onSave, onCancel }: ProfileEditorPr
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Edit Profile</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="full_name" className="block text-sm font-medium mb-2">
-              Full Name
-            </label>
-            <Input
-              id="full_name"
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              placeholder="Enter your full name"
-            />
-          </div>
+    <div className="px-4 md:px-0">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg md:text-xl">Edit Profile</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="full_name" className="block text-sm font-medium mb-2">
+                Full Name
+              </label>
+              <Input
+                id="full_name"
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                placeholder="Enter your full name"
+                className="w-full"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium mb-2">
-              Username
-            </label>
-            <Input
-              id="username"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              placeholder="Enter your username"
-              required
-            />
-          </div>
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium mb-2">
+                Username
+              </label>
+              <Input
+                id="username"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                placeholder="Enter your username"
+                required
+                className="w-full"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="user_type" className="block text-sm font-medium mb-2">
-              Account Type
-            </label>
-            <Select
-              value={formData.user_type}
-              onValueChange={(value: 'musician' | 'listener') => 
-                setFormData({ ...formData, user_type: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="listener">Listener</SelectItem>
-                <SelectItem value="musician">Musician</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div>
+              <label htmlFor="user_type" className="block text-sm font-medium mb-2">
+                Account Type
+              </label>
+              <Select
+                value={formData.user_type}
+                onValueChange={(value: 'musician' | 'listener') => 
+                  setFormData({ ...formData, user_type: value })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="listener">Listener</SelectItem>
+                  <SelectItem value="musician">Musician</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div>
-            <label htmlFor="bio" className="block text-sm font-medium mb-2">
-              Bio
-            </label>
-            <Textarea
-              id="bio"
-              value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-              placeholder="Tell us about yourself..."
-              rows={4}
-            />
-          </div>
+            <div>
+              <label htmlFor="bio" className="block text-sm font-medium mb-2">
+                Bio
+              </label>
+              <Textarea
+                id="bio"
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                placeholder="Tell us about yourself..."
+                rows={4}
+                className="w-full resize-none"
+              />
+            </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Saving..." : "Save Changes"}
-            </Button>
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+            <div className="flex flex-col sm:flex-row gap-2 pt-4">
+              <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
+                {isLoading ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

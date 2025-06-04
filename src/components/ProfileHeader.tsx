@@ -52,15 +52,15 @@ export function ProfileHeader({
   };
 
   return (
-    <div className="mb-8">
-      <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-        <div className="relative group">
-          <Avatar className={`h-24 w-24 md:h-32 md:w-32 avatar-ring ${isUploadingAvatar ? 'opacity-50' : ''}`}>
+    <div className="mb-6 px-4 md:px-0">
+      <div className="flex flex-col items-center space-y-4 md:flex-row md:items-start md:space-y-0 md:space-x-6">
+        <div className="relative group shrink-0">
+          <Avatar className={`h-20 w-20 md:h-32 md:w-32 avatar-ring ${isUploadingAvatar ? 'opacity-50' : ''}`}>
             <AvatarImage 
               src={profile.avatar_url} 
               alt={profile.full_name || "User"}
             />
-            <AvatarFallback>
+            <AvatarFallback className="text-lg md:text-2xl">
               {(profile.full_name?.[0] || profile.username?.[0] || 'U').toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -70,49 +70,52 @@ export function ProfileHeader({
               className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
               onClick={onAvatarClick}
             >
-              <Camera className="h-6 w-6 text-white" />
+              <Camera className="h-5 w-5 md:h-6 md:w-6 text-white" />
               {isUploadingAvatar && <span className="absolute inset-0 flex items-center justify-center text-white text-xs">Uploading...</span>}
             </div>
           )}
         </div>
         
-        <div className="flex-1 text-center md:text-left">
-          <h1 className="text-2xl font-bold">{profile.full_name || profile.username || "User"}</h1>
-          <p className="text-muted-foreground">@{profile.username || "user"}</p>
-          <div className="mt-2 flex items-center gap-2 justify-center md:justify-start">
-            {profile.user_type && (
-              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                profile.user_type === 'musician' 
-                  ? 'bg-resonance-green/10 text-resonance-green flex gap-1' 
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {profile.user_type === 'musician' && <Music className="h-3 w-3" />}
-                {profile.user_type.charAt(0).toUpperCase() + profile.user_type.slice(1)}
-              </span>
-            )}
+        <div className="flex-1 text-center md:text-left space-y-3 md:space-y-4 min-w-0">
+          <div className="space-y-1">
+            <h1 className="text-xl md:text-2xl font-bold truncate">{profile.full_name || profile.username || "User"}</h1>
+            <p className="text-muted-foreground text-sm md:text-base">@{profile.username || "user"}</p>
+            <div className="flex items-center gap-2 justify-center md:justify-start">
+              {profile.user_type && (
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                  profile.user_type === 'musician' 
+                    ? 'bg-resonance-green/10 text-resonance-green flex gap-1' 
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {profile.user_type === 'musician' && <Music className="h-3 w-3" />}
+                  {profile.user_type.charAt(0).toUpperCase() + profile.user_type.slice(1)}
+                </span>
+              )}
+            </div>
           </div>
-          <p className="mt-2 max-w-xl">
+          
+          <p className="text-sm md:text-base max-w-xl leading-relaxed">
             {profile.bio || (profile.user_type === 'musician' ? 'Musician sharing their musical journey.' : 'Music enthusiast')}
           </p>
           
           {/* Stats row */}
-          <div className="flex gap-4 mt-4 justify-center md:justify-start">
-            <div className="cursor-pointer" onClick={() => navigate(`/profile/${profile.id}?tab=posts`)}>
+          <div className="flex gap-4 justify-center md:justify-start text-sm">
+            <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(`/profile/${profile.id}?tab=posts`)}>
               <span className="font-bold">{profile.post_count}</span>{" "}
               <span className="text-muted-foreground">Posts</span>
             </div>
-            <div className="cursor-pointer" onClick={() => navigate(`/profile/${profile.id}?tab=following`)}>
+            <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(`/profile/${profile.id}?tab=following`)}>
               <span className="font-bold">{displayFollowingCount}</span>{" "}
               <span className="text-muted-foreground">Following</span>
             </div>
-            <div className="cursor-pointer" onClick={() => navigate(`/profile/${profile.id}?tab=followers`)}>
+            <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(`/profile/${profile.id}?tab=followers`)}>
               <span className="font-bold">{displayFollowerCount}</span>{" "}
               <span className="text-muted-foreground">Followers</span>
             </div>
             
             {/* Music tracks count for musicians */}
             {profile.user_type === 'musician' && (
-              <div className="cursor-pointer" onClick={() => navigate(`/profile/${profile.id}?tab=music`)}>
+              <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(`/profile/${profile.id}?tab=music`)}>
                 <span className="font-bold">0</span>{" "}
                 <span className="text-muted-foreground">Tracks</span>
               </div>
@@ -121,11 +124,13 @@ export function ProfileHeader({
         </div>
         
         {!isOwnProfile && currentUser && (
-          <div className="md:self-start flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <Button 
               variant={isFollowing ? "outline" : "default"}
               onClick={handleFollowToggle}
               disabled={isFollowLoading}
+              size="sm"
+              className="text-sm"
             >
               {isFollowing ? "Following" : "Follow"}
             </Button>
@@ -133,18 +138,21 @@ export function ProfileHeader({
             <Button 
               variant="outline"
               onClick={handleMessageClick}
-              className="flex gap-2 items-center"
+              size="sm"
+              className="flex gap-2 items-center text-sm"
             >
               <MessageCircle className="h-4 w-4" />
-              Message
+              <span className="hidden sm:inline">Message</span>
             </Button>
           </div>
         )}
         
         {isOwnProfile && onEditClick && (
-          <div className="md:self-start">
-            <Button onClick={onEditClick} className="flex gap-2 items-center">
-              <Edit className="h-4 w-4" /> Edit Profile
+          <div className="shrink-0">
+            <Button onClick={onEditClick} size="sm" className="flex gap-2 items-center text-sm">
+              <Edit className="h-4 w-4" />
+              <span className="hidden sm:inline">Edit Profile</span>
+              <span className="sm:hidden">Edit</span>
             </Button>
           </div>
         )}

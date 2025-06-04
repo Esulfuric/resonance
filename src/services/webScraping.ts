@@ -1,4 +1,3 @@
-
 // Simple web scraping functions for publicly available chart data
 export const scrapeKworbTop100 = async () => {
   try {
@@ -9,11 +8,12 @@ export const scrapeKworbTop100 = async () => {
       'https://cors-anywhere.herokuapp.com/',
     ];
     
-    const kworbUrl = 'https://kworb.net/pop/';
+    // Updated to use worldwide charts
+    const kworbUrl = 'https://kworb.net/ww/';
     
     for (const proxy of proxies) {
       try {
-        console.log(`Trying kworb proxy: ${proxy}`);
+        console.log(`Trying kworb worldwide proxy: ${proxy}`);
         const response = await fetch(proxy + encodeURIComponent(kworbUrl), {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -21,12 +21,12 @@ export const scrapeKworbTop100 = async () => {
         });
         
         if (!response.ok) {
-          console.log(`Kworb proxy ${proxy} failed with status:`, response.status);
+          console.log(`Kworb worldwide proxy ${proxy} failed with status:`, response.status);
           continue;
         }
         
         const html = await response.text();
-        console.log('Successfully fetched kworb HTML, length:', html.length);
+        console.log('Successfully fetched kworb worldwide HTML, length:', html.length);
         
         // Parse the HTML content to extract chart data
         const parser = new DOMParser();
@@ -38,7 +38,7 @@ export const scrapeKworbTop100 = async () => {
         const table = doc.querySelector('table');
         if (table) {
           const rows = table.querySelectorAll('tr');
-          console.log(`Found ${rows.length} table rows on kworb`);
+          console.log(`Found ${rows.length} table rows on kworb worldwide`);
           
           for (let i = 1; i < Math.min(rows.length, 11); i++) { // Skip header row, get top 10
             const row = rows[i];
@@ -79,20 +79,20 @@ export const scrapeKworbTop100 = async () => {
         }
         
         if (songs.length > 0) {
-          console.log('Successfully scraped kworb data:', songs);
+          console.log('Successfully scraped kworb worldwide data:', songs);
           return songs;
         }
         
       } catch (proxyError) {
-        console.log(`Kworb proxy ${proxy} failed:`, proxyError);
+        console.log(`Kworb worldwide proxy ${proxy} failed:`, proxyError);
         continue;
       }
     }
     
-    throw new Error('All kworb proxies failed');
+    throw new Error('All kworb worldwide proxies failed');
     
   } catch (error) {
-    console.error('Error scraping kworb data:', error);
+    console.error('Error scraping kworb worldwide data:', error);
     return null;
   }
 };
