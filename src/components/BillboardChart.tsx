@@ -19,6 +19,7 @@ export function BillboardChart() {
   const [isUsingDemoData, setIsUsingDemoData] = useState(false);
 
   useEffect(() => {
+    // Auto-update chart data on every component mount/reload
     fetchWorldwideChart();
   }, []);
 
@@ -27,20 +28,20 @@ export function BillboardChart() {
       setIsLoading(true);
       setIsUsingDemoData(false);
       
-      console.log('Attempting to scrape Top 100 Worldwide from kworb...');
+      console.log('Fetching latest Top 100 Worldwide chart data...');
       const scrapedData = await scrapeKworbTop100();
       
       if (scrapedData && scrapedData.length > 0) {
-        console.log('Successfully scraped kworb data:', scrapedData);
+        console.log('Successfully fetched latest chart data:', scrapedData);
         setSongs(scrapedData);
         setIsUsingDemoData(false);
       } else {
-        console.log('Scraping failed, using demo data');
+        console.log('Chart scraping failed, using demo data');
         setIsUsingDemoData(true);
         setSongs(getDemoData());
       }
     } catch (error) {
-      console.error('Error fetching worldwide chart data:', error);
+      console.error('Error fetching latest chart data:', error);
       setIsUsingDemoData(true);
       setSongs(getDemoData());
     } finally {
@@ -74,7 +75,7 @@ export function BillboardChart() {
       </CardHeader>
       <CardContent className="p-0">
         {isLoading ? (
-          <div className="p-4 text-center text-muted-foreground">Loading chart...</div>
+          <div className="p-4 text-center text-muted-foreground">Loading latest chart...</div>
         ) : (
           <div className="divide-y max-h-96 overflow-y-auto">
             {songs.map((song) => (

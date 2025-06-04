@@ -9,15 +9,45 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useSupabase } from "@/lib/supabase-provider";
 import { createPost } from "@/services/postService";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 export function CreatePostForm({ onPostCreated }: { onPostCreated?: () => void }) {
   const [content, setContent] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [attachedSong, setAttachedSong] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const { toast } = useToast();
   const { user } = useSupabase();
   const queryClient = useQueryClient();
+
+  // Fetch user profile when component mounts
+  React.useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return;
+      }
+      
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +98,9 @@ export function CreatePostForm({ onPostCreated }: { onPostCreated?: () => void }
     setAttachedSong("Ocean Waves by Chill Vibes");
   };
 
+  const displayName = userProfile?.full_name || userProfile?.username || user?.user_metadata?.full_name || user?.email || 'User';
+  const avatarUrl = userProfile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+
   return (
     <Card className="mb-6">
       <CardContent className="p-4">
@@ -75,10 +108,10 @@ export function CreatePostForm({ onPostCreated }: { onPostCreated?: () => void }
           <div className="flex gap-3">
             <Avatar className="h-10 w-10 avatar-ring">
               <AvatarImage 
-                src={user?.user_metadata?.avatar_url} 
-                alt={user?.user_metadata?.full_name || "Profile"} 
+                src={avatarUrl} 
+                alt={displayName} 
               />
-              <AvatarFallback>{user?.email?.[0] || 'U'}</AvatarFallback>
+              <AvatarFallback>{displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <Textarea

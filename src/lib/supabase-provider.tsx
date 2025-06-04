@@ -17,6 +17,7 @@ type SupabaseContextType = {
   isLoading: boolean;
   signUp: (email: string, password: string, metadata?: UserMetadata) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
+  signInWithGoogle: () => Promise<any>;
   signOut: () => Promise<void>;
 };
 
@@ -30,7 +31,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log("SupabaseProvider initializing...");
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
@@ -39,6 +40,32 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       // Store session in localStorage for persistence
       if (session) {
         localStorage.setItem('supabase.auth.token', JSON.stringify(session));
+        
+        // Create profile if it doesn't exist (for Google OAuth users)
+        if (event === 'SIGNED_IN' && session.user) {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (error && error.code === 'PGRST116') {
+            // Profile doesn't exist, create it
+            const { error: insertError } = await supabase.from('profiles').insert({
+              id: session.user.id,
+              username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'user',
+              full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+              bio: session.user.user_metadata?.bio || '',
+              avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || '',
+              user_type: session.user.user_metadata?.user_type || 'listener',
+              updated_at: new Date().toISOString(),
+            });
+            
+            if (insertError) {
+              console.error("Error creating profile:", insertError);
+            }
+          }
+        }
       } else {
         localStorage.removeItem('supabase.auth.token');
       }
@@ -81,6 +108,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       password,
       options: {
         data: metadata,
+        emailRedirectTo: `${window.location.origin}/`,
       }
     });
     
@@ -114,6 +142,16 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const signInWithGoogle = async () => {
+    console.log("Signing in with Google");
+    return supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`
+      }
+    });
+  };
+
   const signOut = async () => {
     console.log("Signing out");
     await supabase.auth.signOut();
@@ -126,6 +164,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut
   };
 

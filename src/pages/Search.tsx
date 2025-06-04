@@ -7,6 +7,7 @@ import { searchUsersAndPosts } from "@/services/postService";
 import { SearchInput } from "@/components/search/SearchInput";
 import { SearchResults } from "@/components/search/SearchResults";
 import { SuggestedContent } from "@/components/search/SuggestedContent";
+import { MobileCharts } from "@/components/MobileCharts";
 
 interface UserProfile {
   id: string;
@@ -132,6 +133,9 @@ const SearchPage = () => {
           onSearch={handleSearch}
           isSearching={isSearching}
         />
+        
+        {/* Mobile Charts - Only show on mobile and when not searching */}
+        {!searchQuery.trim() && <MobileCharts />}
         
         {searchResults.users.length > 0 || searchResults.posts.length > 0 ? (
           <SearchResults 

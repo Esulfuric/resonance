@@ -18,9 +18,12 @@ export const usePosts = (userId?: string) => {
       if (tab === 'following' && userId) {
         fetchedPosts = await fetchUserPosts(userId);
       } else {
-        // For you tab - show all posts
-        fetchedPosts = await fetchLatestPosts(20);
+        // For you tab - show all posts with fresh data
+        fetchedPosts = await fetchLatestPosts(50); // Increase limit for better content
       }
+      
+      // Sort posts by creation date, newest first
+      fetchedPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
       setPosts(fetchedPosts);
     } catch (error: any) {
@@ -59,6 +62,17 @@ export const usePosts = (userId?: string) => {
       });
     }
   };
+
+  // Auto-refresh posts every 30 seconds when component is active
+  useEffect(() => {
+    if (userId) {
+      const interval = setInterval(() => {
+        fetchPosts('foryou');
+      }, 30000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [userId]);
 
   return {
     posts,
