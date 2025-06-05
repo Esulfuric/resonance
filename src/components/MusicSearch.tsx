@@ -1,11 +1,11 @@
-
 import { useState } from "react";
-import { Search, Play, User, Album as AlbumIcon, Heart } from "lucide-react";
+import { Search, Play, User, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 import { 
   extractYouTubeMusicData, 
   getArtistInfo, 
@@ -18,6 +18,7 @@ import {
 } from "@/services/musicService";
 
 export const MusicSearch = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Track[]>([]);
   const [artistInfo, setArtistInfo] = useState<Artist | null>(null);
@@ -88,6 +89,10 @@ export const MusicSearch = () => {
     }
   };
 
+  const handleTrackClick = (track: Track) => {
+    navigate(`/song/${encodeURIComponent(track.title)}/${encodeURIComponent(track.artist)}`);
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <Card>
@@ -123,12 +128,12 @@ export const MusicSearch = () => {
 
         <TabsContent value="tracks" className="space-y-3">
           {searchResults.map((track, index) => (
-            <Card key={index} className="p-4">
+            <Card key={index} className="p-4 hover:bg-muted/50 transition-colors cursor-pointer">
               <div className="flex items-center gap-4">
                 {track.thumbnail && (
                   <img src={track.thumbnail} alt={track.title} className="w-12 h-12 rounded object-cover" />
                 )}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0" onClick={() => handleTrackClick(track)}>
                   <h3 className="font-medium truncate">{track.title}</h3>
                   <p className="text-sm text-muted-foreground truncate">{track.artist}</p>
                   {track.duration && (
@@ -136,13 +141,19 @@ export const MusicSearch = () => {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => searchArtist(track.artist)}>
+                  <Button size="sm" variant="outline" onClick={(e) => {
+                    e.stopPropagation();
+                    searchArtist(track.artist);
+                  }}>
                     <User className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => getLyrics(track)}>
+                  <Button size="sm" variant="outline" onClick={(e) => {
+                    e.stopPropagation();
+                    getLyrics(track);
+                  }}>
                     <Heart className="h-4 w-4" />
                   </Button>
-                  <Button size="sm">
+                  <Button size="sm" onClick={() => handleTrackClick(track)}>
                     <Play className="h-4 w-4" />
                   </Button>
                 </div>
