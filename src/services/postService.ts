@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { Post, Profile, Comment } from "@/types/post";
 
-export const fetchUserPosts = async (userId: string | undefined): Promise<Post[]> => {
+export const fetchUserPosts = async (userId: string | undefined, limit: number = 20, offset: number = 0): Promise<Post[]> => {
   if (!userId) return [];
   
   const { data: followedUsers } = await supabase
@@ -15,14 +15,14 @@ export const fetchUserPosts = async (userId: string | undefined): Promise<Post[]
   
   const followingIds = followedUsers.map(fu => fu.following_id);
   
-  return fetchPostsByUserIds(followingIds);
+  return fetchPostsByUserIds(followingIds, limit, offset);
 };
 
-export const fetchLatestPosts = async (limit: number = 20): Promise<Post[]> => {
-  return fetchPosts(limit);
+export const fetchLatestPosts = async (limit: number = 20, offset: number = 0): Promise<Post[]> => {
+  return fetchPosts(limit, undefined, offset);
 };
 
-export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promise<Post[]> => {
+export const fetchPosts = async (limit: number = 20, userIds?: string[], offset: number = 0): Promise<Post[]> => {
   try {
     let query = supabase
       .from('posts')
@@ -35,12 +35,11 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
         song_title,
         image_url
       `)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
     
     if (userIds && userIds.length > 0) {
       query = query.in('user_id', userIds);
-    } else {
-      query = query.limit(limit);
     }
     
     const { data, error } = await query;
@@ -108,9 +107,9 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[]): Promis
   }
 };
 
-export const fetchPostsByUserIds = async (userIds: string[]): Promise<Post[]> => {
+export const fetchPostsByUserIds = async (userIds: string[], limit: number = 20, offset: number = 0): Promise<Post[]> => {
   if (!userIds.length) return [];
-  return fetchPosts(undefined, userIds);
+  return fetchPosts(limit, userIds, offset);
 };
 
 export const deletePost = async (postId: string): Promise<{ success: boolean, error?: any }> => {

@@ -10,6 +10,7 @@ export const usePosts = (userId?: string) => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
+  const [currentTab, setCurrentTab] = useState<string>('foryou');
   const { toast } = useToast();
   const observer = useRef<IntersectionObserver>();
 
@@ -45,6 +46,7 @@ export const usePosts = (userId?: string) => {
       
       setHasMore(fetchedPosts.length === limit);
       setOffset(currentOffset + limit);
+      setCurrentTab(tab);
       
     } catch (error: any) {
       console.error('Error fetching posts:', error);
@@ -65,12 +67,12 @@ export const usePosts = (userId?: string) => {
     
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
-        fetchPosts('foryou', true);
+        fetchPosts(currentTab, true);
       }
     });
     
     if (node) observer.current.observe(node);
-  }, [isLoadingMore, hasMore]);
+  }, [isLoadingMore, hasMore, currentTab]);
 
   const handleDeletePost = async (postId: string) => {
     try {
