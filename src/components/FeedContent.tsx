@@ -17,7 +17,14 @@ export const FeedContent: React.FC<FeedContentProps> = ({
   setActiveTab 
 }) => {
   const { user } = useSupabase();
-  const { posts, isLoading, fetchPosts, handleDeletePost } = usePosts(user?.id);
+  const { 
+    posts, 
+    isLoading, 
+    isLoadingMore, 
+    fetchPosts, 
+    handleDeletePost, 
+    lastElementRef 
+  } = usePosts(user?.id);
   
   // Fetch posts when tab changes or component mounts
   React.useEffect(() => {
@@ -37,7 +44,9 @@ export const FeedContent: React.FC<FeedContentProps> = ({
         currentUserId={user?.id} 
         onDeletePost={handleDeletePost}
         isLoading={isLoading}
+        isLoadingMore={isLoadingMore}
         onRefreshFeed={handleRefresh}
+        lastElementRef={lastElementRef}
       />
     </>
   );
@@ -52,7 +61,9 @@ export const FeedContent: React.FC<FeedContentProps> = ({
         currentUserId={user?.id} 
         onDeletePost={handleDeletePost}
         isLoading={false}
+        isLoadingMore={isLoadingMore}
         onRefreshFeed={handleRefresh}
+        lastElementRef={lastElementRef}
       />
     </>
   ) : (

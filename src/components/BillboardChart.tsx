@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Music } from "lucide-react";
 import { scrapeKworbTop100 } from "@/services/webScraping";
@@ -14,6 +15,7 @@ interface BillboardSong {
 }
 
 export function BillboardChart() {
+  const navigate = useNavigate();
   const [songs, setSongs] = useState<BillboardSong[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUsingDemoData, setIsUsingDemoData] = useState(false);
@@ -62,6 +64,10 @@ export function BillboardChart() {
     { rank: 10, title: "Boy's a liar Pt. 2", artist: "PinkPantheress & Ice Spice", peak_position: 10, weeks_on_chart: 4 }
   ];
 
+  const handleSongClick = (song: BillboardSong) => {
+    navigate(`/song/${encodeURIComponent(song.title)}/${encodeURIComponent(song.artist)}`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -79,7 +85,11 @@ export function BillboardChart() {
         ) : (
           <div className="divide-y max-h-96 overflow-y-auto">
             {songs.map((song) => (
-              <div key={song.rank} className="flex items-center gap-3 p-3 hover:bg-muted transition-colors">
+              <div 
+                key={song.rank} 
+                className="flex items-center gap-3 p-3 hover:bg-muted transition-colors cursor-pointer"
+                onClick={() => handleSongClick(song)}
+              >
                 <div className="w-8 h-8 rounded-full bg-resonance-green text-white flex items-center justify-center text-sm font-bold">
                   {song.rank}
                 </div>

@@ -1,6 +1,5 @@
 
 import { supabase } from "@/lib/supabase";
-import { extractYouTubeMusicData } from "@/services/musicService";
 
 interface SearchFilters {
   limit?: number;
@@ -22,7 +21,8 @@ export const searchUsersAndPostsPaginated = async (
   const { limit = 10, offset = 0 } = filters;
   
   try {
-    const [usersResult, postsResult, tracksResult] = await Promise.all([
+    // Only search users and posts for speed - remove slow external API calls
+    const [usersResult, postsResult] = await Promise.all([
       // Search users
       supabase
         .from('profiles')
@@ -44,25 +44,20 @@ export const searchUsersAndPostsPaginated = async (
         `)
         .or(`content.ilike.%${query}%,song_title.ilike.%${query}%`)
         .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1),
-      
-      // Search music tracks
-      extractYouTubeMusicData(query)
+        .range(offset, offset + limit - 1)
     ]);
 
     const users = usersResult.data || [];
     const posts = postsResult.data || [];
-    const allTracks = tracksResult || [];
     
-    // Paginate tracks manually since they come from external source
-    const tracks = allTracks.slice(offset, offset + limit);
+    // For now, return empty tracks to make search fast
+    // Music search can be added back as a separate feature later
+    const tracks: any[] = [];
     
     // Calculate if there are more results
     const hasMoreUsers = users.length === limit;
     const hasMorePosts = posts.length === limit;
-    const hasMoreTracks = allTracks.length > offset + limit;
-    
-    const hasMore = hasMoreUsers || hasMorePosts || hasMoreTracks;
+    const hasMore = hasMoreUsers || hasMorePosts;
     
     return {
       users,

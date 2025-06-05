@@ -8,7 +8,9 @@ interface PostListProps {
   currentUserId?: string;
   onDeletePost: (postId: string) => void;
   isLoading: boolean;
+  isLoadingMore?: boolean;
   onRefreshFeed: () => void;
+  lastElementRef?: (node: HTMLDivElement) => void;
 }
 
 export const PostList: React.FC<PostListProps> = ({ 
@@ -16,7 +18,9 @@ export const PostList: React.FC<PostListProps> = ({
   currentUserId, 
   onDeletePost,
   isLoading,
-  onRefreshFeed
+  isLoadingMore = false,
+  onRefreshFeed,
+  lastElementRef
 }) => {
   if (isLoading) {
     return <div className="text-center py-8">Loading posts...</div>;
@@ -57,8 +61,8 @@ export const PostList: React.FC<PostListProps> = ({
       } : undefined,
       imageUrl: post.image_url,
       stats: {
-        likes: Math.max(0, post.likes_count || 0), // Ensure non-negative likes
-        comments: Math.max(0, post.comments_count || 0), // Ensure non-negative comments
+        likes: Math.max(0, post.likes_count || 0),
+        comments: Math.max(0, post.comments_count || 0),
         shares: 0,
       },
       isOwner: currentUserId === post.user_id,
@@ -69,9 +73,19 @@ export const PostList: React.FC<PostListProps> = ({
 
   return (
     <div className="space-y-4">
-      {mappedPosts.map((post) => (
-        <PostCard key={post.id} {...post} />
+      {mappedPosts.map((post, index) => (
+        <div 
+          key={post.id}
+          ref={index === mappedPosts.length - 1 ? lastElementRef : null}
+        >
+          <PostCard {...post} />
+        </div>
       ))}
+      {isLoadingMore && (
+        <div className="text-center py-4">
+          <p className="text-muted-foreground">Loading more posts...</p>
+        </div>
+      )}
     </div>
   );
 };

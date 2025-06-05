@@ -1,4 +1,5 @@
 
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TrendingSong {
@@ -42,6 +43,12 @@ const trendingSongs: TrendingSong[] = [
 ];
 
 export function TrendingMusic() {
+  const navigate = useNavigate();
+
+  const handleSongClick = (song: TrendingSong) => {
+    navigate(`/song/${encodeURIComponent(song.title)}/${encodeURIComponent(song.artist)}`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -50,7 +57,11 @@ export function TrendingMusic() {
       <CardContent className="p-0">
         <div className="divide-y">
           {trendingSongs.map((song) => (
-            <div key={song.id} className="flex items-center gap-3 p-3 hover:bg-muted transition-colors cursor-pointer">
+            <div 
+              key={song.id} 
+              className="flex items-center gap-3 p-3 hover:bg-muted transition-colors cursor-pointer"
+              onClick={() => handleSongClick(song)}
+            >
               <div className="h-10 w-10 rounded overflow-hidden bg-muted">
                 {song.cover && <img src={song.cover} alt={song.title} className="h-full w-full object-cover" />}
               </div>

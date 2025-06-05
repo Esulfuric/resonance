@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 import { scrapeSpotifyChartsOfficial, getUserLocation } from "@/services/webScraping";
@@ -18,6 +19,7 @@ interface LocationData {
 }
 
 export function LocationChart() {
+  const navigate = useNavigate();
   const [tracks, setTracks] = useState<SpotifyTrack[]>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,6 +98,10 @@ export function LocationChart() {
     return tracks[countryCode] || tracks['US'];
   };
 
+  const handleTrackClick = (track: SpotifyTrack) => {
+    navigate(`/song/${encodeURIComponent(track.title)}/${encodeURIComponent(track.artist)}`);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -113,7 +119,11 @@ export function LocationChart() {
         ) : (
           <div className="divide-y max-h-80 overflow-y-auto">
             {tracks.map((track) => (
-              <div key={track.rank} className="flex items-center gap-3 p-3 hover:bg-muted transition-colors cursor-pointer">
+              <div 
+                key={track.rank} 
+                className="flex items-center gap-3 p-3 hover:bg-muted transition-colors cursor-pointer"
+                onClick={() => handleTrackClick(track)}
+              >
                 <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">
                   {track.rank}
                 </div>
