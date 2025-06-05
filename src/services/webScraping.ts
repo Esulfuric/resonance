@@ -1,14 +1,11 @@
-// Simple web scraping functions for publicly available chart data
+// Improved web scraping functions for music chart data
 export const scrapeKworbTop100 = async () => {
   try {
-    // Try multiple CORS proxy services for better reliability
     const proxies = [
       'https://corsproxy.io/?',
       'https://api.codetabs.com/v1/proxy?quest=',
-      'https://cors-anywhere.herokuapp.com/',
     ];
     
-    // Updated to use worldwide charts
     const kworbUrl = 'https://kworb.net/ww/';
     
     for (const proxy of proxies) {
@@ -16,7 +13,7 @@ export const scrapeKworbTop100 = async () => {
         console.log(`Trying kworb worldwide proxy: ${proxy}`);
         const response = await fetch(proxy + encodeURIComponent(kworbUrl), {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
           }
         });
         
@@ -28,44 +25,60 @@ export const scrapeKworbTop100 = async () => {
         const html = await response.text();
         console.log('Successfully fetched kworb worldwide HTML, length:', html.length);
         
-        // Parse the HTML content to extract chart data
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         
         const songs = [];
         
-        // Look for the main table with chart data
-        const table = doc.querySelector('table');
+        // Look for the main table with chart data - updated selector
+        const table = doc.querySelector('table.sortable') || doc.querySelector('table');
         if (table) {
           const rows = table.querySelectorAll('tr');
           console.log(`Found ${rows.length} table rows on kworb worldwide`);
           
-          for (let i = 1; i < Math.min(rows.length, 11); i++) { // Skip header row, get top 10
+          for (let i = 1; i < Math.min(rows.length, 11); i++) {
             const row = rows[i];
             const cells = row.querySelectorAll('td');
             
-            if (cells.length >= 3) {
+            if (cells.length >= 2) {
               const rank = i;
-              const artistTitle = cells[1]?.textContent?.trim() || '';
               
-              // Parse "Artist - Title" format
+              // Look for artist and title in different cell structures
               let artist = '';
               let title = '';
               
-              if (artistTitle.includes(' - ')) {
-                const parts = artistTitle.split(' - ');
-                artist = parts[0].trim();
-                title = parts.slice(1).join(' - ').trim();
-              } else {
-                // Fallback if format is different
-                artist = 'Various Artists';
-                title = artistTitle;
+              // Try different cell indices for artist/title data
+              for (let cellIndex = 0; cellIndex < Math.min(cells.length, 4); cellIndex++) {
+                const cellText = cells[cellIndex]?.textContent?.trim() || '';
+                
+                // Skip numeric cells (likely chart positions)
+                if (/^\d+$/.test(cellText)) continue;
+                
+                // Look for cells with " - " separator indicating "Artist - Title"
+                if (cellText.includes(' - ') && cellText.length > 5) {
+                  const parts = cellText.split(' - ');
+                  artist = parts[0].trim();
+                  title = parts.slice(1).join(' - ').trim();
+                  break;
+                }
+                
+                // Look for cells with just artist or title
+                if (cellText.length > 2 && !artist) {
+                  artist = cellText;
+                } else if (cellText.length > 2 && !title && artist) {
+                  title = cellText;
+                }
               }
               
-              const weeksStr = cells[2]?.textContent?.trim() || '1';
-              const weeks = parseInt(weeksStr) || 1;
-              
-              if (title && artist) {
+              // Clean up extracted data
+              if (artist && title) {
+                // Remove any chart indicators or extra symbols
+                artist = artist.replace(/[#\d+\-\s]*$/, '').trim();
+                title = title.replace(/[#\d+\-\s]*$/, '').trim();
+                
+                const weeksStr = cells[cells.length - 1]?.textContent?.trim() || '1';
+                const weeks = parseInt(weeksStr.replace(/\D/g, '')) || 1;
+                
                 songs.push({
                   rank,
                   title,
@@ -99,7 +112,6 @@ export const scrapeKworbTop100 = async () => {
 
 export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
   try {
-    // Try multiple approaches for Kworb Spotify country charts
     const proxies = [
       'https://corsproxy.io/?',
       'https://api.codetabs.com/v1/proxy?quest=',
@@ -122,72 +134,51 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
         }
         
         const html = await response.text();
-        console.log('Successfully fetched Kworb Spotify Charts HTML, length:', html.length);
-        
-        // Parse the HTML content
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         
         const tracks = [];
         
         // Look for the main table with chart data
-        const tables = doc.querySelectorAll('table');
-        let chartTable = null;
+        const table = doc.querySelector('table.sortable') || doc.querySelector('table');
         
-        // Find the correct table (usually the first or largest table)
-        for (const table of tables) {
+        if (table) {
           const rows = table.querySelectorAll('tr');
-          if (rows.length > 5) { // Chart tables have multiple rows
-            chartTable = table;
-            break;
-          }
-        }
-        
-        if (chartTable) {
-          const rows = chartTable.querySelectorAll('tr');
           console.log(`Found ${rows.length} table rows on Kworb Spotify`);
           
-          // Process data rows (skip header)
-          for (let i = 1; i < Math.min(rows.length, 6); i++) { // Get top 5
+          for (let i = 1; i < Math.min(rows.length, 6); i++) {
             const row = rows[i];
             const cells = row.querySelectorAll('td');
             
             if (cells.length >= 2) {
-              // Look for the cell that contains the artist and song info
-              // This is typically in the first or second column
-              let artistAndSong = '';
+              let artist = '';
+              let title = '';
               
-              // Check first few cells for the one containing artist/song data
-              for (let j = 0; j < Math.min(cells.length, 3); j++) {
+              // Search through cells for artist - title pattern
+              for (let j = 0; j < Math.min(cells.length, 4); j++) {
                 const cellText = (cells[j] as Element)?.textContent?.trim() || '';
                 
-                // Look for cells that contain " - " which indicates "Artist - Song" format
                 if (cellText.includes(' - ') && cellText.length > 10) {
-                  artistAndSong = cellText;
-                  break;
+                  const parts = cellText.split(' - ');
+                  if (parts.length >= 2) {
+                    artist = parts[0].trim();
+                    title = parts.slice(1).join(' - ').trim();
+                    break;
+                  }
                 }
               }
               
-              if (artistAndSong) {
-                console.log(`Row ${i} found artist-song data:`, artistAndSong);
+              if (artist && title) {
+                // Clean up any remaining indicators
+                const cleanArtist = artist.replace(/\([^)]*\)|\[[^\]]*\]/g, '').trim();
+                const cleanTitle = title.replace(/\([^)]*\)|\[[^\]]*\]/g, '').trim();
                 
-                // Split into artist and title
-                const parts = artistAndSong.split(' - ');
-                if (parts.length >= 2) {
-                  const artist = parts[0].trim();
-                  const title = parts.slice(1).join(' - ').trim();
-                  
-                  // Clean up any remaining chart indicators or numbers in parentheses
-                  const cleanArtist = artist.replace(/\([^)]*\)/g, '').trim();
-                  const cleanTitle = title.replace(/\([^)]*\)/g, '').trim();
-                  
-                  if (cleanArtist && cleanTitle) {
-                    tracks.push({
-                      rank: i,
-                      title: cleanTitle,
-                      artist: cleanArtist
-                    });
-                  }
+                if (cleanArtist && cleanTitle) {
+                  tracks.push({
+                    rank: i,
+                    title: cleanTitle,
+                    artist: cleanArtist
+                  });
                 }
               }
             }
@@ -197,19 +188,6 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
         if (tracks.length > 0) {
           console.log('Successfully scraped Kworb Spotify Charts data:', tracks);
           return tracks;
-        } else {
-          console.log('No valid tracks found, debugging page structure...');
-          // Enhanced debugging - show raw cell content
-          if (chartTable) {
-            const debugRows = chartTable.querySelectorAll('tr');
-            for (let i = 1; i < Math.min(debugRows.length, 4); i++) {
-              const cells = debugRows[i]?.querySelectorAll('td');
-              if (cells) {
-                const cellData = Array.from(cells).map((cell, index) => `[${index}]: "${(cell as Element).textContent?.trim()}"`);
-                console.log(`Debug Row ${i}:`, cellData);
-              }
-            }
-          }
         }
         
       } catch (proxyError) {
@@ -226,9 +204,9 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
   }
 };
 
+// ... keep existing code (getUserLocation function)
 export const getUserLocation = async () => {
   try {
-    // Try multiple location services
     const services = [
       'https://ipapi.co/json/',
       'https://api.ipify.org?format=json',
@@ -248,7 +226,6 @@ export const getUserLocation = async () => {
               city: data.city
             };
           } else {
-            // For simpler IP services, default to US
             return {
               country: 'United States',
               countryCode: 'US',
