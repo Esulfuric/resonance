@@ -1,13 +1,13 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
-import { searchUsersAndPosts } from "@/services/postService";
+import { searchUsersAndPostsPaginated } from "@/services/searchService";
 import { SearchInput } from "@/components/search/SearchInput";
 import { SearchResults } from "@/components/search/SearchResults";
 import { SuggestedContent } from "@/components/search/SuggestedContent";
 import { MobileCharts } from "@/components/MobileCharts";
+import { supabase } from "@/lib/supabase";
 
 interface UserProfile {
   id: string;
@@ -18,14 +18,30 @@ interface UserProfile {
   user_type?: string | null;
 }
 
+interface SearchState {
+  users: UserProfile[];
+  posts: any[];
+  tracks: any[];
+  hasMore: boolean;
+  offset: number;
+}
+
 const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<{ users: UserProfile[], posts: any[] }>({ users: [], posts: [] });
+  const [searchState, setSearchState] = useState<SearchState>({
+    users: [],
+    posts: [],
+    tracks: [],
+    hasMore: false,
+    offset: 0
+  });
   const [suggestedUsers, setSuggestedUsers] = useState<UserProfile[]>([]);
   const [recentlyActive, setRecentlyActive] = useState<UserProfile[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [activeTab, setActiveTab] = useState("suggested");
   const { toast } = useToast();
+  const observer = useRef<IntersectionObserver>();
   
   const { user } = useAuthGuard();
   
@@ -67,21 +83,49 @@ const SearchPage = () => {
     }
   };
   
-  const handleSearch = async (e?: React.FormEvent) => {
+  const handleSearch = async (e?: React.FormEvent, loadMore = false) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
     
-    setIsSearching(true);
+    const isNewSearch = !loadMore;
+    const currentOffset = isNewSearch ? 0 : searchState.offset;
+    
+    if (isNewSearch) {
+      setIsSearching(true);
+      setSearchState({ users: [], posts: [], tracks: [], hasMore: false, offset: 0 });
+    } else {
+      setIsLoadingMore(true);
+    }
     
     try {
-      const results = await searchUsersAndPosts(searchQuery);
-      setSearchResults(results);
+      const results = await searchUsersAndPostsPaginated(searchQuery, {
+        limit: 10,
+        offset: currentOffset
+      });
       
-      if (results.users.length === 0 && results.posts.length === 0) {
-        toast({
-          title: "No results found",
-          description: "Try a different search term",
+      if (isNewSearch) {
+        setSearchState({
+          users: results.users,
+          posts: results.posts,
+          tracks: results.tracks,
+          hasMore: results.hasMore,
+          offset: 10
         });
+        
+        if (results.total === 0) {
+          toast({
+            title: "No results found",
+            description: "Try a different search term",
+          });
+        }
+      } else {
+        setSearchState(prev => ({
+          users: [...prev.users, ...results.users],
+          posts: [...prev.posts, ...results.posts],
+          tracks: [...prev.tracks, ...results.tracks],
+          hasMore: results.hasMore,
+          offset: prev.offset + 10
+        }));
       }
     } catch (error: any) {
       console.error('Error searching:', error);
@@ -92,8 +136,22 @@ const SearchPage = () => {
       });
     } finally {
       setIsSearching(false);
+      setIsLoadingMore(false);
     }
   };
+  
+  const lastElementRef = useCallback((node: HTMLDivElement) => {
+    if (isLoadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && searchState.hasMore && searchQuery.trim()) {
+        handleSearch(undefined, true);
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [isLoadingMore, searchState.hasMore, searchQuery]);
   
   const formatPostForDisplay = (post: any) => ({
     id: post.id,
@@ -117,6 +175,8 @@ const SearchPage = () => {
       shares: 0,
     },
   });
+
+  const hasSearchResults = searchState.users.length > 0 || searchState.posts.length > 0 || searchState.tracks.length > 0;
   
   if (!user) {
     return <div className="flex items-center justify-center h-screen">Redirecting...</div>;
@@ -137,10 +197,12 @@ const SearchPage = () => {
         {/* Mobile Charts - Only show on mobile and when not searching */}
         {!searchQuery.trim() && <MobileCharts />}
         
-        {searchResults.users.length > 0 || searchResults.posts.length > 0 ? (
+        {hasSearchResults ? (
           <SearchResults 
-            searchResults={searchResults}
+            searchResults={searchState}
             formatPostForDisplay={formatPostForDisplay}
+            lastElementRef={lastElementRef}
+            isLoadingMore={isLoadingMore}
           />
         ) : (
           <SuggestedContent 

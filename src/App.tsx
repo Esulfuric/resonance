@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,6 +25,9 @@ import { TranslationProvider } from "@/contexts/TranslationContext";
 import { toast } from "sonner";
 import Navbar from "./components/Navbar";
 import { AuthenticatedRoute } from "./components/AuthenticatedRoute";
+import SongDetails from "@/pages/SongDetails";
+import ArtistDetails from "@/pages/ArtistDetails";
+import AlbumDetails from "@/pages/AlbumDetails";
 
 // Create a Query Client with proper config for better error handling
 const queryClient = new QueryClient({
@@ -158,6 +160,9 @@ const App = () => {
                   } />
                   
                   {/* Catch-all route */}
+                  <Route path="/song/:songTitle/:artist" element={<SongDetails />} />
+                  <Route path="/artist/:artistName" element={<ArtistDetails />} />
+                  <Route path="/album/:albumName/:artistName" element={<AlbumDetails />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <BottomNavigation />
