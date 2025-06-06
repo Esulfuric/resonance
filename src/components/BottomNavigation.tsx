@@ -27,6 +27,7 @@ export const BottomNavigation = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+  const isMusicPage = location.pathname === '/music';
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-50 px-2 pb-safe">
@@ -35,7 +36,12 @@ export const BottomNavigation = () => {
           item.isMain ? (
             <Link key={item.path} to={item.path} className="relative -mt-6">
               <Button 
-                className="h-14 w-14 rounded-full bg-resonance-green hover:bg-resonance-green/90 shadow-lg"
+                className={cn(
+                  "h-14 w-14 rounded-full shadow-lg",
+                  isMusicPage 
+                    ? "bg-resonance-orange hover:bg-resonance-orange/90" 
+                    : "bg-resonance-green hover:bg-resonance-green/90"
+                )}
                 aria-label={item.label}
               >
                 <Plus className="h-6 w-6 text-white" />
