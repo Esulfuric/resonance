@@ -1,4 +1,4 @@
-// Improved web scraping functions for music chart data
+// Enhanced web scraping with better data accuracy and auto-updating
 export const scrapeKworbTop100 = async () => {
   try {
     const proxies = [
@@ -10,74 +10,68 @@ export const scrapeKworbTop100 = async () => {
     
     for (const proxy of proxies) {
       try {
-        console.log(`Trying kworb worldwide proxy: ${proxy}`);
+        console.log(`Fetching latest worldwide chart data from: ${proxy}`);
         const response = await fetch(proxy + encodeURIComponent(kworbUrl), {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           }
         });
         
         if (!response.ok) {
-          console.log(`Kworb worldwide proxy ${proxy} failed with status:`, response.status);
+          console.log(`Proxy ${proxy} failed with status:`, response.status);
           continue;
         }
         
         const html = await response.text();
-        console.log('Successfully fetched kworb worldwide HTML, length:', html.length);
-        
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         
         const songs = [];
-        
-        // Look for the main table with chart data - updated selector
         const table = doc.querySelector('table.sortable') || doc.querySelector('table');
+        
         if (table) {
           const rows = table.querySelectorAll('tr');
-          console.log(`Found ${rows.length} table rows on kworb worldwide`);
+          console.log(`Processing ${rows.length} chart entries`);
           
           for (let i = 1; i < Math.min(rows.length, 11); i++) {
             const row = rows[i];
             const cells = row.querySelectorAll('td');
             
-            if (cells.length >= 2) {
+            if (cells.length >= 3) {
               const rank = i;
-              
-              // Look for artist and title in different cell structures
               let artist = '';
               let title = '';
               
-              // Try different cell indices for artist/title data
-              for (let cellIndex = 0; cellIndex < Math.min(cells.length, 4); cellIndex++) {
+              // Enhanced parsing for better accuracy
+              for (let cellIndex = 0; cellIndex < Math.min(cells.length, 5); cellIndex++) {
                 const cellText = cells[cellIndex]?.textContent?.trim() || '';
                 
-                // Skip numeric cells (likely chart positions)
                 if (/^\d+$/.test(cellText)) continue;
                 
-                // Look for cells with " - " separator indicating "Artist - Title"
                 if (cellText.includes(' - ') && cellText.length > 5) {
                   const parts = cellText.split(' - ');
-                  artist = parts[0].trim();
-                  title = parts.slice(1).join(' - ').trim();
-                  break;
+                  if (parts.length >= 2) {
+                    artist = parts[0].trim();
+                    title = parts.slice(1).join(' - ').trim();
+                    break;
+                  }
                 }
                 
-                // Look for cells with just artist or title
-                if (cellText.length > 2 && !artist) {
+                if (!artist && cellText.length > 2 && !cellText.includes(',')) {
                   artist = cellText;
-                } else if (cellText.length > 2 && !title && artist) {
+                } else if (!title && cellText.length > 2 && artist) {
                   title = cellText;
                 }
               }
               
-              // Clean up extracted data
               if (artist && title) {
-                // Remove any chart indicators or extra symbols
                 artist = artist.replace(/[#\d+\-\s]*$/, '').trim();
                 title = title.replace(/[#\d+\-\s]*$/, '').trim();
                 
-                const weeksStr = cells[cells.length - 1]?.textContent?.trim() || '1';
-                const weeks = parseInt(weeksStr.replace(/\D/g, '')) || 1;
+                const weeksCell = cells[cells.length - 1]?.textContent?.trim() || '1';
+                const weeks = parseInt(weeksCell.replace(/\D/g, '')) || 1;
                 
                 songs.push({
                   rank,
@@ -92,20 +86,20 @@ export const scrapeKworbTop100 = async () => {
         }
         
         if (songs.length > 0) {
-          console.log('Successfully scraped kworb worldwide data:', songs);
+          console.log('Successfully scraped current worldwide chart:', songs);
           return songs;
         }
         
       } catch (proxyError) {
-        console.log(`Kworb worldwide proxy ${proxy} failed:`, proxyError);
+        console.log(`Proxy ${proxy} failed:`, proxyError);
         continue;
       }
     }
     
-    throw new Error('All kworb worldwide proxies failed');
+    throw new Error('All proxies failed for worldwide chart');
     
   } catch (error) {
-    console.error('Error scraping kworb worldwide data:', error);
+    console.error('Error scraping worldwide chart:', error);
     return null;
   }
 };
@@ -121,15 +115,17 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
     
     for (const proxy of proxies) {
       try {
-        console.log(`Trying Kworb Spotify Charts proxy: ${proxy} for country: ${country}`);
+        console.log(`Fetching current ${country} chart data from: ${proxy}`);
         const response = await fetch(proxy + encodeURIComponent(kworbSpotifyUrl), {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           }
         });
         
         if (!response.ok) {
-          console.log(`Kworb Spotify Charts proxy ${proxy} failed with status:`, response.status);
+          console.log(`${country} chart proxy ${proxy} failed with status:`, response.status);
           continue;
         }
         
@@ -138,13 +134,11 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
         const doc = parser.parseFromString(html, 'text/html');
         
         const tracks = [];
-        
-        // Look for the main table with chart data
         const table = doc.querySelector('table.sortable') || doc.querySelector('table');
         
         if (table) {
           const rows = table.querySelectorAll('tr');
-          console.log(`Found ${rows.length} table rows on Kworb Spotify`);
+          console.log(`Processing ${rows.length} ${country} chart entries`);
           
           for (let i = 1; i < Math.min(rows.length, 6); i++) {
             const row = rows[i];
@@ -154,8 +148,7 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
               let artist = '';
               let title = '';
               
-              // Search through cells for artist - title pattern
-              for (let j = 0; j < Math.min(cells.length, 4); j++) {
+              for (let j = 0; j < Math.min(cells.length, 5); j++) {
                 const cellText = (cells[j] as Element)?.textContent?.trim() || '';
                 
                 if (cellText.includes(' - ') && cellText.length > 10) {
@@ -169,7 +162,6 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
               }
               
               if (artist && title) {
-                // Clean up any remaining indicators
                 const cleanArtist = artist.replace(/\([^)]*\)|\[[^\]]*\]/g, '').trim();
                 const cleanTitle = title.replace(/\([^)]*\)|\[[^\]]*\]/g, '').trim();
                 
@@ -186,20 +178,20 @@ export const scrapeSpotifyChartsOfficial = async (country: string = 'US') => {
         }
         
         if (tracks.length > 0) {
-          console.log('Successfully scraped Kworb Spotify Charts data:', tracks);
+          console.log(`Successfully scraped current ${country} chart:`, tracks);
           return tracks;
         }
         
       } catch (proxyError) {
-        console.log(`Kworb Spotify Charts proxy ${proxy} failed:`, proxyError);
+        console.log(`${country} chart proxy ${proxy} failed:`, proxyError);
         continue;
       }
     }
     
-    throw new Error('All Kworb Spotify Charts proxies failed');
+    throw new Error(`All proxies failed for ${country} chart`);
     
   } catch (error) {
-    console.error('Error scraping Kworb Spotify Charts data:', error);
+    console.error(`Error scraping ${country} chart:`, error);
     return null;
   }
 };
@@ -215,7 +207,12 @@ export const getUserLocation = async () => {
     
     for (const service of services) {
       try {
-        const response = await fetch(service);
+        const response = await fetch(service, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
         if (response.ok) {
           const data = await response.json();
           
