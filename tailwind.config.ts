@@ -65,6 +65,7 @@ export default {
 				},
 				resonance: {
 					green: '#00C851',
+					orange: '#ed2f0a', // Added the new orange color
 					dark: '#111111',
 					light: '#FFFFFF',
 					gray: '#E5E5E5',

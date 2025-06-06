@@ -10,13 +10,37 @@ const Music = () => {
   
   // Apply music theme when component mounts
   useEffect(() => {
-    document.documentElement.style.setProperty('--primary', '25 93% 47%'); // #ed2f0a
+    document.documentElement.style.setProperty('--primary', '11 91% 49%'); // #ed2f0a
     document.documentElement.style.setProperty('--primary-foreground', '210 40% 98%');
+    document.documentElement.style.setProperty('--background', '0 0% 0%'); // Jet black
+    document.documentElement.style.setProperty('--foreground', '210 40% 98%');
+    document.documentElement.style.setProperty('--card', '0 0% 5%'); // Very dark grey for cards
+    document.documentElement.style.setProperty('--card-foreground', '210 40% 98%');
+    document.documentElement.style.setProperty('--popover', '0 0% 5%');
+    document.documentElement.style.setProperty('--popover-foreground', '210 40% 98%');
+    document.documentElement.style.setProperty('--muted', '0 0% 10%');
+    document.documentElement.style.setProperty('--muted-foreground', '215 20.2% 65.1%');
+    document.documentElement.style.setProperty('--accent', '0 0% 10%');
+    document.documentElement.style.setProperty('--accent-foreground', '210 40% 98%');
+    document.documentElement.style.setProperty('--border', '0 0% 15%');
+    document.documentElement.style.setProperty('--input', '0 0% 15%');
     
     return () => {
       // Revert to original theme when component unmounts
       document.documentElement.style.setProperty('--primary', '142.1 70.6% 45.3%');
       document.documentElement.style.setProperty('--primary-foreground', '210 40% 98%');
+      document.documentElement.style.setProperty('--background', '0 0% 100%');
+      document.documentElement.style.setProperty('--foreground', '240 10% 3.9%');
+      document.documentElement.style.setProperty('--card', '0 0% 100%');
+      document.documentElement.style.setProperty('--card-foreground', '240 10% 3.9%');
+      document.documentElement.style.setProperty('--popover', '0 0% 100%');
+      document.documentElement.style.setProperty('--popover-foreground', '240 10% 3.9%');
+      document.documentElement.style.setProperty('--muted', '240 4.8% 95.9%');
+      document.documentElement.style.setProperty('--muted-foreground', '240 3.8% 46.1%');
+      document.documentElement.style.setProperty('--accent', '240 4.8% 95.9%');
+      document.documentElement.style.setProperty('--accent-foreground', '240 5.9% 10%');
+      document.documentElement.style.setProperty('--border', '240 5.9% 90%');
+      document.documentElement.style.setProperty('--input', '240 5.9% 90%');
     };
   }, []);
   
