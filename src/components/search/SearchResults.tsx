@@ -5,7 +5,7 @@ import { UserCard } from "./UserCard";
 import { PostCard } from "@/components/PostCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, User, Album as AlbumIcon, Heart } from "lucide-react";
+import { Music } from "lucide-react";
 
 interface SearchResultsProps {
   searchResults: { users: any[], posts: any[], tracks: any[] };
@@ -22,7 +22,29 @@ export const SearchResults = ({
 }: SearchResultsProps) => {
   const navigate = useNavigate();
 
-  const totalResults = searchResults.users.length + searchResults.posts.length + searchResults.tracks.length;
+  const totalResults = searchResults.users.length + searchResults.posts.length;
+  const hasNoResults = totalResults === 0;
+
+  if (hasNoResults) {
+    return (
+      <Card className="p-8 text-center">
+        <CardContent>
+          <Music className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold mb-2">No results found</h3>
+          <p className="text-muted-foreground mb-4">
+            Looking for a song, album or artist?
+          </p>
+          <Button 
+            onClick={() => navigate('/music')}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Music className="h-4 w-4 mr-2" />
+            Search Music
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Tabs defaultValue="all" className="space-y-4">
@@ -30,42 +52,12 @@ export const SearchResults = ({
         <TabsTrigger value="all">All ({totalResults})</TabsTrigger>
         <TabsTrigger value="users">Users ({searchResults.users.length})</TabsTrigger>
         <TabsTrigger value="posts">Posts ({searchResults.posts.length})</TabsTrigger>
-        <TabsTrigger value="music">Music ({searchResults.tracks.length})</TabsTrigger>
       </TabsList>
       
       <TabsContent value="all" className="space-y-3">
         {/* Users */}
         {searchResults.users.slice(0, 3).map(user => (
           <UserCard key={`user-${user.id}`} profile={user} />
-        ))}
-        
-        {/* Music Tracks */}
-        {searchResults.tracks.slice(0, 5).map((track, index) => (
-          <Card key={`track-${index}`} className="p-4">
-            <div className="flex items-center gap-4">
-              {track.thumbnail && (
-                <img src={track.thumbnail} alt={track.title} className="w-12 h-12 rounded object-cover" />
-              )}
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium truncate">{track.title}</h3>
-                <p className="text-sm text-muted-foreground truncate">{track.artist}</p>
-                {track.duration && (
-                  <p className="text-xs text-muted-foreground">{track.duration}</p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => navigate(`/artist/${encodeURIComponent(track.artist)}`)}>
-                  <User className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => navigate(`/song/${encodeURIComponent(track.title)}/${encodeURIComponent(track.artist)}`)}>
-                  <Heart className="h-4 w-4" />
-                </Button>
-                <Button size="sm" onClick={() => navigate(`/song/${encodeURIComponent(track.title)}/${encodeURIComponent(track.artist)}`)}>
-                  <Play className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </Card>
         ))}
         
         {/* Posts */}
@@ -105,43 +97,6 @@ export const SearchResults = ({
         {isLoadingMore && (
           <div className="text-center py-4">
             <p className="text-muted-foreground">Loading more posts...</p>
-          </div>
-        )}
-      </TabsContent>
-      
-      <TabsContent value="music" className="space-y-3">
-        {searchResults.tracks.map((track, index) => (
-          <div key={index} ref={index === searchResults.tracks.length - 1 ? lastElementRef : null}>
-            <Card className="p-4">
-              <div className="flex items-center gap-4">
-                {track.thumbnail && (
-                  <img src={track.thumbnail} alt={track.title} className="w-12 h-12 rounded object-cover" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{track.title}</h3>
-                  <p className="text-sm text-muted-foreground truncate">{track.artist}</p>
-                  {track.duration && (
-                    <p className="text-xs text-muted-foreground">{track.duration}</p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/artist/${encodeURIComponent(track.artist)}`)}>
-                    <User className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/album/${encodeURIComponent(`${track.title} - Single`)}/${encodeURIComponent(track.artist)}`)}>
-                    <AlbumIcon className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" onClick={() => navigate(`/song/${encodeURIComponent(track.title)}/${encodeURIComponent(track.artist)}`)}>
-                    <Play className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-        ))}
-        {isLoadingMore && (
-          <div className="text-center py-4">
-            <p className="text-muted-foreground">Loading more tracks...</p>
           </div>
         )}
       </TabsContent>

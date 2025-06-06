@@ -28,6 +28,7 @@ import { AuthenticatedRoute } from "./components/AuthenticatedRoute";
 import SongDetails from "@/pages/SongDetails";
 import ArtistDetails from "@/pages/ArtistDetails";
 import AlbumDetails from "@/pages/AlbumDetails";
+import Music from "./pages/Music";
 
 // Create a Query Client with proper config for better error handling
 const queryClient = new QueryClient({
@@ -109,6 +110,16 @@ const App = () => {
                         <Navbar />
                         <div className="pt-16 pb-16">
                           <Discover />
+                        </div>
+                      </>
+                    </AuthenticatedRoute>
+                  } />
+                  <Route path="/music" element={
+                    <AuthenticatedRoute>
+                      <>
+                        <Navbar />
+                        <div className="pt-16 pb-16">
+                          <Music />
                         </div>
                       </>
                     </AuthenticatedRoute>

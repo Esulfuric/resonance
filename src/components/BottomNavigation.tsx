@@ -22,7 +22,7 @@ export const BottomNavigation = () => {
     { icon: Home, path: '/feed', label: 'Home' },
     { icon: Search, path: '/search', label: 'Search' },
     { path: '/create-post', label: 'Create', isMain: true },
-    { icon: Music, path: '/discover', label: 'Discover' },
+    { icon: Music, path: '/music', label: 'Music' },
     { icon: User, path: '/profile', label: 'Profile' }
   ];
 
@@ -46,18 +46,33 @@ export const BottomNavigation = () => {
               key={item.path} 
               to={item.path}
               className={cn(
-                "flex flex-col items-center justify-center py-2 px-3",
-                isActive(item.path) ? "text-resonance-green" : "text-muted-foreground"
+                "flex flex-col items-center justify-center py-2 px-3 transition-all duration-300",
+                isActive(item.path) ? "text-primary scale-110" : "text-muted-foreground"
               )}
             >
               <motion.div
                 initial={{ scale: 0.8 }}
-                animate={{ scale: isActive(item.path) ? 1 : 0.8 }}
-                transition={{ duration: 0.2 }}
+                animate={{ 
+                  scale: isActive(item.path) ? 1.1 : 0.8,
+                  rotateY: isActive(item.path) && item.path === '/music' ? 360 : 0
+                }}
+                transition={{ 
+                  duration: 0.3,
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 20
+                }}
               >
                 {item.icon && <item.icon className="h-6 w-6" />}
               </motion.div>
               <span className="text-xs mt-1">{item.label}</span>
+              {isActive(item.path) && item.path === '/music' && (
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "100%" }}
+                  className="h-0.5 bg-primary rounded-full mt-1"
+                />
+              )}
             </Link>
           )
         ))}
