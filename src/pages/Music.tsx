@@ -49,7 +49,7 @@ const Music = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col pb-16 animate-fade-in">
+    <div className="min-h-screen flex flex-col pb-16">
       <main className="container flex-1 py-6">
         <div className="flex items-center gap-2 mb-6">
           <div className="h-8 w-8 rounded-full bg-primary animate-pulse"></div>
