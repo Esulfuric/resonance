@@ -62,34 +62,32 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[], offset:
       }
     }
 
-    // Optimization 2: Fetch counts in bulk
+    // Optimization 2: Fetch likes and comments in bulk, aggregate counts in JS
     const postIdsSet = data.map(post => post.id);
     let likesMap: Record<string, number> = {};
     let commentsMap: Record<string, number> = {};
 
     if (postIdsSet.length > 0) {
-      // Likes
-      const { data: likesCounts } = await supabase
+      // Likes - fetch all matching post_likes and count each post's likes
+      const { data: likesRows } = await supabase
         .from('post_likes')
-        .select('post_id', { count: 'exact', groupBy: 'post_id' })
+        .select('post_id')
         .in('post_id', postIdsSet);
-
-      if (likesCounts) {
-        for (const row of likesCounts) {
+      if (likesRows) {
+        for (const row of likesRows) {
           if (row.post_id) {
             likesMap[row.post_id] = (likesMap[row.post_id] || 0) + 1;
           }
         }
       }
 
-      // Comments
-      const { data: commentsCounts } = await supabase
+      // Comments - fetch all matching post_comments and count each post's comments
+      const { data: commentsRows } = await supabase
         .from('post_comments')
-        .select('post_id', { count: 'exact', groupBy: 'post_id' })
+        .select('post_id')
         .in('post_id', postIdsSet);
-
-      if (commentsCounts) {
-        for (const row of commentsCounts) {
+      if (commentsRows) {
+        for (const row of commentsRows) {
           if (row.post_id) {
             commentsMap[row.post_id] = (commentsMap[row.post_id] || 0) + 1;
           }
