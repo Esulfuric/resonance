@@ -57,6 +57,89 @@ export type Database = {
         }
         Relationships: []
       }
+      music_tracks: {
+        Row: {
+          converted_file_url: string | null
+          created_at: string
+          duration: number | null
+          id: string
+          original_file_url: string
+          track_number: number | null
+          track_title: string
+          upload_id: string
+        }
+        Insert: {
+          converted_file_url?: string | null
+          created_at?: string
+          duration?: number | null
+          id?: string
+          original_file_url: string
+          track_number?: number | null
+          track_title: string
+          upload_id: string
+        }
+        Update: {
+          converted_file_url?: string | null
+          created_at?: string
+          duration?: number | null
+          id?: string
+          original_file_url?: string
+          track_number?: number | null
+          track_title?: string
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "music_tracks_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "music_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      music_uploads: {
+        Row: {
+          admin_notes: string | null
+          album_name: string | null
+          artist_id: string
+          composer_full_name: string
+          cover_art_url: string | null
+          created_at: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          upload_type: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          album_name?: string | null
+          artist_id: string
+          composer_full_name: string
+          cover_art_url?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          upload_type: string
+        }
+        Update: {
+          admin_notes?: string | null
+          album_name?: string | null
+          artist_id?: string
+          composer_full_name?: string
+          cover_art_url?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          upload_type?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           actor_id: string

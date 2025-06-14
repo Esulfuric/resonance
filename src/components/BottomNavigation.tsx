@@ -53,7 +53,11 @@ export const BottomNavigation = () => {
               to={item.path}
               className={cn(
                 "flex flex-col items-center justify-center py-2 px-3 transition-all duration-300",
-                isActive(item.path) ? "text-primary scale-110" : "text-muted-foreground"
+                isActive(item.path) 
+                  ? isMusicPage 
+                    ? "text-resonance-orange scale-110" 
+                    : "text-primary scale-110"
+                  : "text-muted-foreground"
               )}
             >
               <motion.div
@@ -72,11 +76,14 @@ export const BottomNavigation = () => {
                 {item.icon && <item.icon className="h-6 w-6" />}
               </motion.div>
               <span className="text-xs mt-1">{item.label}</span>
-              {isActive(item.path) && item.path === '/music' && (
+              {isActive(item.path) && (
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: "100%" }}
-                  className="h-0.5 bg-primary rounded-full mt-1"
+                  className={cn(
+                    "h-0.5 rounded-full mt-1",
+                    isMusicPage ? "bg-resonance-orange" : "bg-primary"
+                  )}
                 />
               )}
             </Link>

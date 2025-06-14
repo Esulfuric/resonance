@@ -1,178 +1,127 @@
 
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Play, Heart, Share2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { 
-  extractYouTubeMusicData, 
-  getArtistInfo, 
-  getSongLyrics, 
-  generatePlaylist,
-  getAlbumInfo,
-  type Track, 
-  type Artist,
-  type Album 
-} from "@/services/musicService";
-import { SearchForm } from "./music/SearchForm";
-import { TrackList } from "./music/TrackList";
-import { ArtistInfo } from "./music/ArtistInfo";
-import { AlbumInfo } from "./music/AlbumInfo";
 
-export const MusicSearch = () => {
-  const navigate = useNavigate();
+interface SearchResult {
+  id: number;
+  title: string;
+  artist: string;
+  album: string;
+  duration: string;
+  cover?: string;
+}
+
+const mockResults: SearchResult[] = [
+  {
+    id: 1,
+    title: "Blinding Lights",
+    artist: "The Weeknd",
+    album: "After Hours",
+    duration: "3:20",
+    cover: "/placeholder.svg"
+  },
+  {
+    id: 2,
+    title: "Watermelon Sugar",
+    artist: "Harry Styles",
+    album: "Fine Line",
+    duration: "2:54",
+    cover: "/placeholder.svg"
+  },
+];
+
+export function MusicSearch() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Track[]>([]);
-  const [artistInfo, setArtistInfo] = useState<Artist | null>(null);
-  const [selectedLyrics, setSelectedLyrics] = useState<string | null>(null);
-  const [playlist, setPlaylist] = useState<Track[]>([]);
-  const [albumInfo, setAlbumInfo] = useState<Album | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState("tracks");
+  const navigate = useNavigate();
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-
-    setIsSearching(true);
     
-    try {
-      const tracks = await extractYouTubeMusicData(searchQuery);
-      setSearchResults(tracks);
-      
-      if (tracks.length > 0) {
-        const relatedTracks = await generatePlaylist(tracks[0]);
-        setPlaylist(relatedTracks);
-      }
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
+    setIsSearching(true);
+    // Simulate API call
+    setTimeout(() => {
+      setSearchResults(mockResults.filter(song => 
+        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        song.artist.toLowerCase().includes(searchQuery.toLowerCase())
+      ));
       setIsSearching(false);
-    }
+    }, 1000);
   };
 
-  const searchArtist = async (artistName: string) => {
-    setIsSearching(true);
-    try {
-      const info = await getArtistInfo(artistName);
-      setArtistInfo(info);
-      setActiveTab("artists");
-    } catch (error) {
-      console.error('Artist search failed:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const getLyrics = async (track: Track) => {
-    setIsSearching(true);
-    try {
-      const lyrics = await getSongLyrics(track.title, track.artist);
-      setSelectedLyrics(lyrics);
-      setActiveTab("lyrics");
-    } catch (error) {
-      console.error('Lyrics fetch failed:', error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const searchAlbum = async (albumName: string, artistName: string) => {
-    setIsSearching(true);
-    try {
-      const album = await getAlbumInfo(albumName, artistName);
-      setAlbumInfo(album);
-      setActiveTab("albums");
-    } catch (error) {
-      console.error('Album search failed:', error);
-    } finally {
-      setIsSearching(false);
-    }
+  const handleSongClick = (song: SearchResult) => {
+    navigate(`/song/${encodeURIComponent(song.title)}/${encodeURIComponent(song.artist)}`);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <SearchForm 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onSearch={handleSearch}
-        isSearching={isSearching}
-      />
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full">
-          <TabsTrigger value="tracks">Tracks ({searchResults.length})</TabsTrigger>
-          <TabsTrigger value="artists">Artists</TabsTrigger>
-          <TabsTrigger value="albums">Albums</TabsTrigger>
-          <TabsTrigger value="playlists">Suggestions ({playlist.length})</TabsTrigger>
-          <TabsTrigger value="lyrics">Lyrics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="tracks">
-          <TrackList 
-            tracks={searchResults}
-            onArtistClick={searchArtist}
-            onLyricsClick={getLyrics}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Search Music</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex gap-2">
+          <Input
+            placeholder="Search for songs, artists, or albums..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            className="flex-1"
           />
-        </TabsContent>
+          <Button 
+            onClick={handleSearch} 
+            disabled={isSearching}
+            className="bg-resonance-orange hover:bg-resonance-orange/90"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+        </div>
 
-        <TabsContent value="artists" className="space-y-4">
-          {artistInfo && <ArtistInfo artist={artistInfo} onGetLyrics={getLyrics} />}
-        </TabsContent>
-
-        <TabsContent value="albums" className="space-y-4">
-          {albumInfo && <AlbumInfo album={albumInfo} />}
-        </TabsContent>
-
-        <TabsContent value="playlists" className="space-y-3">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold">Suggested Tracks</h3>
-            <p className="text-sm text-muted-foreground">Based on your search results</p>
+        {searchResults.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-sm text-muted-foreground">Search Results</h3>
+            <div className="space-y-2">
+              {searchResults.map((song) => (
+                <div 
+                  key={song.id} 
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                  onClick={() => handleSongClick(song)}
+                >
+                  <div className="h-12 w-12 rounded overflow-hidden bg-muted">
+                    {song.cover && <img src={song.cover} alt={song.title} className="h-full w-full object-cover" />}
+                  </div>
+                  <div className="flex-1 overflow-hidden min-w-0">
+                    <p className="font-medium truncate">{song.title}</p>
+                    <p className="text-sm text-muted-foreground truncate">{song.artist}</p>
+                    <p className="text-xs text-muted-foreground truncate">{song.album}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{song.duration}</span>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="rounded-full p-2 bg-resonance-orange hover:bg-resonance-orange/90 text-white"
+                    >
+                      <Play className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          {playlist.map((track, index) => (
-            <Card key={index} className="p-3">
-              <div className="flex items-center gap-3">
-                {track.thumbnail && (
-                  <img src={track.thumbnail} alt={track.title} className="w-10 h-10 rounded object-cover" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate text-sm">{track.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
-                </div>
-                <Badge variant="secondary" className="text-xs">
-                  Suggested
-                </Badge>
-                <Button size="sm" variant="ghost">
-                  <Play className="h-3 w-3" />
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </TabsContent>
+        )}
 
-        <TabsContent value="lyrics" className="space-y-4">
-          {selectedLyrics ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Song Lyrics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {selectedLyrics}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <p className="text-muted-foreground">No lyrics selected. Click the lyrics button on any track to view lyrics.</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
+        {isSearching && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-resonance-orange mx-auto"></div>
+            <p className="text-sm text-muted-foreground mt-2">Searching...</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-};
+}
