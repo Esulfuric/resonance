@@ -91,7 +91,8 @@ export function MusicUpload() {
       if (formData.coverArt) {
         const coverArtPath = `${user.id}/${Date.now()}-cover.${formData.coverArt.name.split('.').pop()}`;
         await handleFileUpload(formData.coverArt, coverArtPath);
-        coverArtUrl = `${supabase.storageUrl}/object/public/cover-art/${coverArtPath}`;
+        // Construct the public URL manually
+        coverArtUrl = `https://sieepgujumwjauyoahzp.supabase.co/storage/v1/object/public/cover-art/${coverArtPath}`;
       }
 
       // Create music upload record
