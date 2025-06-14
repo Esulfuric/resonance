@@ -28,7 +28,12 @@ export const fetchProfiles = async (userIds: string[]): Promise<ProfilesMap> => 
   
   const profilesMap: ProfilesMap = {};
   for (const row of profileRows) {
-    profilesMap[row.id] = row;
+    profilesMap[row.id] = {
+      full_name: row.full_name,
+      username: row.username,
+      avatar_url: row.avatar_url,
+      user_type: row.user_type === 'musician' || row.user_type === 'listener' ? row.user_type : undefined
+    };
   }
   return profilesMap;
 };
@@ -99,7 +104,7 @@ export const enhancePostsWithData = async (posts: any[]): Promise<Post[]> => {
         full_name: profileData.full_name,
         username: profileData.username,
         avatar_url: profileData.avatar_url,
-        user_type: profileData.user_type as 'musician' | 'listener'
+        user_type: profileData.user_type
       },
       likes_count: likesMap[post.id] || 0,
       comments_count: commentsMap[post.id] || 0,
