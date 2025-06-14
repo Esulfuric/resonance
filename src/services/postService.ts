@@ -47,58 +47,71 @@ export const fetchPosts = async (limit: number = 20, userIds?: string[], offset:
     if (error) throw error;
     if (!data) return [];
     
-    const postsWithProfilesAndCounts = await Promise.all(data.map(async (post) => {
-      try {
-        // Fetch profile data separately
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('full_name, username, avatar_url, user_type')
-          .eq('id', post.user_id)
-          .single();
-
-        const { count: likesCount, error: likesError } = await supabase
-          .from('post_likes')
-          .select('*', { count: 'exact', head: true })
-          .eq('post_id', post.id);
-          
-        const { count: commentsCount, error: commentsError } = await supabase
-          .from('post_comments')
-          .select('*', { count: 'exact', head: true })
-          .eq('post_id', post.id);
-        
-        return {
-          ...post,
-          profiles: profileError ? {
-            full_name: undefined,
-            username: undefined,
-            avatar_url: undefined,
-            user_type: undefined
-          } : {
-            full_name: profileData?.full_name || undefined,
-            username: profileData?.username || undefined,
-            avatar_url: profileData?.avatar_url || undefined,
-            user_type: (profileData?.user_type as 'musician' | 'listener') || undefined
-          },
-          likes_count: Math.max(0, likesError ? 0 : likesCount || 0),
-          comments_count: Math.max(0, commentsError ? 0 : commentsCount || 0),
-          is_edited: isPostEdited(post),
-        };
-      } catch (err) {
-        console.error('Error processing post data:', err);
-        return {
-          ...post,
-          profiles: {
-            full_name: undefined,
-            username: undefined,
-            avatar_url: undefined,
-            user_type: undefined
-          },
-          likes_count: 0,
-          comments_count: 0,
-          is_edited: isPostEdited(post),
-        };
+    // Optimization 1: Fetch all profiles at once
+    const userIdsSet = [...new Set(data.map(post => post.user_id).filter(Boolean))];
+    let profilesMap: Record<string, any> = {};
+    if (userIdsSet.length > 0) {
+      const { data: profileRows, error: profileErr } = await supabase
+        .from('profiles')
+        .select('id,full_name,username,avatar_url,user_type')
+        .in('id', userIdsSet);
+      if (!profileErr && profileRows) {
+        for (const row of profileRows) {
+          profilesMap[row.id] = row;
+        }
       }
-    }));
+    }
+
+    // Optimization 2: Fetch counts in bulk
+    const postIdsSet = data.map(post => post.id);
+    let likesMap: Record<string, number> = {};
+    let commentsMap: Record<string, number> = {};
+
+    if (postIdsSet.length > 0) {
+      // Likes
+      const { data: likesCounts } = await supabase
+        .from('post_likes')
+        .select('post_id', { count: 'exact', groupBy: 'post_id' })
+        .in('post_id', postIdsSet);
+
+      if (likesCounts) {
+        for (const row of likesCounts) {
+          if (row.post_id) {
+            likesMap[row.post_id] = (likesMap[row.post_id] || 0) + 1;
+          }
+        }
+      }
+
+      // Comments
+      const { data: commentsCounts } = await supabase
+        .from('post_comments')
+        .select('post_id', { count: 'exact', groupBy: 'post_id' })
+        .in('post_id', postIdsSet);
+
+      if (commentsCounts) {
+        for (const row of commentsCounts) {
+          if (row.post_id) {
+            commentsMap[row.post_id] = (commentsMap[row.post_id] || 0) + 1;
+          }
+        }
+      }
+    }
+
+    const postsWithProfilesAndCounts = data.map((post) => {
+      const profileData = profilesMap[post.user_id] || {};
+      return {
+        ...post,
+        profiles: {
+          full_name: profileData.full_name,
+          username: profileData.username,
+          avatar_url: profileData.avatar_url,
+          user_type: profileData.user_type as 'musician' | 'listener'
+        },
+        likes_count: likesMap[post.id] || 0,
+        comments_count: commentsMap[post.id] || 0,
+        is_edited: isPostEdited(post),
+      };
+    });
 
     return postsWithProfilesAndCounts;
   } catch (error: any) {
