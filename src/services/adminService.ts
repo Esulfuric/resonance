@@ -35,15 +35,11 @@ export interface AdminAction {
 // Admin authentication functions
 export const adminLogin = async (username: string, password: string): Promise<{ success: boolean; admin?: AdminUser; error?: string }> => {
   try {
-    // Use the correct way to access Supabase URL and key
-    const supabaseUrl = 'https://sieepgujumwjauyoahzp.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNpZWVwZ3VqdW13amF1eW9haHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY0Mzg1MzgsImV4cCI6MjA2MjAxNDUzOH0.4hJEuIa2KGJ0Vg7BdUtKo-Mp4_F30WQ7ixyhLRmfCA0';
-    
-    const response = await fetch(`${supabaseUrl}/functions/v1/admin-login`, {
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/admin-login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`,
+        'Authorization': `Bearer ${supabase.supabaseKey}`,
       },
       body: JSON.stringify({ username, password }),
     });
@@ -72,6 +68,7 @@ export const getPendingMusicUploads = async (): Promise<PendingMusicUpload[]> =>
       .from('music_uploads')
       .select(`
         *,
+        profiles!music_uploads_artist_id_fkey(full_name, username),
         music_tracks(id, track_title, track_number)
       `)
       .eq('status', 'pending')
@@ -79,25 +76,12 @@ export const getPendingMusicUploads = async (): Promise<PendingMusicUpload[]> =>
     
     if (error) throw error;
     
-    // Get artist information separately
-    const uploadsWithArtists = await Promise.all(
-      (uploads || []).map(async (upload) => {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, username')
-          .eq('id', upload.artist_id)
-          .single();
-        
-        return {
-          ...upload,
-          upload_type: upload.upload_type as 'single' | 'album',
-          artist_name: profile?.full_name || profile?.username || 'Unknown Artist',
-          tracks: upload.music_tracks || []
-        };
-      })
-    );
-    
-    return uploadsWithArtists;
+    return uploads?.map(upload => ({
+      ...upload,
+      upload_type: upload.upload_type as 'single' | 'album',
+      artist_name: upload.profiles?.full_name || upload.profiles?.username || 'Unknown Artist',
+      tracks: upload.music_tracks || []
+    })) || [];
   } catch (error) {
     console.error('Error fetching pending music uploads:', error);
     return [];

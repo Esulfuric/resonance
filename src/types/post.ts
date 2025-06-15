@@ -1,3 +1,4 @@
+
 export interface Profile {
   full_name?: string;
   username?: string;
@@ -17,10 +18,6 @@ export interface Post {
   profiles?: Profile;
   likes_count?: number;
   comments_count?: number;
-  is_removed?: boolean;
-  removal_reason?: string;
-  removed_at?: string;
-  removed_by?: string;
 }
 
 export interface Comment {
