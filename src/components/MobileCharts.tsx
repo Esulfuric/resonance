@@ -1,7 +1,5 @@
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { BillboardChart } from "@/components/BillboardChart";
-import { LocationChart } from "@/components/LocationChart";
 
 export const MobileCharts = () => {
   const isMobile = useIsMobile();
@@ -12,8 +10,9 @@ export const MobileCharts = () => {
 
   return (
     <div className="space-y-4 mt-6">
-      <BillboardChart />
-      <LocationChart />
+      <div className="text-center text-muted-foreground p-4">
+        <p className="text-sm">Charts are now available in the Music section</p>
+      </div>
     </div>
   );
 };

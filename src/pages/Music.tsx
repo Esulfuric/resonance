@@ -3,6 +3,8 @@ import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { MusicSearch } from "@/components/MusicSearch";
 import { TrendingMusic } from "@/components/TrendingMusic";
 import { MusicUpload } from "@/components/MusicUpload";
+import { BillboardChart } from "@/components/BillboardChart";
+import { LocationChart } from "@/components/LocationChart";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useEffect } from "react";
 
@@ -45,25 +47,21 @@ const Music = () => {
           </h1>
         </div>
         
-        {isMusician ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {isMusician ? (
               <MusicUpload />
-            </div>
-            <div className="space-y-6">
-              <TrendingMusic />
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
+            ) : (
               <MusicSearch />
-            </div>
-            <div className="space-y-6">
-              <TrendingMusic />
-            </div>
+            )}
           </div>
-        )}
+          
+          <div className="space-y-6">
+            <TrendingMusic />
+            <BillboardChart />
+            <LocationChart />
+          </div>
+        </div>
       </main>
     </div>
   );
