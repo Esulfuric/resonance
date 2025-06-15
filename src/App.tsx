@@ -31,11 +31,11 @@ const ArtistDetails = lazy(() => import("@/pages/ArtistDetails"));
 const AlbumDetails = lazy(() => import("@/pages/AlbumDetails"));
 const Music = lazy(() => import("./pages/Music"));
 
-// Lazy load other components
-const BottomNavigation = lazy(() => import("./components/BottomNavigation"));
+// Lazy load other components - fix the import syntax for named exports
+const BottomNavigation = lazy(() => import("./components/BottomNavigation").then(module => ({ default: module.BottomNavigation })));
 const Navbar = lazy(() => import("./components/Navbar"));
-const AuthenticatedRoute = lazy(() => import("./components/AuthenticatedRoute"));
-const AdminProtectedRoute = lazy(() => import("./components/AdminProtectedRoute"));
+const AuthenticatedRoute = lazy(() => import("./components/AuthenticatedRoute").then(module => ({ default: module.AuthenticatedRoute })));
+const AdminProtectedRoute = lazy(() => import("./components/AdminProtectedRoute").then(module => ({ default: module.AdminProtectedRoute })));
 
 // Create a Query Client with optimized config
 const queryClient = new QueryClient({
