@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { PostCard } from "@/components/PostCard";
 import { Music, Users, Settings, Upload } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ProfileSettings } from "@/components/ProfileSettings";
 import { MusicTrackList } from "@/components/MusicTrackList";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -37,6 +37,7 @@ interface FollowUser {
   username?: string;
   full_name?: string;
   avatar_url?: string;
+  user_type?: 'musician' | 'listener';
 }
 
 interface ProfileContentProps {
@@ -59,8 +60,17 @@ export function ProfileContent({
   userType
 }: ProfileContentProps) {
   const navigate = useNavigate();
+  const { username } = useParams();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState(defaultTab);
   const isMusician = userType === 'musician';
+
+  // Generate username-based URL for other users
+  const getUsernameUrl = (user: FollowUser) => {
+    const userUsername = user.username || 'user';
+    const prefix = user.user_type === 'musician' ? 'm' : 'l';
+    return `/${prefix}/${userUsername}`;
+  };
 
   // Component to display user list (for followers/following)
   const UserList = ({ users }: { users: FollowUser[] }) => (
@@ -68,17 +78,26 @@ export function ProfileContent({
       {users.map((user) => (
         <div 
           key={user.id} 
-          className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer"
-          onClick={() => navigate(`/profile/${user.id}`)}
+          className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+          onClick={() => navigate(getUsernameUrl(user))}
         >
           <div className="avatar">
             <div className="w-12 rounded-full">
-              <img src={user.avatar_url} alt={user.username || "User"} />
+              <img src={user.avatar_url || "https://randomuser.me/api/portraits/women/42.jpg"} alt={user.username || "User"} />
             </div>
           </div>
           <div>
             <p className="font-medium">{user.full_name || user.username}</p>
             <p className="text-sm text-muted-foreground">@{user.username}</p>
+            {user.user_type && (
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium mt-1 ${
+                user.user_type === 'musician' 
+                  ? 'bg-resonance-green/10 text-resonance-green' 
+                  : 'bg-muted text-muted-foreground'
+              }`}>
+                {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
+              </span>
+            )}
           </div>
         </div>
       ))}

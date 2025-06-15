@@ -51,6 +51,14 @@ export function ProfileHeader({
     navigate(`/messages?user=${profile.id}`);
   };
 
+  // Generate username-based URL
+  const getUsernameUrl = (tab?: string) => {
+    const username = profile.username || 'user';
+    const prefix = profile.user_type === 'musician' ? 'm' : 'l';
+    const baseUrl = `/${prefix}/${username}`;
+    return tab ? `${baseUrl}?tab=${tab}` : baseUrl;
+  };
+
   return (
     <div className="mb-6 px-4 md:px-0">
       <div className="flex flex-col items-center space-y-4 md:flex-row md:items-start md:space-y-0 md:space-x-6">
@@ -100,22 +108,22 @@ export function ProfileHeader({
           
           {/* Stats row */}
           <div className="flex gap-4 justify-center md:justify-start text-sm">
-            <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(`/profile/${profile.id}?tab=posts`)}>
+            <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(getUsernameUrl('posts'))}>
               <span className="font-bold">{profile.post_count}</span>{" "}
               <span className="text-muted-foreground">Posts</span>
             </div>
-            <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(`/profile/${profile.id}?tab=following`)}>
+            <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(getUsernameUrl('following'))}>
               <span className="font-bold">{displayFollowingCount}</span>{" "}
               <span className="text-muted-foreground">Following</span>
             </div>
-            <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(`/profile/${profile.id}?tab=followers`)}>
+            <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(getUsernameUrl('followers'))}>
               <span className="font-bold">{displayFollowerCount}</span>{" "}
               <span className="text-muted-foreground">Followers</span>
             </div>
             
             {/* Music tracks count for musicians */}
             {profile.user_type === 'musician' && (
-              <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(`/profile/${profile.id}?tab=music`)}>
+              <div className="cursor-pointer hover:text-resonance-green transition-colors" onClick={() => navigate(getUsernameUrl('music'))}>
                 <span className="font-bold">0</span>{" "}
                 <span className="text-muted-foreground">Tracks</span>
               </div>

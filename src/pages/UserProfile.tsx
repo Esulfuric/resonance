@@ -1,5 +1,5 @@
 
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams } from "react-router-dom";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileHeader } from "@/components/ProfileHeader";
@@ -8,6 +8,7 @@ import { FormattedPost } from "@/types/post";
 
 const UserProfile = () => {
   const [searchParams] = useSearchParams();
+  const params = useParams();
   const {
     profile,
     posts,

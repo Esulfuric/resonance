@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useSupabase } from "@/lib/supabase-provider";
@@ -22,8 +22,9 @@ interface FollowUser {
 }
 
 export const useUserProfile = () => {
-  const { userId } = useParams();
+  const { userId, username } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: currentUser } = useSupabase();
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -31,18 +32,70 @@ export const useUserProfile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [followers, setFollowers] = useState<FollowUser[]>([]);
   const [following, setFollowing] = useState<FollowUser[]>([]);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!userId || !currentUser) return;
+    if (!currentUser) return;
     
     const fetchProfileData = async () => {
       setIsLoading(true);
       try {
+        let targetUserId = userId;
+        
+        // If we have a username parameter, resolve it to a user ID
+        if (username) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('id, user_type')
+            .eq('username', username)
+            .single();
+          
+          if (profileError || !profileData) {
+            toast({
+              title: "User not found",
+              description: "The requested user profile could not be found.",
+              variant: "destructive",
+            });
+            navigate('/feed');
+            return;
+          }
+          
+          // Verify the route prefix matches the user type
+          const isListenerRoute = location.pathname.startsWith('/l/');
+          const isMusicianRoute = location.pathname.startsWith('/m/');
+          
+          if (isListenerRoute && profileData.user_type !== 'listener') {
+            // Redirect to correct route
+            navigate(`/m/${username}${location.search}`, { replace: true });
+            return;
+          }
+          
+          if (isMusicianRoute && profileData.user_type !== 'musician') {
+            // Redirect to correct route  
+            navigate(`/l/${username}${location.search}`, { replace: true });
+            return;
+          }
+          
+          targetUserId = profileData.id;
+        }
+        
+        if (!targetUserId) {
+          toast({
+            title: "User not found",
+            description: "Invalid user identifier.",
+            variant: "destructive",
+          });
+          navigate('/feed');
+          return;
+        }
+        
+        setResolvedUserId(targetUserId);
+        
         // Fetch user profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', userId)
+          .eq('id', targetUserId)
           .single();
         
         if (profileError) throw profileError;
@@ -68,7 +121,7 @@ export const useUserProfile = () => {
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
           .select('*')
-          .eq('user_id', userId)
+          .eq('user_id', targetUserId)
           .order('created_at', { ascending: false });
         
         if (postsError) throw postsError;
@@ -78,7 +131,7 @@ export const useUserProfile = () => {
         const { data: followersData } = await supabase
           .from('follows')
           .select('follower_id')
-          .eq('following_id', userId);
+          .eq('following_id', targetUserId);
         
         if (followersData && followersData.length > 0) {
           const followerIds = followersData.map(f => f.follower_id);
@@ -96,7 +149,7 @@ export const useUserProfile = () => {
         const { data: followingData } = await supabase
           .from('follows')
           .select('following_id')
-          .eq('follower_id', userId);
+          .eq('follower_id', targetUserId);
         
         if (followingData && followingData.length > 0) {
           const followingIds = followingData.map(f => f.following_id);
@@ -123,7 +176,7 @@ export const useUserProfile = () => {
     };
     
     fetchProfileData();
-  }, [userId, navigate, toast, currentUser]);
+  }, [userId, username, navigate, toast, currentUser, location.pathname, location.search]);
 
   return {
     profile,
@@ -132,6 +185,6 @@ export const useUserProfile = () => {
     followers,
     following,
     currentUser,
-    userId
+    userId: resolvedUserId
   };
 };

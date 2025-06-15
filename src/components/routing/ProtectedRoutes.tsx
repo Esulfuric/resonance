@@ -36,6 +36,17 @@ export const ProtectedRoutes = () => (
         <pages.UserProfile />
       </AuthenticatedLayout>
     } />
+    {/* New username-based routes */}
+    <Route path="/l/:username" element={
+      <AuthenticatedLayout>
+        <pages.UserProfile />
+      </AuthenticatedLayout>
+    } />
+    <Route path="/m/:username" element={
+      <AuthenticatedLayout>
+        <pages.UserProfile />
+      </AuthenticatedLayout>
+    } />
     <Route path="/messages" element={
       <AuthenticatedLayout>
         <pages.Messages />
