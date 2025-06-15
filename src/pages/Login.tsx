@@ -19,12 +19,14 @@ const Login = () => {
   const { toast } = useToast();
   const { signIn, signInWithGoogle, user } = useSupabase();
 
-  // If user is already logged in, redirect to external URL
+  // If user is already logged in, redirect to feed
   useEffect(() => {
     if (user) {
-      window.location.href = 'resonance://loggedin';
+      const redirectPath = sessionStorage.getItem('redirectAfterLogin') || '/feed';
+      sessionStorage.removeItem('redirectAfterLogin'); // Clear the stored path
+      navigate(redirectPath);
     }
-  }, [user]);
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,8 +42,7 @@ const Login = () => {
         description: "Welcome back to Resonance!",
       });
 
-      // Redirect to external URL after successful login
-      window.location.href = 'resonance://loggedin';
+      // The useEffect above will handle the redirect
     } catch (error: any) {
       toast({
         title: "Login failed",
@@ -60,8 +61,7 @@ const Login = () => {
       
       if (error) throw error;
       
-      // The OAuth flow will handle the redirect, but we'll also set up 
-      // the external redirect in the auth state change listener
+      // OAuth flow will handle the redirect
     } catch (error: any) {
       toast({
         title: "Google login failed",

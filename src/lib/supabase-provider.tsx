@@ -37,16 +37,6 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       setIsLoading(false);
       
-      // Handle external redirect on successful login
-      if (event === 'SIGNED_IN' && session?.user) {
-        // Check if we're on the login page or if this is a fresh login
-        const currentPath = window.location.pathname;
-        if (currentPath === '/login' || currentPath === '/signup') {
-          window.location.href = 'resonance://loggedin';
-          return; // Don't continue with other logic if redirecting
-        }
-      }
-      
       // Store session in localStorage for persistence
       if (session) {
         localStorage.setItem('supabase.auth.token', JSON.stringify(session));
@@ -157,7 +147,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     return supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'resonance://auth'
+        redirectTo: `${window.location.origin}/`
       }
     });
   };
