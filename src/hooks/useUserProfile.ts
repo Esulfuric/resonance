@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -42,13 +41,13 @@ export const useUserProfile = () => {
       try {
         let targetUserId = userId;
         
-        // If we have a username parameter, resolve it to a user ID
+        // Always resolve by username if :username param present
         if (username) {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('id, user_type')
             .eq('username', username)
-            .single();
+            .maybeSingle();
           
           if (profileError || !profileData) {
             toast({
@@ -60,18 +59,16 @@ export const useUserProfile = () => {
             return;
           }
           
-          // Verify the route prefix matches the user type
           const isListenerRoute = location.pathname.startsWith('/l/');
           const isMusicianRoute = location.pathname.startsWith('/m/');
           
+          // ensure correct prefix-username match and redirect if needed
           if (isListenerRoute && profileData.user_type !== 'listener') {
-            // Redirect to correct route
             navigate(`/m/${username}${location.search}`, { replace: true });
             return;
           }
           
           if (isMusicianRoute && profileData.user_type !== 'musician') {
-            // Redirect to correct route  
             navigate(`/l/${username}${location.search}`, { replace: true });
             return;
           }
@@ -91,12 +88,12 @@ export const useUserProfile = () => {
         
         setResolvedUserId(targetUserId);
         
-        // Fetch user profile
+        // Fetch user profile (with username only, not ID)
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', targetUserId)
-          .single();
+          .maybeSingle();
         
         if (profileError) throw profileError;
         if (!profileData) {

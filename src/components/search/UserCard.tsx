@@ -20,6 +20,7 @@ interface UserCardProps {
 export const UserCard = ({ profile }: UserCardProps) => {
   const navigate = useNavigate();
 
+  // Always use username-based URLs for profile navigation
   const getUsernameUrl = () => {
     const username = profile.username || 'user';
     const prefix = profile.user_type === 'musician' ? 'm' : 'l';

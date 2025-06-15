@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -47,11 +46,11 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(stats.likes);
 
-  // Generate username-based URL for user profile
+  // Generate username-based URL for user profile - ENSURE IT IS ALWAYS USED!
   const getUserProfileUrl = () => {
-    if (!user.username) return '#';
-    const prefix = user.user_type === 'musician' ? 'm' : 'l';
-    return `/${prefix}/${user.username}`;
+    const username = user.username || "user";
+    const prefix = user.user_type === "musician" ? "m" : "l";
+    return `/${prefix}/${username}`;
   };
 
   useEffect(() => {
@@ -104,6 +103,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
+            {/* Main profile avatar link */}
             <Link to={getUserProfileUrl()}>
               <Avatar className="h-10 w-10">
                 <AvatarImage src={user.avatar} alt={user.name} />
@@ -112,6 +112,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             </Link>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
+                {/* Main profile name link */}
                 <Link 
                   to={getUserProfileUrl()} 
                   className="font-semibold text-sm hover:underline"
