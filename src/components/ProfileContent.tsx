@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,11 @@ export function ProfileContent({
   // Generate username-based URL for other users
   const getUsernameUrl = (user: FollowUser) => {
     const userUsername = user.username || 'user';
-    const prefix = user.user_type === 'musician' ? 'm' : 'l';
+    // Defensive: fallback to 'l' for listeners if user_type is something else (or missing)
+    let prefix: string = 'l';
+    if (user.user_type === 'musician') prefix = 'm';
+    else if (user.user_type === 'listener') prefix = 'l';
+    // If somehow missing, still defaults to listener
     return `/${prefix}/${userUsername}`;
   };
 

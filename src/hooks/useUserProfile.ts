@@ -55,7 +55,7 @@ export const useUserProfile = () => {
               description: "The requested user profile could not be found.",
               variant: "destructive",
             });
-            setIsLoading(false); // <-- Ensure loading state always ends before navigation!
+            setIsLoading(false);
             navigate('/feed');
             return;
           }
@@ -63,15 +63,14 @@ export const useUserProfile = () => {
           const isListenerRoute = location.pathname.startsWith('/l/');
           const isMusicianRoute = location.pathname.startsWith('/m/');
           
-          // ensure correct prefix-username match and redirect if needed
           if (isListenerRoute && profileData.user_type !== 'listener') {
-            setIsLoading(false); // <-- Always before navigation!
+            setIsLoading(false);
             navigate(`/m/${username}${location.search}`, { replace: true });
             return;
           }
           
           if (isMusicianRoute && profileData.user_type !== 'musician') {
-            setIsLoading(false); // <-- Always before navigation!
+            setIsLoading(false);
             navigate(`/l/${username}${location.search}`, { replace: true });
             return;
           }
@@ -85,14 +84,14 @@ export const useUserProfile = () => {
             description: "Invalid user identifier.",
             variant: "destructive",
           });
-          setIsLoading(false); // <-- Always before navigation!
+          setIsLoading(false);
           navigate('/feed');
           return;
         }
         
         setResolvedUserId(targetUserId);
         
-        // Fetch user profile (with username only, not ID)
+        // Fetch user profile (with user_type!)
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -106,7 +105,7 @@ export const useUserProfile = () => {
             description: "The requested user profile could not be found.",
             variant: "destructive",
           });
-          setIsLoading(false); // <-- Always before navigation!
+          setIsLoading(false);
           navigate('/feed');
           return;
         }
@@ -129,7 +128,7 @@ export const useUserProfile = () => {
         if (postsError) throw postsError;
         setPosts(postsData || []);
         
-        // Fetch followers
+        // Fetch followers - INCLUDE user_type!
         const { data: followersData } = await supabase
           .from('follows')
           .select('follower_id')
@@ -139,15 +138,15 @@ export const useUserProfile = () => {
           const followerIds = followersData.map(f => f.follower_id);
           const { data: followerProfiles } = await supabase
             .from('profiles')
-            .select('id, username, full_name, avatar_url')
+            .select('id, username, full_name, avatar_url, user_type')
             .in('id', followerIds);
-            
+
           setFollowers(followerProfiles as FollowUser[] || []);
         } else {
           setFollowers([]);
         }
         
-        // Fetch following
+        // Fetch following - INCLUDE user_type!
         const { data: followingData } = await supabase
           .from('follows')
           .select('following_id')
@@ -157,9 +156,9 @@ export const useUserProfile = () => {
           const followingIds = followingData.map(f => f.following_id);
           const { data: followingProfiles } = await supabase
             .from('profiles')
-            .select('id, username, full_name, avatar_url')
+            .select('id, username, full_name, avatar_url, user_type')
             .in('id', followingIds);
-            
+
           setFollowing(followingProfiles as FollowUser[] || []);
         } else {
           setFollowing([]);
