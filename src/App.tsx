@@ -4,41 +4,46 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
-import Feed from "./pages/Feed";
-import Profile from "./pages/Profile";
-import UserProfile from "./pages/UserProfile";
-import Discover from "./pages/Discover";
-import SearchPage from "./pages/Search";
-import NotFound from "./pages/NotFound";
-import CreatePost from "./pages/CreatePost";
-import Messages from "./pages/Messages";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import { BottomNavigation } from "./components/BottomNavigation";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { SupabaseProvider } from "@/lib/supabase-provider";
 import { TranslationProvider } from "@/contexts/TranslationContext";
 import { toast } from "sonner";
-import Navbar from "./components/Navbar";
-import { AuthenticatedRoute } from "./components/AuthenticatedRoute";
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
-import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
-import SongDetails from "@/pages/SongDetails";
-import ArtistDetails from "@/pages/ArtistDetails";
-import AlbumDetails from "@/pages/AlbumDetails";
-import Music from "./pages/Music";
 
-// Create a Query Client with proper config for better error handling
+// Lazy load components for better performance
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const Feed = lazy(() => import("./pages/Feed"));
+const Profile = lazy(() => import("./pages/Profile"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
+const Discover = lazy(() => import("./pages/Discover"));
+const SearchPage = lazy(() => import("./pages/Search"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const CreatePost = lazy(() => import("./pages/CreatePost"));
+const Messages = lazy(() => import("./pages/Messages"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const SongDetails = lazy(() => import("@/pages/SongDetails"));
+const ArtistDetails = lazy(() => import("@/pages/ArtistDetails"));
+const AlbumDetails = lazy(() => import("@/pages/AlbumDetails"));
+const Music = lazy(() => import("./pages/Music"));
+
+// Lazy load other components
+const BottomNavigation = lazy(() => import("./components/BottomNavigation"));
+const Navbar = lazy(() => import("./components/Navbar"));
+const AuthenticatedRoute = lazy(() => import("./components/AuthenticatedRoute"));
+const AdminProtectedRoute = lazy(() => import("./components/AdminProtectedRoute"));
+
+// Create a Query Client with optimized config
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
     },
     mutations: {
       onError: (error: any) => {
@@ -82,107 +87,115 @@ const App = () => {
               <Toaster />
               <Sonner />
               <BrowserRouter>
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                  <Route path="/terms-of-service" element={<TermsOfService />} />
-                  
-                  {/* Admin routes - NO NAVBAR */}
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin/dashboard" element={
-                    <AdminProtectedRoute>
-                      <AdminDashboard />
-                    </AdminProtectedRoute>
-                  } />
-                  
-                  {/* Protected routes with Navbar */}
-                  <Route path="/feed" element={
-                    <AuthenticatedRoute>
-                      <>
-                        <Navbar />
-                        <div className="pt-16 pb-16">
-                          <Feed />
-                        </div>
-                      </>
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/discover" element={
-                    <AuthenticatedRoute>
-                      <>
-                        <Navbar />
-                        <div className="pt-16 pb-16">
-                          <Discover />
-                        </div>
-                      </>
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/music" element={
-                    <AuthenticatedRoute>
-                      <>
-                        <Navbar />
-                        <div className="pt-16 pb-16">
-                          <Music />
-                        </div>
-                      </>
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/search" element={
-                    <AuthenticatedRoute>
-                      <>
-                        <Navbar />
-                        <div className="pt-16 pb-16">
-                          <SearchPage />
-                        </div>
-                      </>
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/profile" element={
-                    <AuthenticatedRoute>
-                      <>
-                        <Navbar />
-                        <div className="pt-16 pb-16">
-                          <Profile />
-                        </div>
-                      </>
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/profile/:userId" element={
-                    <AuthenticatedRoute>
-                      <>
-                        <Navbar />
-                        <div className="pt-16 pb-16">
-                          <UserProfile />
-                        </div>
-                      </>
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/create-post" element={
-                    <AuthenticatedRoute>
-                      <CreatePost />
-                    </AuthenticatedRoute>
-                  } />
-                  <Route path="/messages" element={
-                    <AuthenticatedRoute>
-                      <>
-                        <Navbar />
-                        <div className="pt-16 pb-16">
-                          <Messages />
-                        </div>
-                      </>
-                    </AuthenticatedRoute>
-                  } />
-                  
-                  {/* Catch-all route */}
-                  <Route path="/song/:songTitle/:artist" element={<SongDetails />} />
-                  <Route path="/artist/:artistName" element={<ArtistDetails />} />
-                  <Route path="/album/:albumName/:artistName" element={<AlbumDetails />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <BottomNavigation />
+                <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+                  <Routes>
+                    {/* Admin routes - NO NAVBAR, NO BOTTOM NAV */}
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin/dashboard" element={
+                      <AdminProtectedRoute>
+                        <AdminDashboard />
+                      </AdminProtectedRoute>
+                    } />
+                    
+                    {/* Public routes without navbar */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/terms-of-service" element={<TermsOfService />} />
+                    
+                    {/* Protected routes with Navbar and Bottom Navigation */}
+                    <Route path="/feed" element={
+                      <AuthenticatedRoute>
+                        <>
+                          <Navbar />
+                          <div className="pt-16 pb-16">
+                            <Feed />
+                          </div>
+                          <BottomNavigation />
+                        </>
+                      </AuthenticatedRoute>
+                    } />
+                    <Route path="/discover" element={
+                      <AuthenticatedRoute>
+                        <>
+                          <Navbar />
+                          <div className="pt-16 pb-16">
+                            <Discover />
+                          </div>
+                          <BottomNavigation />
+                        </>
+                      </AuthenticatedRoute>
+                    } />
+                    <Route path="/music" element={
+                      <AuthenticatedRoute>
+                        <>
+                          <Navbar />
+                          <div className="pt-16 pb-16">
+                            <Music />
+                          </div>
+                          <BottomNavigation />
+                        </>
+                      </AuthenticatedRoute>
+                    } />
+                    <Route path="/search" element={
+                      <AuthenticatedRoute>
+                        <>
+                          <Navbar />
+                          <div className="pt-16 pb-16">
+                            <SearchPage />
+                          </div>
+                          <BottomNavigation />
+                        </>
+                      </AuthenticatedRoute>
+                    } />
+                    <Route path="/profile" element={
+                      <AuthenticatedRoute>
+                        <>
+                          <Navbar />
+                          <div className="pt-16 pb-16">
+                            <Profile />
+                          </div>
+                          <BottomNavigation />
+                        </>
+                      </AuthenticatedRoute>
+                    } />
+                    <Route path="/profile/:userId" element={
+                      <AuthenticatedRoute>
+                        <>
+                          <Navbar />
+                          <div className="pt-16 pb-16">
+                            <UserProfile />
+                          </div>
+                          <BottomNavigation />
+                        </>
+                      </AuthenticatedRoute>
+                    } />
+                    <Route path="/create-post" element={
+                      <AuthenticatedRoute>
+                        <CreatePost />
+                      </AuthenticatedRoute>
+                    } />
+                    <Route path="/messages" element={
+                      <AuthenticatedRoute>
+                        <>
+                          <Navbar />
+                          <div className="pt-16 pb-16">
+                            <Messages />
+                          </div>
+                          <BottomNavigation />
+                        </>
+                      </AuthenticatedRoute>
+                    } />
+                    
+                    {/* Catch-all routes */}
+                    <Route path="/song/:songTitle/:artist" element={<SongDetails />} />
+                    <Route path="/artist/:artistName" element={<ArtistDetails />} />
+                    <Route path="/album/:albumName/:artistName" element={<AlbumDetails />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
               </BrowserRouter>
             </div>
           </TooltipProvider>

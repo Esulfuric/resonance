@@ -49,11 +49,8 @@ const Navbar = () => {
     }
   };
 
-  // Hide navbar on certain pages including admin routes
-  if (['/login', '/signup', '/forgot-password', '/admin/login', '/admin/dashboard'].includes(location.pathname)) {
-    return null;
-  }
-
+  // This component should only be rendered on pages that need it
+  // Admin routes are handled in App.tsx routing structure
   return (
     <div className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-sm z-10 border-b">
       <div className="container h-full flex items-center justify-between">
