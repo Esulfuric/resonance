@@ -25,6 +25,8 @@ import { TranslationProvider } from "@/contexts/TranslationContext";
 import { toast } from "sonner";
 import Navbar from "./components/Navbar";
 import { AuthenticatedRoute } from "./components/AuthenticatedRoute";
+import AdminLogin from "./pages/AdminLogin";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import SongDetails from "@/pages/SongDetails";
 import ArtistDetails from "@/pages/ArtistDetails";
 import AlbumDetails from "@/pages/AlbumDetails";
@@ -92,6 +94,14 @@ const App = () => {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
+                  
+                  {/* Admin routes */}
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin/dashboard" element={
+                    <AdminProtectedRoute>
+                      <AdminDashboard />
+                    </AdminProtectedRoute>
+                  } />
                   
                   {/* Protected routes with Navbar */}
                   <Route path="/feed" element={
