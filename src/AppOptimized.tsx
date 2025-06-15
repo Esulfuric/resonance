@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,9 +11,9 @@ import { toast } from "sonner";
 import { FullScreenLoader } from "@/components/ui/loading-state";
 import { PublicRoutes } from "@/components/routing/PublicRoutes";
 import { AdminRoutes } from "@/components/routing/AdminRoutes";
-import { ProtectedRoutes } from "@/components/routing/ProtectedRoutes";
 import { DetailRoutes } from "@/components/routing/DetailRoutes";
-import { pages } from "@/config/routes";
+import { pages, components } from "@/config/routes";
+import { AuthenticatedLayout } from "@/components/layout/AppLayout";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,10 +62,22 @@ const AppOptimized = () => {
               <Toaster />
               <Sonner />
               <BrowserRouter>
-                <Suspense fallback={<FullScreenLoader message="Loading..." />}>
+                <Suspense fallback={<FullScreenLoader message="Loading page..." />}>
                   <Routes>
                     <AdminRoutes />
-                    <ProtectedRoutes />
+                    
+                    {/* Inlined Protected Routes for simpler routing */}
+                    <Route path="/feed" element={<AuthenticatedLayout><pages.Feed /></AuthenticatedLayout>} />
+                    <Route path="/discover" element={<AuthenticatedLayout><pages.Discover /></AuthenticatedLayout>} />
+                    <Route path="/music" element={<AuthenticatedLayout><pages.MusicOptimized /></AuthenticatedLayout>} />
+                    <Route path="/search" element={<AuthenticatedLayout><pages.SearchPage /></AuthenticatedLayout>} />
+                    <Route path="/profile" element={<AuthenticatedLayout><pages.Profile /></AuthenticatedLayout>} />
+                    <Route path="/profile/:userId" element={<AuthenticatedLayout><pages.UserProfile /></AuthenticatedLayout>} />
+                    <Route path="/l/:username" element={<AuthenticatedLayout><pages.UserProfile /></AuthenticatedLayout>} />
+                    <Route path="/m/:username" element={<AuthenticatedLayout><pages.UserProfile /></AuthenticatedLayout>} />
+                    <Route path="/messages" element={<AuthenticatedLayout><pages.Messages /></AuthenticatedLayout>} />
+                    <Route path="/create-post" element={<components.AuthenticatedRouteOptimized><pages.CreatePost /></components.AuthenticatedRouteOptimized>} />
+
                     <PublicRoutes />
                     <DetailRoutes />
                     <Route path="*" element={<pages.NotFound />} />

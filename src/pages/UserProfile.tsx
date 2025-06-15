@@ -5,6 +5,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileHeader } from "@/components/ProfileHeader";
 import { ProfileContent } from "@/components/ProfileContent";
 import { FormattedPost } from "@/types/post";
+import { FullScreenLoader } from "@/components/ui/loading-state";
 
 const UserProfile = () => {
   const [searchParams] = useSearchParams();
@@ -27,7 +28,7 @@ const UserProfile = () => {
   const defaultTab = searchParams.get('tab') || 'posts';
   
   if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading profile...</div>;
+    return <FullScreenLoader message="Loading user profile..." />;
   }
   
   if (!!errorMessage) {
@@ -109,4 +110,3 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
-
