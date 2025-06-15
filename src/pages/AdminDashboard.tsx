@@ -94,28 +94,17 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch posts with profiles
+      // Fetch posts without profiles join first
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
-        .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          is_removed,
-          profiles!posts_user_id_fkey (
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('id, content, created_at, user_id, is_removed')
         .order('created_at', { ascending: false });
 
       if (postsError) {
         console.error('Error fetching posts:', postsError);
       }
 
-      // Fetch users
+      // Fetch users/profiles
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('id, username, full_name, avatar_url, is_banned, user_type')
@@ -125,62 +114,63 @@ const AdminDashboard = () => {
         console.error('Error fetching users:', usersError);
       }
 
-      // Fetch music uploads with profiles
+      // Fetch music uploads without profiles join first
       const { data: musicData, error: musicError } = await supabase
         .from('music_uploads')
-        .select(`
-          id,
-          title,
-          artist_id,
-          composer_full_name,
-          status,
-          created_at,
-          profiles!music_uploads_artist_id_fkey (
-            username,
-            full_name
-          )
-        `)
+        .select('id, title, artist_id, composer_full_name, status, created_at')
         .order('created_at', { ascending: false });
 
       if (musicError) {
         console.error('Error fetching music:', musicError);
       }
 
-      // Transform and set the data with proper type safety
-      setPosts((postsData || []).map(post => ({
+      // Create profiles lookup map
+      const profilesMap = (usersData || []).reduce((acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Transform posts with profile data
+      const transformedPosts = (postsData || []).map(post => ({
         id: post.id,
         content: post.content,
         created_at: post.created_at,
         user_id: post.user_id,
         is_removed: post.is_removed,
-        profiles: post.profiles ? {
-          username: post.profiles.username || '',
-          full_name: post.profiles.full_name || '',
-          avatar_url: post.profiles.avatar_url || ''
+        profiles: profilesMap[post.user_id] ? {
+          username: profilesMap[post.user_id].username || '',
+          full_name: profilesMap[post.user_id].full_name || '',
+          avatar_url: profilesMap[post.user_id].avatar_url || ''
         } : null
-      })));
+      }));
 
-      setUsers((usersData || []).map(user => ({
+      // Transform users
+      const transformedUsers = (usersData || []).map(user => ({
         id: user.id,
         username: user.username || '',
         full_name: user.full_name || '',
         avatar_url: user.avatar_url || '',
-        is_banned: user.is_banned,
+        is_banned: user.is_banned || false,
         user_type: user.user_type || 'listener'
-      })));
+      }));
 
-      setMusicUploads((musicData || []).map(upload => ({
+      // Transform music uploads with profile data
+      const transformedMusicUploads = (musicData || []).map(upload => ({
         id: upload.id,
         title: upload.title,
         artist_id: upload.artist_id,
         composer_full_name: upload.composer_full_name,
         status: upload.status,
         created_at: upload.created_at,
-        profiles: upload.profiles ? {
-          username: upload.profiles.username || '',
-          full_name: upload.profiles.full_name || ''
+        profiles: profilesMap[upload.artist_id] ? {
+          username: profilesMap[upload.artist_id].username || '',
+          full_name: profilesMap[upload.artist_id].full_name || ''
         } : null
-      })));
+      }));
+
+      setPosts(transformedPosts);
+      setUsers(transformedUsers);
+      setMusicUploads(transformedMusicUploads);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to fetch data');
