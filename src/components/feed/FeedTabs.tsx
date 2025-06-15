@@ -21,8 +21,32 @@ export const FeedTabs: React.FC<FeedTabsProps> = ({
   forYouContent,
   followingContent,
 }) => {
+  // Defensive: always provide a non-null content panel
+  const safeForYouContent =
+    forYouContent !== undefined && forYouContent !== null
+      ? forYouContent
+      : (
+        <div className="text-center py-12 text-muted-foreground">
+          Nothing to show.
+        </div>
+      );
+
+  const safeFollowingContent =
+    followingContent !== undefined && followingContent !== null
+      ? followingContent
+      : (
+        <div className="text-center py-12 text-muted-foreground">
+          Nothing to show.
+        </div>
+      );
+
   return (
-    <Tabs defaultValue={activeTab} className="mb-6" onValueChange={onTabChange}>
+    <Tabs
+      defaultValue={activeTab}
+      value={activeTab}
+      className="mb-6"
+      onValueChange={onTabChange}
+    >
       <div className="flex items-center justify-between">
         <TabsList className="grid w-[400px] grid-cols-2">
           <TabsTrigger value="foryou">For You</TabsTrigger>
@@ -38,13 +62,11 @@ export const FeedTabs: React.FC<FeedTabsProps> = ({
           <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
       </div>
-      
       <TabsContent value="foryou" className="space-y-4 mt-4">
-        {forYouContent}
+        {safeForYouContent}
       </TabsContent>
-      
       <TabsContent value="following" className="mt-4">
-        {followingContent}
+        {safeFollowingContent}
       </TabsContent>
     </Tabs>
   );

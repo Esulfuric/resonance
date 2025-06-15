@@ -1,4 +1,3 @@
-
 import { useSearchParams } from "react-router-dom";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileHeader } from "@/components/ProfileHeader";
@@ -19,7 +18,6 @@ export const UserProfileContent = () => {
     errorMessage
   } = useUserProfile();
 
-  // ================= CONCRETE FIX ========================
   // Defensive: Don't try to render tabs at all if not loaded or errored
   if (isLoading) {
     return <FullScreenLoader message="Loading user profile..." />;
@@ -73,6 +71,13 @@ export const UserProfileContent = () => {
     };
   });
 
+  // Defensive: always provide a non-null empty fallback for tab content
+  // since Radix & Framer Motion can crash if there's ever a null/undefined
+  const displayPostsSafe =
+    Array.isArray(displayPosts) && displayPosts.length > 0
+      ? displayPosts
+      : [];
+
   const isOwnProfile = currentUser?.id === userId;
   const defaultTab = searchParams.get('tab') || 'posts';
 
@@ -82,16 +87,16 @@ export const UserProfileContent = () => {
         <ProfileHeader 
           profile={{
             ...profile,
-            post_count: displayPosts.length,
+            post_count: displayPostsSafe.length,
             follower_count: followers.length,
             following_count: following.length
           }} 
           isOwnProfile={isOwnProfile}
         />
         <ProfileContent 
-          posts={displayPosts}
-          followers={followers}
-          following={following}
+          posts={displayPostsSafe}
+          followers={followers || []}
+          following={following || []}
           isOwnProfile={isOwnProfile}
           defaultTab={defaultTab}
           userType={profile.user_type}
