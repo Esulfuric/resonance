@@ -13,8 +13,107 @@ interface LocationData {
   city?: string;
 }
 
-// Real trending music data as fallback
-const getTrendingFallbackData = (): ChartTrack[] => {
+// Scrape data from Official Charts UK
+const scrapeOfficialChartsData = async (): Promise<ChartTrack[]> => {
+  try {
+    console.log('Scraping Official Charts UK Singles Chart...');
+    
+    // Use a CORS proxy to access the Official Charts website
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent('https://www.officialcharts.com/charts/singles-chart/')}`;
+    
+    const response = await fetch(proxyUrl);
+    if (!response.ok) {
+      throw new Error('Failed to fetch chart data');
+    }
+    
+    const data = await response.json();
+    const html = data.contents;
+    
+    // Parse the HTML to extract chart data
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    const tracks: ChartTrack[] = [];
+    
+    // Look for chart entries in the Official Charts format
+    const chartItems = doc.querySelectorAll('.chart-item, .chart-position, .position, .track');
+    
+    // Try multiple selectors for different possible HTML structures
+    const selectors = [
+      '.chart-item',
+      '.chart-entry',
+      '.track-item',
+      '.position-item',
+      'tr[data-position]',
+      '.chart-table tr',
+      '.singles-chart-item'
+    ];
+    
+    for (const selector of selectors) {
+      const items = doc.querySelectorAll(selector);
+      
+      items.forEach((item, index) => {
+        if (index >= 40) return; // Limit to top 40
+        
+        // Try to extract title and artist from various possible structures
+        const titleSelectors = ['.title', '.track-title', '.song-title', 'h3', 'h2', '.name'];
+        const artistSelectors = ['.artist', '.track-artist', '.performer', '.by', '.artist-name'];
+        
+        let title = '';
+        let artist = '';
+        
+        for (const titleSel of titleSelectors) {
+          const titleEl = item.querySelector(titleSel);
+          if (titleEl && titleEl.textContent?.trim()) {
+            title = titleEl.textContent.trim();
+            break;
+          }
+        }
+        
+        for (const artistSel of artistSelectors) {
+          const artistEl = item.querySelector(artistSel);
+          if (artistEl && artistEl.textContent?.trim()) {
+            artist = artistEl.textContent.trim();
+            break;
+          }
+        }
+        
+        // If we couldn't find structured data, try to extract from text content
+        if (!title || !artist) {
+          const textContent = item.textContent?.trim() || '';
+          const lines = textContent.split('\n').filter(line => line.trim());
+          
+          if (lines.length >= 2) {
+            title = lines[0].trim();
+            artist = lines[1].trim();
+          }
+        }
+        
+        if (title && artist && title.length > 0 && artist.length > 0) {
+          tracks.push({
+            rank: index + 1,
+            title: title.replace(/^\d+\.\s*/, ''), // Remove leading numbers
+            artist: artist.replace(/^by\s+/i, ''), // Remove "by" prefix
+            peak_position: index + 1,
+            weeks_on_chart: Math.floor(Math.random() * 20) + 1
+          });
+        }
+      });
+      
+      if (tracks.length > 0) break;
+    }
+    
+    console.log(`Successfully scraped ${tracks.length} tracks from Official Charts`);
+    return tracks.slice(0, 10); // Return top 10
+    
+  } catch (error) {
+    console.error('Error scraping Official Charts:', error);
+    throw error;
+  }
+};
+
+// Fallback data in case scraping fails
+const getFallbackData = (): ChartTrack[] => {
   return [
     { rank: 1, title: "Flowers", artist: "Miley Cyrus", peak_position: 1, weeks_on_chart: 12 },
     { rank: 2, title: "Anti-Hero", artist: "Taylor Swift", peak_position: 1, weeks_on_chart: 18 },
@@ -29,66 +128,20 @@ const getTrendingFallbackData = (): ChartTrack[] => {
   ];
 };
 
-const getLocationFallbackData = (country: string): ChartTrack[] => {
-  // Country-specific variations of popular tracks
-  const baseData = getTrendingFallbackData();
-  
-  // Add some regional variation based on country
-  if (country.includes('United Kingdom') || country.includes('UK')) {
-    return [
-      { rank: 1, title: "Miracle", artist: "Calvin Harris & Ellie Goulding", peak_position: 1, weeks_on_chart: 8 },
-      { rank: 2, title: "Sprinter", artist: "Dave & Central Cee", peak_position: 1, weeks_on_chart: 6 },
-      ...baseData.slice(2, 8)
-    ];
-  } else if (country.includes('Canada')) {
-    return [
-      { rank: 1, title: "Popular", artist: "The Weeknd & Playboi Carti", peak_position: 1, weeks_on_chart: 7 },
-      { rank: 2, title: "Flowers", artist: "Miley Cyrus", peak_position: 1, weeks_on_chart: 12 },
-      ...baseData.slice(2, 8)
-    ];
-  }
-  
-  return baseData.slice(0, 8);
-};
-
 export const fetchBillboardChartData = async (): Promise<ChartTrack[]> => {
   try {
-    console.log('Fetching Billboard chart data...');
+    console.log('Fetching worldwide chart data from Official Charts...');
     
-    // Try multiple music chart APIs/sources
-    const sources = [
-      'https://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect',
-      'https://itunes.apple.com/search?term=popular&media=music&limit=10',
-    ];
-
-    for (const url of sources) {
-      try {
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Successfully fetched chart data from:', url);
-          
-          // Parse iTunes API response
-          if (data.results && Array.isArray(data.results)) {
-            return data.results.slice(0, 10).map((track: any, index: number) => ({
-              rank: index + 1,
-              title: track.trackName || 'Unknown Track',
-              artist: track.artistName || 'Unknown Artist',
-              peak_position: index + 1,
-              weeks_on_chart: Math.floor(Math.random() * 20) + 1
-            }));
-          }
-        }
-      } catch (error) {
-        console.log(`Failed to fetch from ${url}:`, error);
-        continue;
-      }
+    const scrapedData = await scrapeOfficialChartsData();
+    
+    if (scrapedData.length > 0) {
+      return scrapedData;
     }
-
-    throw new Error('All sources failed');
+    
+    throw new Error('No data scraped');
   } catch (error) {
-    console.log('Using fallback chart data due to error:', error);
-    return getTrendingFallbackData();
+    console.log('Scraping failed, using fallback data:', error);
+    return getFallbackData();
   }
 };
 
@@ -117,11 +170,12 @@ export const fetchLocationChartData = async (country: string): Promise<ChartTrac
   try {
     console.log(`Fetching location chart data for ${country}...`);
     
-    // Try to get real data for the country
-    const spotifyUrl = `https://itunes.apple.com/search?term=top+hits+${country}&media=music&limit=8`;
+    // For location-based data, we'll use a different approach since Official Charts is UK-specific
+    // Try iTunes API for country-specific data
+    const iTunesUrl = `https://itunes.apple.com/search?term=top+hits&country=${country === 'United Kingdom' ? 'GB' : 'US'}&media=music&limit=8`;
     
     try {
-      const response = await fetch(spotifyUrl);
+      const response = await fetch(iTunesUrl);
       if (response.ok) {
         const data = await response.json();
         
@@ -136,13 +190,13 @@ export const fetchLocationChartData = async (country: string): Promise<ChartTrac
         }
       }
     } catch (error) {
-      console.log('iTunes API failed, using fallback:', error);
+      console.log('iTunes API failed for location data:', error);
     }
 
     // Fallback to curated regional data
-    return getLocationFallbackData(country);
+    return getFallbackData().slice(0, 8);
   } catch (error) {
     console.log('Using fallback location data due to error:', error);
-    return getLocationFallbackData(country);
+    return getFallbackData().slice(0, 8);
   }
 };
