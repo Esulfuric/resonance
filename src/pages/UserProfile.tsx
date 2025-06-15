@@ -16,7 +16,8 @@ const UserProfile = () => {
     followers,
     following,
     currentUser,
-    userId
+    userId,
+    errorMessage
   } = useUserProfile();
   
   // Use auth guard to protect this route
@@ -29,8 +30,26 @@ const UserProfile = () => {
     return <div className="flex items-center justify-center h-screen">Loading profile...</div>;
   }
   
+  if (!!errorMessage) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="bg-destructive/10 border border-destructive p-8 rounded-lg text-center max-w-lg">
+          <h2 className="text-lg font-bold mb-2 text-destructive">Profile Not Found</h2>
+          <p className="text-base">{errorMessage}</p>
+        </div>
+      </div>
+    );
+  }
+  
   if (!profile) {
-    return <div className="flex items-center justify-center h-screen">Profile not found</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="bg-destructive/10 border border-destructive p-8 rounded-lg text-center max-w-lg">
+          <h2 className="text-lg font-bold mb-2 text-destructive">Profile Not Found</h2>
+          <p className="text-base">The profile could not be found or loaded.</p>
+        </div>
+      </div>
+    );
   }
 
   // Format posts for display
@@ -90,3 +109,4 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
+

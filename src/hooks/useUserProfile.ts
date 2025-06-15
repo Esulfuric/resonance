@@ -32,43 +32,44 @@ export const useUserProfile = () => {
   const [followers, setFollowers] = useState<FollowUser[]>([]);
   const [following, setFollowing] = useState<FollowUser[]>([]);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentUser) return;
     
     const fetchProfileData = async () => {
       setIsLoading(true);
+      setErrorMessage(null); // reset before load
       try {
         let targetUserId = userId;
-        
+
         // Always resolve by username if :username param present
         if (username) {
+          // Diagnostic log
+          console.log("[UserProfile] Resolving profile for username:", username);
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('id, user_type')
             .eq('username', username)
             .maybeSingle();
           
+          console.log("[UserProfile] Profile query result", profileData, profileError);
+
           if (profileError || !profileData) {
-            toast({
-              title: "User not found",
-              description: "The requested user profile could not be found.",
-              variant: "destructive",
-            });
+            setErrorMessage("The requested user profile could not be found (invalid username or error).");
             setIsLoading(false);
-            navigate('/feed');
             return;
           }
           
           const isListenerRoute = location.pathname.startsWith('/l/');
           const isMusicianRoute = location.pathname.startsWith('/m/');
           
+          // If user_type doesn't match path, correct path
           if (isListenerRoute && profileData.user_type !== 'listener') {
             setIsLoading(false);
             navigate(`/m/${username}${location.search}`, { replace: true });
             return;
           }
-          
           if (isMusicianRoute && profileData.user_type !== 'musician') {
             setIsLoading(false);
             navigate(`/l/${username}${location.search}`, { replace: true });
@@ -79,38 +80,32 @@ export const useUserProfile = () => {
         }
         
         if (!targetUserId) {
-          toast({
-            title: "User not found",
-            description: "Invalid user identifier.",
-            variant: "destructive",
-          });
+          setErrorMessage("Invalid user identifier (missing userId or username).");
           setIsLoading(false);
-          navigate('/feed');
           return;
         }
         
         setResolvedUserId(targetUserId);
-        
-        // Fetch user profile (with user_type!)
+
+        // Diagnostic log for targetUserId
+        console.log("[UserProfile] Fetching profile details for id:", targetUserId);
+
+        // Fetch full user profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', targetUserId)
           .maybeSingle();
+
+        console.log("[UserProfile] Fetched profile details:", profileData, profileError);
         
         if (profileError) throw profileError;
         if (!profileData) {
-          toast({
-            title: "User not found",
-            description: "The requested user profile could not be found.",
-            variant: "destructive",
-          });
+          setErrorMessage("The requested user profile could not be found (bad id).");
           setIsLoading(false);
-          navigate('/feed');
           return;
         }
         
-        // Cast user_type to the correct union type
         const userType = profileData.user_type as 'musician' | 'listener' | undefined;
         
         setProfile({
@@ -166,6 +161,7 @@ export const useUserProfile = () => {
         
       } catch (error: any) {
         console.error('Error fetching profile:', error);
+        setErrorMessage("Error loading profile: " + error.message);
         toast({
           title: "Error loading profile",
           description: error.message,
@@ -186,6 +182,7 @@ export const useUserProfile = () => {
     followers,
     following,
     currentUser,
-    userId: resolvedUserId
+    userId: resolvedUserId,
+    errorMessage,
   };
 };
