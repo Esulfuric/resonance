@@ -35,6 +35,7 @@ export const useUserProfile = () => {
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Set a timeout for loading state to prevent infinite loading
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
     if (isLoading) {
@@ -43,14 +44,14 @@ export const useUserProfile = () => {
           setIsLoading(false);
           setErrorMessage("The profile took too long to load. Please try refreshing the page.");
         }
-      }, 15000); // 15s timeout
+      }, 15000); // 15 seconds
     }
     return () => clearTimeout(timeoutId);
   }, [isLoading]);
 
   useEffect(() => {
-    if (!currentUser) return;
-    
+    // Don't block loading if user is not signed in (public profile view)
+    // Previously: if (!currentUser) return;
     const fetchProfileData = async () => {
       setIsLoading(true);
       setErrorMessage(null); // reset before load
@@ -59,14 +60,13 @@ export const useUserProfile = () => {
 
         // Always resolve by username if :username param present
         if (username) {
-          // Diagnostic log
           console.log("[UserProfile] Resolving profile for username:", username);
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('id, user_type')
             .eq('username', username)
             .maybeSingle();
-          
+
           console.log("[UserProfile] Profile query result", profileData, profileError);
 
           if (profileError || !profileData) {
@@ -74,11 +74,10 @@ export const useUserProfile = () => {
             setIsLoading(false);
             return;
           }
-          
+
           const isListenerRoute = location.pathname.startsWith('/l/');
           const isMusicianRoute = location.pathname.startsWith('/m/');
-          
-          // If user_type doesn't match path, correct path
+
           if (isListenerRoute && profileData.user_type !== 'listener') {
             setIsLoading(false);
             navigate(`/m/${username}${location.search}`, { replace: true });
@@ -89,19 +88,18 @@ export const useUserProfile = () => {
             navigate(`/l/${username}${location.search}`, { replace: true });
             return;
           }
-          
+
           targetUserId = profileData.id;
         }
-        
+
         if (!targetUserId) {
           setErrorMessage("Invalid user identifier (missing userId or username).");
           setIsLoading(false);
           return;
         }
-        
+
         setResolvedUserId(targetUserId);
 
-        // Diagnostic log for targetUserId
         console.log("[UserProfile] Fetching profile details for id:", targetUserId);
 
         // Fetch full user profile
@@ -112,37 +110,37 @@ export const useUserProfile = () => {
           .maybeSingle();
 
         console.log("[UserProfile] Fetched profile details:", profileData, profileError);
-        
+
         if (profileError) throw profileError;
         if (!profileData) {
           setErrorMessage("The requested user profile could not be found (bad id).");
           setIsLoading(false);
           return;
         }
-        
+
         const userType = profileData.user_type as 'musician' | 'listener' | undefined;
-        
+
         setProfile({
           ...profileData,
           user_type: userType
         });
-        
+
         // Fetch user posts
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
           .select('*')
           .eq('user_id', targetUserId)
           .order('created_at', { ascending: false });
-        
+
         if (postsError) throw postsError;
         setPosts(postsData || []);
-        
+
         // Fetch followers - INCLUDE user_type!
         const { data: followersData } = await supabase
           .from('follows')
           .select('follower_id')
           .eq('following_id', targetUserId);
-        
+
         if (followersData && followersData.length > 0) {
           const followerIds = followersData.map(f => f.follower_id);
           const { data: followerProfiles } = await supabase
@@ -154,13 +152,13 @@ export const useUserProfile = () => {
         } else {
           setFollowers([]);
         }
-        
+
         // Fetch following - INCLUDE user_type!
         const { data: followingData } = await supabase
           .from('follows')
           .select('following_id')
           .eq('follower_id', targetUserId);
-        
+
         if (followingData && followingData.length > 0) {
           const followingIds = followingData.map(f => f.following_id);
           const { data: followingProfiles } = await supabase
@@ -172,7 +170,7 @@ export const useUserProfile = () => {
         } else {
           setFollowing([]);
         }
-        
+
       } catch (error: any) {
         console.error('Error fetching profile:', error);
         setErrorMessage("Error loading profile: " + error.message);
@@ -185,9 +183,10 @@ export const useUserProfile = () => {
         setIsLoading(false);
       }
     };
-    
+
+    // Fetch whenever relevant identifiers or navigation changes
     fetchProfileData();
-  }, [userId, username, navigate, toast, currentUser, location.pathname, location.search]);
+  }, [userId, username, navigate, toast, location.pathname, location.search]);
 
   return {
     profile,
