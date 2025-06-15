@@ -5,7 +5,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from './ThemeToggle';
-import { motion } from "framer-motion";
 
 export const MobileNavigation: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -40,13 +39,8 @@ export const MobileNavigation: React.FC = () => {
           </div>
           
           <nav className="space-y-2">
-            {navItems.map((item, index) => (
-              <motion.div 
-                key={item.path}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-              >
+            {navItems.map((item) => (
+              <div key={item.path}>
                 <Link 
                   to={item.path} 
                   onClick={() => setOpen(false)}
@@ -59,7 +53,7 @@ export const MobileNavigation: React.FC = () => {
                   <item.icon className="h-5 w-5" />
                   <span>{item.title}</span>
                 </Link>
-              </motion.div>
+              </div>
             ))}
           </nav>
 

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -79,12 +78,7 @@ const App = () => {
       <TranslationProvider>
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="min-h-screen pb-20" 
-            >
+            <div className="min-h-screen pb-20">
               <Toaster />
               <Sonner />
               <BrowserRouter>
@@ -97,7 +91,7 @@ const App = () => {
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   
-                  {/* Admin routes */}
+                  {/* Admin routes - NO NAVBAR */}
                   <Route path="/admin/login" element={<AdminLogin />} />
                   <Route path="/admin/dashboard" element={
                     <AdminProtectedRoute>
@@ -190,7 +184,7 @@ const App = () => {
                 </Routes>
                 <BottomNavigation />
               </BrowserRouter>
-            </motion.div>
+            </div>
           </TooltipProvider>
         </QueryClientProvider>
       </TranslationProvider>

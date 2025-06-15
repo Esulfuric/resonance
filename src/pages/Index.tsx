@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -142,8 +141,8 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Admin Access Button */}
-        <section className="py-8 border-t">
+        {/* Admin Access Button - Hidden on mobile */}
+        <section className="py-8 border-t hidden md:block">
           <div className="container px-4 md:px-6">
             <div className="text-center">
               <Link to="/admin/login">
