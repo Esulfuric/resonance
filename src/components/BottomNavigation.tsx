@@ -11,12 +11,12 @@ export const BottomNavigation = () => {
   const location = useLocation();
   const { user } = useSupabase();
   
-  // Don't show bottom nav if not authenticated or on public routes
+  // Don't show bottom nav if not authenticated
   if (!user) return null;
 
-  // Don't show on public routes even if authenticated
-  const publicRoutes = ['/', '/login', '/signup', '/forgot-password'];
-  if (publicRoutes.includes(location.pathname)) return null;
+  // Don't show on auth pages
+  const authRoutes = ['/login', '/signup', '/forgot-password'];
+  if (authRoutes.includes(location.pathname)) return null;
 
   const navItems = [
     { icon: Home, path: '/feed', label: 'Home' },

@@ -49,7 +49,7 @@ const Navbar = () => {
     }
   };
 
-  // Hide navbar on certain pages
+  // Hide navbar on auth pages (but show on index page)
   if (['/login', '/signup', '/forgot-password'].includes(location.pathname)) {
     return null;
   }
