@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -161,17 +160,7 @@ const App = () => {
                         </>
                       </AuthenticatedRoute>
                     } />
-                    <Route path="/profile/:userId" element={
-                      <AuthenticatedRoute>
-                        <>
-                          <Navbar />
-                          <div className="pt-16 pb-16">
-                            <UserProfile />
-                          </div>
-                          <BottomNavigation />
-                        </>
-                      </AuthenticatedRoute>
-                    } />
+                    {/* REMOVED: <Route path="/profile/:userId" ... /> */}
                     <Route path="/create-post" element={
                       <AuthenticatedRoute>
                         <CreatePost />
@@ -188,7 +177,31 @@ const App = () => {
                         </>
                       </AuthenticatedRoute>
                     } />
-                    
+
+                    {/* Username-based profile routes ONLY */}
+                    <Route path="/l/:username" element={
+                      <AuthenticatedRoute>
+                        <>
+                          <Navbar />
+                          <div className="pt-16 pb-16">
+                            <UserProfile />
+                          </div>
+                          <BottomNavigation />
+                        </>
+                      </AuthenticatedRoute>
+                    } />
+                    <Route path="/m/:username" element={
+                      <AuthenticatedRoute>
+                        <>
+                          <Navbar />
+                          <div className="pt-16 pb-16">
+                            <UserProfile />
+                          </div>
+                          <BottomNavigation />
+                        </>
+                      </AuthenticatedRoute>
+                    } />
+
                     {/* Catch-all routes */}
                     <Route path="/song/:songTitle/:artist" element={<SongDetails />} />
                     <Route path="/artist/:artistName" element={<ArtistDetails />} />

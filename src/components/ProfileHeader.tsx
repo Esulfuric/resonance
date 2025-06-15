@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useFollow } from "@/hooks/use-follow";
@@ -51,7 +50,7 @@ export function ProfileHeader({
     navigate(`/messages?user=${profile.id}`);
   };
 
-  // Generate username-based URL
+  // Canonical username-based navigation only:
   const getUsernameUrl = (tab?: string) => {
     const username = profile.username || 'user';
     const prefix = profile.user_type === 'musician' ? 'm' : 'l';

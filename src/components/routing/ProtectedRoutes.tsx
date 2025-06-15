@@ -1,10 +1,8 @@
-
 import React from "react";
 import { Route } from "react-router-dom";
 import { pages, components } from "@/config/routes";
 import { AuthenticatedLayout } from "@/components/layout/AppLayout";
 
-// Ensure these routes come BEFORE any catch-all route ("*")
 export const ProtectedRoutes = () => (
   <>
     <Route path="/feed" element={
@@ -32,11 +30,7 @@ export const ProtectedRoutes = () => (
         <pages.Profile />
       </AuthenticatedLayout>
     } />
-    <Route path="/profile/:userId" element={
-      <AuthenticatedLayout>
-        <pages.UserProfile />
-      </AuthenticatedLayout>
-    } />
+    {/* REMOVED: <Route path="/profile/:userId" ... /> */}
     {/* Username-based routes -- these must come BEFORE any catch-all route */}
     <Route path="/l/:username" element={
       <AuthenticatedLayout>

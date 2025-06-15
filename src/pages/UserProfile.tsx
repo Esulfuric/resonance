@@ -1,5 +1,5 @@
-
-import { useSearchParams, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useSearchParams, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { ProfileHeader } from "@/components/ProfileHeader";
@@ -7,9 +7,41 @@ import { ProfileContent } from "@/components/ProfileContent";
 import { FormattedPost } from "@/types/post";
 import { FullScreenLoader } from "@/components/ui/loading-state";
 
+// Helper for canonicalizing to username-based route
+async function fetchUsernameFromId(profileId: string) {
+  if (!profileId) return null;
+  // This import should match your main supabase client!
+  const { supabase } = await import("@/lib/supabase");
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('username, user_type')
+    .eq('id', profileId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return { username: data.username, user_type: data.user_type };
+}
+
 const UserProfile = () => {
   const [searchParams] = useSearchParams();
   const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // ----- REDIRECT if loaded with /profile/:userId route
+  useEffect(() => {
+    // Only handle legacy route (/profile/:userId)
+    if (location.pathname.startsWith("/profile/") && params.userId) {
+      fetchUsernameFromId(params.userId).then(user => {
+        if (user && user.username) {
+          // Canonicalize to /l/:username or /m/:username
+          const prefix = user.user_type === 'musician' ? 'm' : 'l';
+          navigate(`/${prefix}/${user.username}${location.search}`, { replace: true });
+        }
+        // If user doesn't exist, keep logic below, it will display error as usual.
+      });
+    }
+  }, [params.userId, location.pathname, location.search, navigate]);
+
   const {
     profile,
     posts,

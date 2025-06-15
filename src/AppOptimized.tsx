@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -66,13 +65,12 @@ const AppOptimized = () => {
                   <Routes>
                     <AdminRoutes />
                     
-                    {/* Inlined Protected Routes for simpler routing */}
+                    {/* Simplified protected routes */}
                     <Route path="/feed" element={<AuthenticatedLayout><pages.Feed /></AuthenticatedLayout>} />
                     <Route path="/discover" element={<AuthenticatedLayout><pages.Discover /></AuthenticatedLayout>} />
                     <Route path="/music" element={<AuthenticatedLayout><pages.MusicOptimized /></AuthenticatedLayout>} />
                     <Route path="/search" element={<AuthenticatedLayout><pages.SearchPage /></AuthenticatedLayout>} />
                     <Route path="/profile" element={<AuthenticatedLayout><pages.Profile /></AuthenticatedLayout>} />
-                    <Route path="/profile/:userId" element={<AuthenticatedLayout><pages.UserProfile /></AuthenticatedLayout>} />
                     <Route path="/l/:username" element={<AuthenticatedLayout><pages.UserProfile /></AuthenticatedLayout>} />
                     <Route path="/m/:username" element={<AuthenticatedLayout><pages.UserProfile /></AuthenticatedLayout>} />
                     <Route path="/messages" element={<AuthenticatedLayout><pages.Messages /></AuthenticatedLayout>} />
