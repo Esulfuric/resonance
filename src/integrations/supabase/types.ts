@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          id: string
+          reason: string | null
+          target_id: string
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          target_id: string
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          target_id?: string
+        }
+        Relationships: []
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          username?: string
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string | null
@@ -107,6 +155,9 @@ export type Database = {
           cover_art_url: string | null
           created_at: string
           id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           title: string
           updated_at: string
@@ -120,6 +171,9 @@ export type Database = {
           cover_art_url?: string | null
           created_at?: string
           id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -133,6 +187,9 @@ export type Database = {
           cover_art_url?: string | null
           created_at?: string
           id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -255,6 +312,10 @@ export type Database = {
           created_at: string | null
           id: string
           image_url: string | null
+          is_removed: boolean
+          removal_reason: string | null
+          removed_at: string | null
+          removed_by: string | null
           song_title: string | null
           updated_at: string | null
           user_id: string
@@ -264,6 +325,10 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_url?: string | null
+          is_removed?: boolean
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           song_title?: string | null
           updated_at?: string | null
           user_id: string
@@ -273,6 +338,10 @@ export type Database = {
           created_at?: string | null
           id?: string
           image_url?: string | null
+          is_removed?: boolean
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
           song_title?: string | null
           updated_at?: string | null
           user_id?: string
@@ -282,27 +351,36 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          ban_reason: string | null
+          banned_at: string | null
           bio: string | null
           full_name: string | null
           id: string
+          is_banned: boolean
           updated_at: string | null
           user_type: string | null
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           bio?: string | null
           full_name?: string | null
           id: string
+          is_banned?: boolean
           updated_at?: string | null
           user_type?: string | null
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
           bio?: string | null
           full_name?: string | null
           id?: string
+          is_banned?: boolean
           updated_at?: string | null
           user_type?: string | null
           username?: string | null
@@ -323,6 +401,10 @@ export type Database = {
           created_at: string
           unread_count: number
         }[]
+      }
+      is_user_banned: {
+        Args: { user_id_param: string }
+        Returns: boolean
       }
     }
     Enums: {

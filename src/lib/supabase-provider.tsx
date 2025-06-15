@@ -33,6 +33,27 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.id);
+      
+      // Check if user is banned before allowing session
+      if (session?.user) {
+        try {
+          const { data: isBanned } = await supabase.rpc('is_user_banned', {
+            user_id_param: session.user.id
+          });
+          
+          if (isBanned) {
+            console.log("User is banned, signing out");
+            await supabase.auth.signOut();
+            setSession(null);
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error("Error checking ban status:", error);
+        }
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
