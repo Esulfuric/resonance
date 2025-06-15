@@ -11,7 +11,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface FormattedPost {
   id: string;
+  user_id?: string;
   user: {
+    id?: string;
     name: string;
     username: string;
     avatar: string;
@@ -47,6 +49,7 @@ interface ProfileContentProps {
   showSettings?: boolean;
   defaultTab?: string;
   userType?: 'musician' | 'listener';
+  currentUserId?: string;
 }
 
 export function ProfileContent({
@@ -56,7 +59,8 @@ export function ProfileContent({
   isOwnProfile,
   showSettings = false,
   defaultTab = "posts",
-  userType
+  userType,
+  currentUserId
 }: ProfileContentProps) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -124,7 +128,18 @@ export function ProfileContent({
         <ScrollArea className="max-h-[800px] pr-4">
           {posts.length > 0 ? (
             posts.map((post) => (
-              <PostCard key={post.id} {...post} />
+              <PostCard 
+                key={post.id}
+                id={post.id}
+                user_id={post.user_id}
+                user={post.user}
+                timestamp={post.timestamp}
+                content={post.content}
+                imageUrl={post.imageUrl}
+                songInfo={post.songInfo}
+                stats={post.stats}
+                currentUserId={currentUserId}
+              />
             ))
           ) : (
             <div className="text-center py-8">

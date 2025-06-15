@@ -14,37 +14,74 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { toggleLikePost, checkPostLiked } from "@/services/post/postInteractions";
 import { deletePost } from "@/services/post/postActions";
-import { FormattedPost } from "@/types/post";
 
 interface PostCardProps {
-  post: FormattedPost & {
-    likes_count?: number;
-    comments_count?: number;
-    is_removed?: boolean;
-    removal_reason?: string;
+  id: string;
+  user_id?: string;
+  user: {
+    id?: string;
+    name: string;
+    username: string;
+    avatar: string;
+    user_type?: 'musician' | 'listener';
   };
+  timestamp: string;
+  content: string;
+  isEdited?: boolean;
+  imageUrl?: string;
+  songInfo?: {
+    title: string;
+    artist: string;
+    albumCover: string;
+  };
+  stats: {
+    likes: number;
+    comments: number;
+    shares: number;
+  };
+  likes_count?: number;
+  comments_count?: number;
+  is_removed?: boolean;
+  removal_reason?: string;
   currentUserId?: string;
   onDeletePost?: (postId: string) => void;
   onRefreshFeed?: () => void;
 }
 
-export const PostCard = ({ post, currentUserId, onDeletePost, onRefreshFeed }: PostCardProps) => {
+export const PostCard = ({
+  id,
+  user_id,
+  user,
+  timestamp,
+  content,
+  isEdited,
+  imageUrl,
+  songInfo,
+  stats,
+  likes_count,
+  comments_count,
+  is_removed,
+  removal_reason,
+  currentUserId,
+  onDeletePost,
+  onRefreshFeed
+}: PostCardProps) => {
   const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(post.likes_count || post.stats.likes);
+  const [likesCount, setLikesCount] = useState(likes_count || stats.likes);
   const [isLiking, setIsLiking] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (currentUserId) {
-      checkPostLiked(post.id, currentUserId).then(setIsLiked);
+      checkPostLiked(id, currentUserId).then(setIsLiked);
     }
-  }, [post.id, currentUserId]);
+  }, [id, currentUserId]);
 
   const handleLike = async () => {
     if (!currentUserId || isLiking) return;
     
     setIsLiking(true);
-    const result = await toggleLikePost(post.id, currentUserId);
+    const result = await toggleLikePost(id, currentUserId);
     
     if (result.success) {
       setIsLiked(result.isLiked);
@@ -65,9 +102,9 @@ export const PostCard = ({ post, currentUserId, onDeletePost, onRefreshFeed }: P
     const confirmed = window.confirm("Are you sure you want to delete this post?");
     if (!confirmed) return;
 
-    const result = await deletePost(post.id);
+    const result = await deletePost(id);
     if (result.success) {
-      onDeletePost(post.id);
+      onDeletePost(id);
       onRefreshFeed?.();
       toast({
         title: "Post deleted",
@@ -82,10 +119,10 @@ export const PostCard = ({ post, currentUserId, onDeletePost, onRefreshFeed }: P
     }
   };
 
-  const isOwnPost = currentUserId === post.user.id;
+  const isOwnPost = currentUserId === (user_id || user.id);
 
   // Show removed post message
-  if (post.is_removed) {
+  if (is_removed) {
     return (
       <Card className="border-l-4 border-l-red-500">
         <CardContent className="p-6">
@@ -93,9 +130,9 @@ export const PostCard = ({ post, currentUserId, onDeletePost, onRefreshFeed }: P
             <p className="text-red-600 font-medium">
               This post has been removed because it doesn't follow the content policies
             </p>
-            {isOwnPost && post.removal_reason && (
+            {isOwnPost && removal_reason && (
               <p className="text-sm text-gray-600 mt-2">
-                Reason: {post.removal_reason}
+                Reason: {removal_reason}
               </p>
             )}
           </div>
@@ -109,20 +146,20 @@ export const PostCard = ({ post, currentUserId, onDeletePost, onRefreshFeed }: P
       <CardHeader className="flex flex-row items-center space-y-0 pb-3">
         <div className="flex items-center space-x-3 flex-1">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={post.user.avatar} alt={post.user.name} />
-            <AvatarFallback>{post.user.name[0]}</AvatarFallback>
+            <AvatarImage src={user.avatar} alt={user.name} />
+            <AvatarFallback>{user.name[0]}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium leading-none">{post.user.name}</p>
-              <p className="text-sm text-muted-foreground">@{post.user.username}</p>
-              {post.user.user_type === 'musician' && (
+              <p className="text-sm font-medium leading-none">{user.name}</p>
+              <p className="text-sm text-muted-foreground">@{user.username}</p>
+              {user.user_type === 'musician' && (
                 <Badge variant="secondary" className="text-xs bg-resonance-orange/10 text-resonance-orange">
                   Musician
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{post.timestamp}</p>
+            <p className="text-sm text-muted-foreground">{timestamp}</p>
           </div>
         </div>
         
@@ -143,25 +180,25 @@ export const PostCard = ({ post, currentUserId, onDeletePost, onRefreshFeed }: P
       </CardHeader>
       
       <CardContent className="pb-3">
-        <p className="text-sm mb-3">{post.content}</p>
+        <p className="text-sm mb-3">{content}</p>
         
-        {post.songInfo && (
+        {songInfo && (
           <div className="mb-3 p-3 bg-muted rounded-lg flex items-center space-x-3">
             <img 
-              src={post.songInfo.albumCover} 
+              src={songInfo.albumCover} 
               alt="Album cover" 
               className="w-12 h-12 rounded object-cover"
             />
             <div>
-              <p className="text-sm font-medium">{post.songInfo.title}</p>
-              <p className="text-xs text-muted-foreground">{post.songInfo.artist}</p>
+              <p className="text-sm font-medium">{songInfo.title}</p>
+              <p className="text-xs text-muted-foreground">{songInfo.artist}</p>
             </div>
           </div>
         )}
         
-        {post.imageUrl && (
+        {imageUrl && (
           <img 
-            src={post.imageUrl} 
+            src={imageUrl} 
             alt="Post image" 
             className="w-full rounded-lg object-cover max-h-96 mb-3"
           />
@@ -182,12 +219,12 @@ export const PostCard = ({ post, currentUserId, onDeletePost, onRefreshFeed }: P
             
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-blue-500">
               <MessageCircle className="h-4 w-4 mr-1" />
-              <span className="text-xs">{post.stats.comments}</span>
+              <span className="text-xs">{comments_count || stats.comments}</span>
             </Button>
             
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-green-500">
               <Share className="h-4 w-4 mr-1" />
-              <span className="text-xs">{post.stats.shares}</span>
+              <span className="text-xs">{stats.shares}</span>
             </Button>
           </div>
         </div>

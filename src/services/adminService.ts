@@ -35,12 +35,21 @@ export interface AdminAction {
 // Admin authentication functions
 export const adminLogin = async (username: string, password: string): Promise<{ success: boolean; admin?: AdminUser; error?: string }> => {
   try {
-    const { data, error } = await supabase.rpc('admin_login', {
-      username_param: username,
-      password_param: password
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/admin-login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabase.supabaseKey}`,
+      },
+      body: JSON.stringify({ username, password }),
     });
     
-    if (error) throw error;
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { success: false, error: errorData.error || 'Login failed' };
+    }
+    
+    const data = await response.json();
     
     if (data && data.length > 0) {
       return { success: true, admin: data[0] };
@@ -69,6 +78,7 @@ export const getPendingMusicUploads = async (): Promise<PendingMusicUpload[]> =>
     
     return uploads?.map(upload => ({
       ...upload,
+      upload_type: upload.upload_type as 'single' | 'album',
       artist_name: upload.profiles?.full_name || upload.profiles?.username || 'Unknown Artist',
       tracks: upload.music_tracks || []
     })) || [];
