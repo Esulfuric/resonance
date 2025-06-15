@@ -48,19 +48,19 @@ const Navbar = () => {
     }
   };
 
-  // Hide navbar when not signed in OR on auth pages
+  // Don't show navbar when not signed in OR on auth pages
   if (!user || ['/login', '/signup', '/forgot-password'].includes(location.pathname)) {
     return null;
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-sm z-10 border-b">
-      <div className="container h-full flex items-center justify-between">
+    <div className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-sm z-50 border-b">
+      <div className="container h-full flex items-center justify-between px-4 max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
           <Logo />
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <LanguageToggle />
           <ThemeToggle />
           
