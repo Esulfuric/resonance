@@ -44,13 +44,13 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-resonance-green/10 to-resonance-orange/10">
+    <div className="min-h-screen bg-gradient-to-br from-resonance-green/10 to-resonance-green/5">
       {/* Header */}
       <header className="container mx-auto px-4 py-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-full bg-resonance-green animate-pulse"></div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-resonance-green to-resonance-orange bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-resonance-green to-resonance-green/80 bg-clip-text text-transparent">
               Resonance
             </h1>
           </div>
@@ -79,7 +79,7 @@ const Index = () => {
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-20">
         <div className="text-center max-w-4xl mx-auto">
-          <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-resonance-green to-resonance-orange bg-clip-text text-transparent">
+          <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-resonance-green to-resonance-green/80 bg-clip-text text-transparent">
             Connect Through Music
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
@@ -148,7 +148,7 @@ const Index = () => {
       <footer className="bg-muted/50 py-8">
         <div className="container mx-auto px-4 text-center">
           <p className="text-muted-foreground">
-            © 2024 Resonance. Connecting music lovers worldwide.
+            © 2024 Sulfuric Creations. Music made social. Connections made meaningful.
           </p>
         </div>
       </footer>
