@@ -1,9 +1,8 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, useEffect } from "react";
 import { SupabaseProvider } from "@/lib/supabase-provider";
 import { TranslationProvider } from "@/contexts/TranslationContext";
@@ -13,6 +12,7 @@ import { PublicRoutes } from "@/components/routing/PublicRoutes";
 import { AdminRoutes } from "@/components/routing/AdminRoutes";
 import { ProtectedRoutes } from "@/components/routing/ProtectedRoutes";
 import { DetailRoutes } from "@/components/routing/DetailRoutes";
+import { pages } from "@/config/routes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,9 +64,10 @@ const AppOptimized = () => {
                 <Suspense fallback={<FullScreenLoader message="Loading..." />}>
                   <Routes>
                     <AdminRoutes />
-                    <PublicRoutes />
                     <ProtectedRoutes />
+                    <PublicRoutes />
                     <DetailRoutes />
+                    <Route path="*" element={<pages.NotFound />} />
                   </Routes>
                 </Suspense>
               </BrowserRouter>
