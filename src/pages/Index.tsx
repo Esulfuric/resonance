@@ -48,9 +48,9 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-resonance-green/10 to-resonance-green/5">
+    <div className="h-screen w-screen bg-gradient-to-br from-resonance-green/10 to-resonance-green/5 flex flex-col overflow-x-hidden">
       {/* Header */}
-      <header className="w-full px-6 py-6">
+      <header className="w-full px-6 py-6 flex-shrink-0">
         <div className="w-full max-w-7xl mx-auto">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -88,7 +88,7 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <main className="w-full px-6 py-12 flex-1">
+      <main className="w-full px-6 py-12 flex-1 flex flex-col justify-center overflow-y-auto">
         <div className="w-full max-w-7xl mx-auto">
           <div className="text-center">
             <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-resonance-green to-resonance-green/80 bg-clip-text text-transparent">
@@ -134,7 +134,7 @@ const Index = () => {
       </main>
 
       {/* Admin Login Button */}
-      <div className="w-full px-6 pb-8">
+      <div className="w-full px-6 pb-4 flex-shrink-0">
         <div className="w-full max-w-7xl mx-auto">
           <div className="flex justify-center">
             <Button
@@ -151,7 +151,7 @@ const Index = () => {
       </div>
 
       {/* Footer */}
-      <footer className="w-full bg-muted/50 py-8 mt-auto">
+      <footer className="w-full bg-muted/50 py-8 flex-shrink-0">
         <div className="w-full max-w-7xl mx-auto px-6 text-center">
           <p className="text-muted-foreground">
             © 2024 Sulfuric Creations. Music made social. Connections made meaningful.
