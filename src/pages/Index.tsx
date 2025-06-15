@@ -13,14 +13,6 @@ const Index = () => {
   const { user, signInWithGoogle, isLoading } = useSupabase();
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  const handleGetStarted = () => {
-    if (user) {
-      navigate('/feed');
-    } else {
-      navigate('/login');
-    }
-  };
-
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
@@ -56,10 +48,10 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-resonance-green/10 to-resonance-green/5">
+    <div className="min-h-screen w-full bg-gradient-to-br from-resonance-green/10 to-resonance-green/5">
       {/* Header */}
-      <header className="w-full px-4 py-6">
-        <div className="container mx-auto">
+      <header className="w-full px-6 py-6">
+        <div className="w-full max-w-7xl mx-auto">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <img 
@@ -96,9 +88,9 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <main className="w-full px-4 py-20">
-        <div className="container mx-auto">
-          <div className="text-center max-w-4xl mx-auto">
+      <main className="w-full px-6 py-12 flex-1">
+        <div className="w-full max-w-7xl mx-auto">
+          <div className="text-center">
             <h2 className="text-5xl font-bold mb-6 bg-gradient-to-r from-resonance-green to-resonance-green/80 bg-clip-text text-transparent">
               Connect Through Music
             </h2>
@@ -106,30 +98,21 @@ const Index = () => {
               Join a vibrant community of music lovers, discover new artists, and share your passion for music with like-minded people.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <Button 
-                size="lg" 
-                onClick={handleGetStarted}
-                className="bg-resonance-green hover:bg-resonance-green/90 text-lg px-8 py-3"
-                disabled={isLoading}
-              >
-                {isLoading ? "Loading..." : "Get Started"}
-              </Button>
-              {!user && (
+            {!user && (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
                 <Button 
                   size="lg" 
-                  variant="outline" 
                   onClick={handleGoogleSignIn}
-                  className="text-lg px-8 py-3"
+                  className="bg-resonance-green hover:bg-resonance-green/90 text-lg px-8 py-3"
                   disabled={googleLoading || isLoading}
                 >
                   {googleLoading ? "Signing in..." : "Sign in with Google"}
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Features Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
               {features.map((feature, index) => (
                 <Card key={index} className="border-none shadow-lg hover:shadow-xl transition-shadow">
                   <CardHeader className="text-center">
@@ -151,8 +134,8 @@ const Index = () => {
       </main>
 
       {/* Admin Login Button */}
-      <div className="w-full px-4 pb-8">
-        <div className="container mx-auto">
+      <div className="w-full px-6 pb-8">
+        <div className="w-full max-w-7xl mx-auto">
           <div className="flex justify-center">
             <Button
               onClick={() => navigate('/admin/login')}
@@ -168,8 +151,8 @@ const Index = () => {
       </div>
 
       {/* Footer */}
-      <footer className="w-full bg-muted/50 py-8">
-        <div className="container mx-auto px-4 text-center">
+      <footer className="w-full bg-muted/50 py-8 mt-auto">
+        <div className="w-full max-w-7xl mx-auto px-6 text-center">
           <p className="text-muted-foreground">
             © 2024 Sulfuric Creations. Music made social. Connections made meaningful.
           </p>
