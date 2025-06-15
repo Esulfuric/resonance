@@ -11,12 +11,12 @@ export const BottomNavigation = () => {
   const location = useLocation();
   const { user } = useSupabase();
   
-  // Don't show bottom nav if not authenticated
+  // Don't show bottom nav if not authenticated or on public routes
   if (!user) return null;
 
-  // Don't show on auth pages
-  const authRoutes = ['/login', '/signup', '/forgot-password'];
-  if (authRoutes.includes(location.pathname)) return null;
+  // Don't show on public routes even if authenticated
+  const publicRoutes = ['/', '/login', '/signup', '/forgot-password'];
+  if (publicRoutes.includes(location.pathname)) return null;
 
   const navItems = [
     { icon: Home, path: '/feed', label: 'Home' },
@@ -30,14 +30,14 @@ export const BottomNavigation = () => {
   const isMusicPage = location.pathname === '/music';
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-50 safe-area-inset-bottom">
-      <div className="flex items-center justify-between max-w-md mx-auto h-16 px-2">
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-50 px-2 pb-safe">
+      <div className="flex items-center justify-between max-w-md mx-auto">
         {navItems.map((item, index) => (
           item.isMain ? (
-            <Link key={item.path} to={item.path} className="relative -mt-6 flex-shrink-0">
+            <Link key={item.path} to={item.path} className="relative -mt-6">
               <Button 
                 className={cn(
-                  "h-14 w-14 rounded-full shadow-lg transition-all",
+                  "h-14 w-14 rounded-full shadow-lg",
                   isMusicPage 
                     ? "bg-resonance-orange hover:bg-resonance-orange/90" 
                     : "bg-resonance-green hover:bg-resonance-green/90"
@@ -52,7 +52,7 @@ export const BottomNavigation = () => {
               key={item.path} 
               to={item.path}
               className={cn(
-                "flex flex-col items-center justify-center py-2 px-1 transition-all duration-300 min-w-0 flex-1",
+                "flex flex-col items-center justify-center py-2 px-3 transition-all duration-300",
                 isActive(item.path) 
                   ? isMusicPage 
                     ? "text-resonance-orange scale-110" 
@@ -72,15 +72,14 @@ export const BottomNavigation = () => {
                   stiffness: 300,
                   damping: 20
                 }}
-                className="flex flex-col items-center"
               >
-                {item.icon && <item.icon className="h-5 w-5" />}
-                <span className="text-xs mt-1 truncate max-w-12 text-center">{item.label}</span>
+                {item.icon && <item.icon className="h-6 w-6" />}
               </motion.div>
+              <span className="text-xs mt-1">{item.label}</span>
               {isActive(item.path) && (
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: "50%" }}
+                  animate={{ width: "100%" }}
                   className={cn(
                     "h-0.5 rounded-full mt-1",
                     isMusicPage ? "bg-resonance-orange" : "bg-primary"
