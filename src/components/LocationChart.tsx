@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
+import { getUserLocation, fetchLocationChartData } from "@/services/chartDataService";
 
 interface SpotifyTrack {
   rank: number;
   title: string;
   artist: string;
-  preview_url?: string;
+  peak_position?: number;
+  weeks_on_chart?: number;
 }
 
 interface LocationData {
@@ -16,102 +18,6 @@ interface LocationData {
   countryCode: string;
   city?: string;
 }
-
-const getUserLocationFromIP = async (): Promise<LocationData> => {
-  try {
-    const response = await fetch('https://ipapi.co/json/');
-    const data = await response.json();
-    return {
-      country: data.country_name || 'United States',
-      countryCode: data.country_code || 'US',
-      city: data.city
-    };
-  } catch (error) {
-    console.error('Error getting user location:', error);
-    return {
-      country: 'United States',
-      countryCode: 'US'
-    };
-  }
-};
-
-const scrapeRealSpotifyCharts = async (countryCode: string): Promise<SpotifyTrack[]> => {
-  try {
-    // Try multiple music chart sources for country-specific data
-    const sources = [
-      `https://kworb.net/spotify/country/${countryCode.toLowerCase()}.html`,
-      `https://charts.spotify.com/charts/view/regional-${countryCode.toLowerCase()}-weekly/latest`,
-      'https://www.last.fm/charts/top-tracks'
-    ];
-
-    for (const url of sources) {
-      try {
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-        const response = await fetch(proxyUrl);
-        
-        if (response.ok) {
-          const data = await response.json();
-          const parsed = parseSpotifyChartData(data.contents);
-          if (parsed.length > 0) {
-            return parsed;
-          }
-        }
-      } catch (error) {
-        console.log(`Failed to fetch from ${url}:`, error);
-        continue;
-      }
-    }
-
-    throw new Error('All chart sources failed');
-  } catch (error) {
-    console.error(`Error scraping charts for ${countryCode}:`, error);
-    throw error;
-  }
-};
-
-const parseSpotifyChartData = (html: string): SpotifyTrack[] => {
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const tracks: SpotifyTrack[] = [];
-
-    // Try different selectors based on the source
-    const selectors = [
-      'tr[data-track]',
-      '.chartlist-row',
-      '.track-row',
-      'tbody tr'
-    ];
-
-    for (const selector of selectors) {
-      const elements = doc.querySelectorAll(selector);
-      
-      elements.forEach((element, index) => {
-        if (index >= 10) return; // Limit to top 10
-        
-        const titleElement = element.querySelector('.track-name, .chartlist-name, [data-testid="title"]');
-        const artistElement = element.querySelector('.artist-name, .chartlist-artist, [data-testid="artist"]');
-        
-        const title = titleElement?.textContent?.trim();
-        const artist = artistElement?.textContent?.trim();
-        
-        if (title && artist) {
-          tracks.push({
-            rank: index + 1,
-            title,
-            artist
-          });
-        }
-      });
-
-      if (tracks.length > 0) break;
-    }
-
-    return tracks;
-  } catch (error) {
-    return [];
-  }
-};
 
 export function LocationChart() {
   const navigate = useNavigate();
@@ -131,19 +37,15 @@ export function LocationChart() {
       
       // Get user's location
       console.log('Fetching user location...');
-      const userLocation = await getUserLocationFromIP();
+      const userLocation = await getUserLocation();
       setLocation(userLocation);
       
-      // Try to scrape real charts for the user's country
-      console.log('Attempting to scrape real charts for:', userLocation.countryCode);
-      const realTracks = await scrapeRealSpotifyCharts(userLocation.countryCode);
+      // Fetch charts for the user's country
+      console.log('Fetching location-specific charts for:', userLocation.country);
+      const chartData = await fetchLocationChartData(userLocation.country);
       
-      if (realTracks.length > 0) {
-        console.log('Successfully scraped real chart data:', realTracks);
-        setTracks(realTracks);
-      } else {
-        throw new Error('No chart data available');
-      }
+      console.log('Successfully loaded location chart data:', chartData);
+      setTracks(chartData);
       
     } catch (error) {
       console.error('Error fetching location or charts:', error);
@@ -196,6 +98,11 @@ export function LocationChart() {
                 <div className="flex-1 overflow-hidden min-w-0">
                   <p className="font-medium truncate text-sm">{track.title}</p>
                   <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+                  {track.peak_position && track.weeks_on_chart && (
+                    <p className="text-xs text-muted-foreground">
+                      Peak: #{track.peak_position} • {track.weeks_on_chart}w
+                    </p>
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   <button className="rounded-full bg-resonance-orange p-2 text-white hover:bg-resonance-orange/80 transition-colors">
