@@ -19,7 +19,8 @@ export const UserProfileContent = () => {
     errorMessage
   } = useUserProfile();
 
-  // Defensive: Don't try to render deeply if not loaded or errored
+  // ================= CONCRETE FIX ========================
+  // Defensive: Don't try to render tabs at all if not loaded or errored
   if (isLoading) {
     return <FullScreenLoader message="Loading user profile..." />;
   }

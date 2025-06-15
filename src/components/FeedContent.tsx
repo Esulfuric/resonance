@@ -8,6 +8,7 @@ import { FeedTabs } from "@/components/feed/FeedTabs";
 import { CreatePostForm } from "@/components/CreatePostForm";
 import { Button } from "@/components/ui/button";
 import { LoadingGif } from "@/components/ui/loading-gif";
+import { FullScreenLoader } from "@/components/ui/loading-state"; // <- import loader
 
 interface FeedContentProps {
   activeTab: string;
@@ -84,6 +85,15 @@ export const FeedContent: React.FC<FeedContentProps> = ({
   ) : (
     <EmptyFollowingState />
   );
+
+  // ================= CONCRETE FIX ========================
+  // Only render FeedTabs if not loading or error.
+  if (isLoading && !error) {
+    return <FullScreenLoader message="Loading feed..." />;
+  }
+  if (error) {
+    return errorView;
+  }
 
   return (
     <FeedTabs
