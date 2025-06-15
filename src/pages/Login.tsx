@@ -49,6 +49,7 @@ const Login = () => {
         description: error.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
@@ -68,6 +69,7 @@ const Login = () => {
         description: error.message || "Please try again.",
         variant: "destructive",
       });
+    } finally {
       setGoogleLoading(false);
     }
   };
