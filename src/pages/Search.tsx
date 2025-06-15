@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { useToast } from "@/hooks/use-toast";
@@ -6,7 +5,6 @@ import { searchUsersAndPostsPaginated } from "@/services/searchService";
 import { SearchInput } from "@/components/search/SearchInput";
 import { SearchResults } from "@/components/search/SearchResults";
 import { SuggestedContent } from "@/components/search/SuggestedContent";
-import { MobileCharts } from "@/components/MobileCharts";
 import { supabase } from "@/lib/supabase";
 
 interface UserProfile {
@@ -193,9 +191,6 @@ const SearchPage = () => {
           onSearch={handleSearch}
           isSearching={isSearching}
         />
-        
-        {/* Mobile Charts - Only show on mobile and when not searching */}
-        {!searchQuery.trim() && <MobileCharts />}
         
         {hasSearchResults ? (
           <SearchResults 

@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { translateText, getLanguageFromCountry } from '@/services/translationService';
-import { getUserLocation } from '@/services/webScraping';
 
 interface TranslationContextType {
   currentLanguage: string;
@@ -34,12 +33,11 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({ childr
         return;
       }
 
-      const location = await getUserLocation();
-      const language = getLanguageFromCountry(location.countryCode);
-      setCurrentLanguageState(language);
+      // Default to English since location detection is no longer available
+      setCurrentLanguageState('en');
       
       // Store in localStorage for persistence
-      localStorage.setItem('userLanguage', language);
+      localStorage.setItem('userLanguage', 'en');
     } catch (error) {
       console.error('Failed to detect user language:', error);
       // Default to English if detection fails
