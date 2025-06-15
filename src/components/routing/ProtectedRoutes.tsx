@@ -4,6 +4,7 @@ import { Route } from "react-router-dom";
 import { pages, components } from "@/config/routes";
 import { AuthenticatedLayout } from "@/components/layout/AppLayout";
 
+// Ensure these routes come BEFORE any catch-all route ("*")
 export const ProtectedRoutes = () => (
   <>
     <Route path="/feed" element={
@@ -36,7 +37,7 @@ export const ProtectedRoutes = () => (
         <pages.UserProfile />
       </AuthenticatedLayout>
     } />
-    {/* New username-based routes */}
+    {/* Username-based routes -- these must come BEFORE any catch-all route */}
     <Route path="/l/:username" element={
       <AuthenticatedLayout>
         <pages.UserProfile />
@@ -57,5 +58,6 @@ export const ProtectedRoutes = () => (
         <pages.CreatePost />
       </components.AuthenticatedRouteOptimized>
     } />
+    {/* NOTE: Do NOT add a catch-all * route here! It should only go in your top-level router! */}
   </>
 );
