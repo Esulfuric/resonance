@@ -40,7 +40,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-interface Post {
+interface PostWithProfile {
   id: string;
   content: string;
   created_at: string;
@@ -53,7 +53,7 @@ interface Post {
   } | null;
 }
 
-interface User {
+interface UserProfile {
   id: string;
   username: string;
   full_name: string;
@@ -62,7 +62,7 @@ interface User {
   user_type: string;
 }
 
-interface MusicUpload {
+interface MusicUploadWithProfile {
   id: string;
   title: string;
   artist_id: string;
@@ -77,9 +77,9 @@ interface MusicUpload {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [musicUploads, setMusicUploads] = useState<MusicUpload[]>([]);
+  const [posts, setPosts] = useState<PostWithProfile[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [musicUploads, setMusicUploads] = useState<MusicUploadWithProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -131,9 +131,9 @@ const AdminDashboard = () => {
         console.error('Error fetching music:', musicError);
       }
 
-      setPosts((postsData || []) as Post[]);
-      setUsers((usersData || []) as User[]);
-      setMusicUploads((musicData || []) as MusicUpload[]);
+      setPosts(postsData || []);
+      setUsers(usersData || []);
+      setMusicUploads(musicData || []);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to fetch data');
