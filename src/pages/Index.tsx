@@ -63,7 +63,7 @@ const Index = () => {
       
       {/* Header for non-authenticated users */}
       {!user && (
-        <header className="w-full px-4 py-6 pt-20">
+        <header className="w-full px-4 py-6">
           <div className="container mx-auto max-w-7xl">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -103,7 +103,7 @@ const Index = () => {
       )}
 
       {/* Hero Section */}
-      <main className={`w-full px-4 py-8 sm:py-16 lg:py-20 ${user ? 'pt-20' : ''}`}>
+      <main className={`w-full px-4 py-8 sm:py-16 lg:py-20 ${user ? 'pt-20 pb-20' : ''}`}>
         <div className="container mx-auto max-w-7xl">
           <div className="text-center max-w-4xl mx-auto">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-resonance-green to-resonance-green/80 bg-clip-text text-transparent leading-tight">
@@ -158,21 +158,23 @@ const Index = () => {
       </main>
 
       {/* Admin Login Button */}
-      <div className="w-full px-6 pb-8">
-        <div className="container mx-auto max-w-7xl">
-          <div className="flex justify-center">
-            <Button
-              onClick={() => navigate('/admin/login')}
-              variant="ghost"
-              size="sm"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-2 text-sm"
-            >
-              <Shield className="h-4 w-4" />
-              Log in as Admin
-            </Button>
+      {!user && (
+        <div className="w-full px-6 pb-8">
+          <div className="container mx-auto max-w-7xl">
+            <div className="flex justify-center">
+              <Button
+                onClick={() => navigate('/admin/login')}
+                variant="ghost"
+                size="sm"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-2 text-sm"
+              >
+                <Shield className="h-4 w-4" />
+                Log in as Admin
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Footer */}
       <footer className="w-full bg-muted/50 py-8">

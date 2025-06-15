@@ -37,7 +37,6 @@ const Navbar = () => {
   const myProfileText = useSystemTranslation("My Profile");
   const messagesText = useSystemTranslation("Messages");
   const logoutText = useSystemTranslation("Logout");
-  const loginText = useSystemTranslation("Login");
 
   const handleNotificationsOpen = (open: boolean) => {
     setNotificationsOpen(open);
@@ -49,8 +48,8 @@ const Navbar = () => {
     }
   };
 
-  // Hide navbar on auth pages (but show on index page)
-  if (['/login', '/signup', '/forgot-password'].includes(location.pathname)) {
+  // Hide navbar when not signed in OR on auth pages
+  if (!user || ['/login', '/signup', '/forgot-password'].includes(location.pathname)) {
     return null;
   }
 
@@ -65,65 +64,53 @@ const Navbar = () => {
           <LanguageToggle />
           <ThemeToggle />
           
-          {user && (
-            <>
-              <Link to="/messages" className="p-2 rounded-full hover:bg-muted relative">
-                <MessageCircle className="h-5 w-5" />
-                <NotificationBadge count={messageCount} />
-              </Link>
-              
-              <Popover open={notificationsOpen} onOpenChange={handleNotificationsOpen}>
-                <PopoverTrigger asChild>
-                  <div className="relative">
-                    <button className="p-2 rounded-full hover:bg-muted">
-                      <Bell className="h-5 w-5" />
-                    </button>
-                    <NotificationBadge count={notificationCount} />
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="p-0 w-80">
-                  <NotificationList onClose={() => setNotificationsOpen(false)} />
-                </PopoverContent>
-              </Popover>
-            </>
-          )}
+          <Link to="/messages" className="p-2 rounded-full hover:bg-muted relative">
+            <MessageCircle className="h-5 w-5" />
+            <NotificationBadge count={messageCount} />
+          </Link>
           
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="focus:outline-none">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.user_metadata?.avatar_url} />
-                    <AvatarFallback>
-                      {user.email?.[0]?.toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
+          <Popover open={notificationsOpen} onOpenChange={handleNotificationsOpen}>
+            <PopoverTrigger asChild>
+              <div className="relative">
+                <button className="p-2 rounded-full hover:bg-muted">
+                  <Bell className="h-5 w-5" />
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <Link to="/profile">
-                  <DropdownMenuItem className="cursor-pointer">
-                    {myProfileText}
-                  </DropdownMenuItem>
-                </Link>
-                <Link to="/messages">
-                  <DropdownMenuItem className="cursor-pointer">
-                    {messagesText}
-                  </DropdownMenuItem>
-                </Link>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" onClick={signOut}>
-                  {logoutText}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Link to="/login">
-              <button className="bg-resonance-green text-white px-4 py-2 rounded-full text-sm font-medium">
-                {loginText}
+                <NotificationBadge count={notificationCount} />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="p-0 w-80">
+              <NotificationList onClose={() => setNotificationsOpen(false)} />
+            </PopoverContent>
+          </Popover>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="focus:outline-none">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user.user_metadata?.avatar_url} />
+                  <AvatarFallback>
+                    {user.email?.[0]?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
               </button>
-            </Link>
-          )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <Link to="/profile">
+                <DropdownMenuItem className="cursor-pointer">
+                  {myProfileText}
+                </DropdownMenuItem>
+              </Link>
+              <Link to="/messages">
+                <DropdownMenuItem className="cursor-pointer">
+                  {messagesText}
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer" onClick={signOut}>
+                {logoutText}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
