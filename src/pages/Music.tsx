@@ -3,8 +3,6 @@ import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { MusicSearch } from "@/components/MusicSearch";
 import { TrendingMusic } from "@/components/TrendingMusic";
 import { MusicUpload } from "@/components/MusicUpload";
-import { BillboardChart } from "@/components/BillboardChart";
-import { LocationChart } from "@/components/LocationChart";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useEffect } from "react";
 
@@ -58,8 +56,6 @@ const Music = () => {
           
           <div className="space-y-6">
             <TrendingMusic />
-            <BillboardChart />
-            <LocationChart />
           </div>
         </div>
       </main>
