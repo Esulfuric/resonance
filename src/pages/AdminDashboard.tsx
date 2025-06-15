@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -95,12 +94,20 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch posts
+      // Fetch posts with profiles
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
-          *,
-          profiles (username, full_name, avatar_url)
+          id,
+          content,
+          created_at,
+          user_id,
+          is_removed,
+          profiles!posts_user_id_fkey (
+            username,
+            full_name,
+            avatar_url
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -111,19 +118,27 @@ const AdminDashboard = () => {
       // Fetch users
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, username, full_name, avatar_url, is_banned, user_type')
         .order('username');
 
       if (usersError) {
         console.error('Error fetching users:', usersError);
       }
 
-      // Fetch music uploads
+      // Fetch music uploads with profiles
       const { data: musicData, error: musicError } = await supabase
         .from('music_uploads')
         .select(`
-          *,
-          profiles (username, full_name)
+          id,
+          title,
+          artist_id,
+          composer_full_name,
+          status,
+          created_at,
+          profiles!music_uploads_artist_id_fkey (
+            username,
+            full_name
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -131,9 +146,41 @@ const AdminDashboard = () => {
         console.error('Error fetching music:', musicError);
       }
 
-      setPosts(postsData || []);
-      setUsers(usersData || []);
-      setMusicUploads(musicData || []);
+      // Transform and set the data with proper type safety
+      setPosts((postsData || []).map(post => ({
+        id: post.id,
+        content: post.content,
+        created_at: post.created_at,
+        user_id: post.user_id,
+        is_removed: post.is_removed,
+        profiles: post.profiles ? {
+          username: post.profiles.username || '',
+          full_name: post.profiles.full_name || '',
+          avatar_url: post.profiles.avatar_url || ''
+        } : null
+      })));
+
+      setUsers((usersData || []).map(user => ({
+        id: user.id,
+        username: user.username || '',
+        full_name: user.full_name || '',
+        avatar_url: user.avatar_url || '',
+        is_banned: user.is_banned,
+        user_type: user.user_type || 'listener'
+      })));
+
+      setMusicUploads((musicData || []).map(upload => ({
+        id: upload.id,
+        title: upload.title,
+        artist_id: upload.artist_id,
+        composer_full_name: upload.composer_full_name,
+        status: upload.status,
+        created_at: upload.created_at,
+        profiles: upload.profiles ? {
+          username: upload.profiles.username || '',
+          full_name: upload.profiles.full_name || ''
+        } : null
+      })));
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to fetch data');
