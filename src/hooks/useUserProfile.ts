@@ -55,6 +55,7 @@ export const useUserProfile = () => {
               description: "The requested user profile could not be found.",
               variant: "destructive",
             });
+            setIsLoading(false); // <-- Ensure loading state always ends before navigation!
             navigate('/feed');
             return;
           }
@@ -64,11 +65,13 @@ export const useUserProfile = () => {
           
           // ensure correct prefix-username match and redirect if needed
           if (isListenerRoute && profileData.user_type !== 'listener') {
+            setIsLoading(false); // <-- Always before navigation!
             navigate(`/m/${username}${location.search}`, { replace: true });
             return;
           }
           
           if (isMusicianRoute && profileData.user_type !== 'musician') {
+            setIsLoading(false); // <-- Always before navigation!
             navigate(`/l/${username}${location.search}`, { replace: true });
             return;
           }
@@ -82,6 +85,7 @@ export const useUserProfile = () => {
             description: "Invalid user identifier.",
             variant: "destructive",
           });
+          setIsLoading(false); // <-- Always before navigation!
           navigate('/feed');
           return;
         }
@@ -102,6 +106,7 @@ export const useUserProfile = () => {
             description: "The requested user profile could not be found.",
             variant: "destructive",
           });
+          setIsLoading(false); // <-- Always before navigation!
           navigate('/feed');
           return;
         }
