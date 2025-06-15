@@ -1,234 +1,397 @@
-
-import React, { useState, useEffect } from "react";
-import { Heart, MessageCircle, Share, MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+import React, { useState, useRef, useEffect } from 'react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Music, Pencil, Trash2, Send } from 'lucide-react';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { toggleLikePost, checkPostLiked } from "@/services/post/postInteractions";
-import { deletePost } from "@/services/post/postActions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Comment } from "@/types/post";
+import { toggleLikePost, checkPostLiked, addComment, fetchComments } from "@/services/postService";
+import { useSupabase } from "@/lib/supabase-provider";
+import { TranslateButton } from "@/components/TranslateButton";
 
-interface PostCardProps {
-  id: string;
-  user_id?: string;
-  user: {
-    id?: string;
-    name: string;
-    username: string;
-    avatar: string;
-    user_type?: 'musician' | 'listener';
-  };
-  timestamp: string;
-  content: string;
-  isEdited?: boolean;
-  imageUrl?: string;
-  songInfo?: {
-    title: string;
-    artist: string;
-    albumCover: string;
-  };
-  stats: {
-    likes: number;
-    comments: number;
-    shares: number;
-  };
-  likes_count?: number;
-  comments_count?: number;
-  is_removed?: boolean;
-  removal_reason?: string;
-  currentUserId?: string;
-  onDeletePost?: (postId: string) => void;
-  onRefreshFeed?: () => void;
-}
-
-export const PostCard = ({
-  id,
-  user_id,
-  user,
-  timestamp,
-  content,
-  isEdited,
-  imageUrl,
-  songInfo,
-  stats,
-  likes_count,
-  comments_count,
-  is_removed,
-  removal_reason,
-  currentUserId,
-  onDeletePost,
-  onRefreshFeed
-}: PostCardProps) => {
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(likes_count || stats.likes);
-  const [isLiking, setIsLiking] = useState(false);
+export function PostCard(props: any) {
+  const { 
+    id, 
+    user_id, 
+    user, 
+    timestamp, 
+    content, 
+    imageUrl, 
+    songInfo, 
+    stats, 
+    isEdited = false, 
+    isOwner = false, 
+    onDelete,
+    onRefreshFeed
+  } = props;
+  
+  const [liked, setLiked] = useState<boolean>(false);
+  const [likesCount, setLikesCount] = useState(stats?.likes || 0);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(content);
+  const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsCount, setCommentsCount] = useState(stats?.comments || 0);
+  const [showComments, setShowComments] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [displayContent, setDisplayContent] = useState(content);
+  
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const commentInputRef = useRef<HTMLTextAreaElement>(null);
+  const { user: currentUser } = useSupabase();
 
+  // Check if the current user has liked this post
   useEffect(() => {
-    if (currentUserId) {
-      checkPostLiked(id, currentUserId).then(setIsLiked);
-    }
-  }, [id, currentUserId]);
+    const checkLiked = async () => {
+      if (currentUser && id) {
+        const isLiked = await checkPostLiked(id, currentUser.id);
+        setLiked(isLiked);
+      }
+    };
+
+    checkLiked();
+  }, [id, currentUser]);
 
   const handleLike = async () => {
-    if (!currentUserId || isLiking) return;
-    
-    setIsLiking(true);
-    const result = await toggleLikePost(id, currentUserId);
-    
-    if (result.success) {
-      setIsLiked(result.isLiked);
-      setLikesCount(prev => result.isLiked ? prev + 1 : prev - 1);
-    } else {
+    if (!currentUser) {
       toast({
-        title: "Error",
-        description: "Failed to update like",
+        title: "Authentication required",
+        description: "Please sign in to like posts.",
         variant: "destructive",
       });
+      return;
     }
-    setIsLiking(false);
-  };
-
-  const handleDelete = async () => {
-    if (!onDeletePost) return;
     
-    const confirmed = window.confirm("Are you sure you want to delete this post?");
-    if (!confirmed) return;
-
-    const result = await deletePost(id);
-    if (result.success) {
-      onDeletePost(id);
-      onRefreshFeed?.();
-      toast({
-        title: "Post deleted",
-        description: "Your post has been deleted successfully",
-      });
-    } else {
+    const newLikedState = !liked;
+    // Optimistic update
+    setLiked(newLikedState);
+    setLikesCount(prev => newLikedState ? prev + 1 : prev - 1);
+    
+    const result = await toggleLikePost(id, currentUser.id);
+    
+    if (!result.success) {
+      // Revert on failure
+      setLiked(liked);
+      setLikesCount(likesCount);
       toast({
         title: "Error",
-        description: "Failed to delete post",
+        description: "Could not update like status.",
         variant: "destructive",
       });
     }
   };
 
-  const isOwnPost = currentUserId === (user_id || user.id);
+  const handleUserClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/profile/${user_id || id.split('-')[0]}`);
+  };
 
-  // Show removed post message
-  if (is_removed) {
-    return (
-      <Card className="border-l-4 border-l-red-500">
-        <CardContent className="p-6">
-          <div className="text-center">
-            <p className="text-red-600 font-medium">
-              This post has been removed because it doesn't follow the content policies
-            </p>
-            {isOwnPost && removal_reason && (
-              <p className="text-sm text-gray-600 mt-2">
-                Reason: {removal_reason}
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleEdit = () => {
+    setIsEditing(true);
+    // Focus the textarea and set cursor at the end when it becomes visible
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(
+          editedContent.length,
+          editedContent.length
+        );
+      }
+    }, 0);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedContent(content);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ content: editedContent, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setIsEditing(false);
+      toast({
+        title: "Post updated",
+        description: "Your changes have been saved.",
+      });
+
+      // Update the local state or refresh the feed
+      if (onRefreshFeed) {
+        onRefreshFeed();
+      }
+    } catch (error: any) {
+      console.error('Error updating post:', error);
+      toast({
+        title: "Error updating post",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleCommentClick = () => {
+    setShowComments(true);
+    loadComments();
+  };
+  
+  const loadComments = async () => {
+    if (isLoadingComments) return;
+    
+    setIsLoadingComments(true);
+    try {
+      const fetchedComments = await fetchComments(id);
+      setComments(fetchedComments);
+      setCommentsCount(fetchedComments.length);
+    } catch (error) {
+      console.error('Error loading comments:', error);
+      toast({
+        title: "Error loading comments",
+        description: "Could not load comments. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+  
+  const handlePostComment = async () => {
+    if (!commentText.trim() || !currentUser) return;
+    
+    try {
+      const result = await addComment(id, currentUser.id, commentText);
+      
+      if (result.success && result.data) {
+        setComments([...comments, result.data]);
+        setCommentsCount(prevCount => prevCount + 1);
+        setCommentText('');
+        toast({
+          title: "Comment posted",
+          description: "Your comment has been added.",
+        });
+      } else {
+        throw result.error;
+      }
+    } catch (error: any) {
+      console.error('Error posting comment:', error);
+      toast({
+        title: "Error posting comment",
+        description: error.message || "Could not post comment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center space-y-0 pb-3">
-        <div className="flex items-center space-x-3 flex-1">
-          <Avatar className="h-10 w-10">
+    <Card className="overflow-hidden hover:bg-accent/50 transition-colors cursor-pointer mb-4">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          {/* User avatar */}
+          <Avatar className="h-10 w-10 cursor-pointer" onClick={handleUserClick}>
             <AvatarImage src={user.avatar} alt={user.name} />
             <AvatarFallback>{user.name[0]}</AvatarFallback>
           </Avatar>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium leading-none">{user.name}</p>
-              <p className="text-sm text-muted-foreground">@{user.username}</p>
-              {user.user_type === 'musician' && (
-                <Badge variant="secondary" className="text-xs bg-resonance-orange/10 text-resonance-orange">
-                  Musician
-                </Badge>
+          
+          {/* Post content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <div onClick={handleUserClick} className="cursor-pointer">
+                <span className="font-semibold">{user.name}</span>
+                <span className="text-muted-foreground ml-1">@{user.username}</span>
+                {user.user_type && (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1)}
+                  </span>
+                )}
+                <span className="text-muted-foreground text-sm ml-2">{timestamp}</span>
+              </div>
+              
+              {isOwner && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">More options</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleEdit}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onDelete) onDelete();
+                      }}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{timestamp}</p>
-          </div>
-        </div>
-        
-        {isOwnPost && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleDelete} className="text-red-600">
-                Delete Post
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </CardHeader>
-      
-      <CardContent className="pb-3">
-        <p className="text-sm mb-3">{content}</p>
-        
-        {songInfo && (
-          <div className="mb-3 p-3 bg-muted rounded-lg flex items-center space-x-3">
-            <img 
-              src={songInfo.albumCover} 
-              alt="Album cover" 
-              className="w-12 h-12 rounded object-cover"
-            />
-            <div>
-              <p className="text-sm font-medium">{songInfo.title}</p>
-              <p className="text-xs text-muted-foreground">{songInfo.artist}</p>
+            
+            <div className="mt-2">
+              {isEditing ? (
+                <div className="space-y-2">
+                  <Textarea 
+                    ref={textareaRef}
+                    value={editedContent}
+                    onChange={(e) => setEditedContent(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                      Cancel
+                    </Button>
+                    <Button size="sm" onClick={handleSaveEdit}>
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm whitespace-pre-wrap">{displayContent}</p>
+                  {isEdited && <p className="text-xs text-green-500 mt-1">Edited</p>}
+                  <div className="mt-2">
+                    <TranslateButton 
+                      content={content}
+                      onTranslate={setDisplayContent}
+                    />
+                  </div>
+                </>
+              )}
+              
+              {/* Song info */}
+              {songInfo && (
+                <div className="mt-3 flex items-center gap-3 rounded-md bg-muted p-2">
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded">
+                    <img 
+                      src={songInfo.albumCover} 
+                      alt={songInfo.title}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{songInfo.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">{songInfo.artist}</p>
+                  </div>
+                  <Music className="ml-auto h-4 w-4 text-resonance-green" />
+                </div>
+              )}
+              
+              {/* Post image */}
+              {imageUrl && (
+                <div className="mt-3 rounded-md overflow-hidden">
+                  <img 
+                    src={imageUrl}
+                    alt="Post attachment" 
+                    className="w-full h-auto max-h-96 object-contain bg-muted"
+                  />
+                </div>
+              )}
             </div>
-          </div>
-        )}
-        
-        {imageUrl && (
-          <img 
-            src={imageUrl} 
-            alt="Post image" 
-            className="w-full rounded-lg object-cover max-h-96 mb-3"
-          />
-        )}
-        
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`text-muted-foreground hover:text-red-500 ${isLiked ? 'text-red-500' : ''}`}
-              onClick={handleLike}
-              disabled={isLiking}
-            >
-              <Heart className={`h-4 w-4 mr-1 ${isLiked ? 'fill-current' : ''}`} />
-              <span className="text-xs">{likesCount}</span>
-            </Button>
-            
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-blue-500">
-              <MessageCircle className="h-4 w-4 mr-1" />
-              <span className="text-xs">{comments_count || stats.comments}</span>
-            </Button>
-            
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-green-500">
-              <Share className="h-4 w-4 mr-1" />
-              <span className="text-xs">{stats.shares}</span>
-            </Button>
           </div>
         </div>
       </CardContent>
+      
+      <CardFooter className="px-4 py-2 border-t">
+        <div className="flex items-center gap-6 w-full">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`gap-1 ${liked ? 'text-red-500' : 'text-muted-foreground hover:text-primary'}`}
+            onClick={handleLike}
+          >
+            <Heart className={`h-4 w-4 ${liked ? 'fill-red-500 text-red-500' : ''}`} />
+            <span>{likesCount}</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="gap-1 text-muted-foreground hover:text-primary"
+            onClick={handleCommentClick}
+          >
+            <MessageCircle className="h-4 w-4" />
+            <span>{commentsCount}</span>
+          </Button>
+          <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-primary">
+            <Share2 className="h-4 w-4" />
+            <span>{stats.shares}</span>
+          </Button>
+        </div>
+      </CardFooter>
+      
+      {/* Comments Dialog */}
+      <Dialog open={showComments} onOpenChange={setShowComments}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Comments</DialogTitle>
+          </DialogHeader>
+          
+          <div className="max-h-[60vh] overflow-y-auto space-y-4 my-4">
+            {isLoadingComments ? (
+              <div className="text-center py-4">Loading comments...</div>
+            ) : comments.length > 0 ? (
+              comments.map(comment => (
+                <div key={comment.id} className="flex gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={comment.user?.avatar_url} />
+                    <AvatarFallback>{comment.user?.full_name?.[0] || 'U'}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="bg-muted p-2 rounded-md">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-sm">{comment.user?.full_name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(comment.created_at).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <p className="text-sm mt-1">{comment.content}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">No comments yet. Be the first to comment!</div>
+            )}
+          </div>
+          
+          {currentUser && (
+            <div className="flex gap-2 mt-4">
+              <Textarea 
+                ref={commentInputRef}
+                placeholder="Write a comment..." 
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                className="resize-none"
+              />
+              <Button size="icon" onClick={handlePostComment} disabled={!commentText.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
-};
+}
