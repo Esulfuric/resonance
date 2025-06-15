@@ -14,6 +14,7 @@ interface Profile {
   username: string | null;
   avatar_url: string | null;
   bio: string | null;
+  user_type?: string | null;
 }
 
 export function UserSearch() {
@@ -57,9 +58,15 @@ export function UserSearch() {
     return () => clearTimeout(debounce);
   }, [searchTerm]);
 
-  const handleViewProfile = (userId: string) => {
+  const getUsernameUrl = (profile: Profile) => {
+    const username = profile.username || 'user';
+    const prefix = profile.user_type === 'musician' ? 'm' : 'l';
+    return `/${prefix}/${username}`;
+  };
+
+  const handleViewProfile = (profile: Profile) => {
     setShowDropdown(false);
-    navigate(`/profile/${userId}`);
+    navigate(getUsernameUrl(profile));
   };
 
   return (
@@ -112,7 +119,7 @@ export function UserSearch() {
                   <div 
                     key={profile.id} 
                     className="flex items-center gap-3 p-3 hover:bg-muted cursor-pointer border-b last:border-0" 
-                    onClick={() => handleViewProfile(profile.id)}
+                    onClick={() => handleViewProfile(profile)}
                   >
                     <Avatar className="h-9 w-9">
                       <AvatarImage src={profile.avatar_url || undefined} alt={profile.full_name || "User"} />

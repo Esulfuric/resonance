@@ -47,6 +47,13 @@ export const PostCard: React.FC<PostCardProps> = ({
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(stats.likes);
 
+  // Generate username-based URL for user profile
+  const getUserProfileUrl = () => {
+    if (!user.username) return '#';
+    const prefix = user.user_type === 'musician' ? 'm' : 'l';
+    return `/${prefix}/${user.username}`;
+  };
+
   useEffect(() => {
     if (currentUser && id) {
       checkPostLiked(id, currentUser.id).then(setIsLiked);
@@ -97,7 +104,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
-            <Link to={user_id ? `/profile/${user_id}` : '#'}>
+            <Link to={getUserProfileUrl()}>
               <Avatar className="h-10 w-10">
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback>{user.name[0]?.toUpperCase()}</AvatarFallback>
@@ -106,7 +113,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <Link 
-                  to={user_id ? `/profile/${user_id}` : '#'} 
+                  to={getUserProfileUrl()} 
                   className="font-semibold text-sm hover:underline"
                 >
                   {user.name}

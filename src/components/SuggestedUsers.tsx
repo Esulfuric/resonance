@@ -5,18 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface Profile {
   id: string;
   full_name: string | null;
   username: string | null;
   avatar_url: string | null;
+  user_type?: string | null;
 }
 
 export function SuggestedUsers() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -43,6 +46,12 @@ export function SuggestedUsers() {
     
     fetchProfiles();
   }, [toast]);
+
+  const getUsernameUrl = (profile: Profile) => {
+    const username = profile.username || 'user';
+    const prefix = profile.user_type === 'musician' ? 'm' : 'l';
+    return `/${prefix}/${username}`;
+  };
 
   if (isLoading) {
     return (
@@ -82,7 +91,11 @@ export function SuggestedUsers() {
       <CardContent className="p-0">
         <div className="divide-y">
           {profiles.map((profile) => (
-            <div key={profile.id} className="flex items-center gap-3 p-3">
+            <div 
+              key={profile.id} 
+              className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={() => navigate(getUsernameUrl(profile))}
+            >
               <Avatar className="h-9 w-9">
                 <AvatarImage src={profile.avatar_url || undefined} alt={profile.full_name || "User"} />
                 <AvatarFallback>

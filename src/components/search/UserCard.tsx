@@ -20,10 +20,16 @@ interface UserCardProps {
 export const UserCard = ({ profile }: UserCardProps) => {
   const navigate = useNavigate();
 
+  const getUsernameUrl = () => {
+    const username = profile.username || 'user';
+    const prefix = profile.user_type === 'musician' ? 'm' : 'l';
+    return `/${prefix}/${username}`;
+  };
+
   return (
     <Card 
       className="hover:bg-accent transition-colors cursor-pointer"
-      onClick={() => navigate(`/profile/${profile.id}`)}
+      onClick={() => navigate(getUsernameUrl())}
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
