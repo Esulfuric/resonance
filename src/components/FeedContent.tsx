@@ -6,6 +6,8 @@ import { PostList } from "@/components/feed/PostList";
 import { EmptyFollowingState } from "@/components/feed/EmptyFollowingState";
 import { FeedTabs } from "@/components/feed/FeedTabs";
 import { CreatePostForm } from "@/components/CreatePostForm";
+import { Button } from "@/components/ui/button";
+import { LoadingGif } from "@/components/ui/loading-gif";
 
 interface FeedContentProps {
   activeTab: string;
@@ -21,6 +23,7 @@ export const FeedContent: React.FC<FeedContentProps> = ({
     posts, 
     isLoading, 
     isLoadingMore, 
+    error,
     fetchPosts, 
     handleDeletePost, 
     lastElementRef 
@@ -35,11 +38,20 @@ export const FeedContent: React.FC<FeedContentProps> = ({
     fetchPosts(activeTab);
   };
 
+  const errorView = (
+    <div className="text-center py-8">
+      <p className="text-destructive mb-4">{error}</p>
+      <Button onClick={handleRefresh}>
+        Try Again
+      </Button>
+    </div>
+  );
+
   // Prepare content for each tab
   const forYouContent = (
     <>
       {user && <CreatePostForm onPostCreated={handleRefresh} />}
-      <PostList 
+      {error ? errorView : <PostList 
         posts={posts} 
         currentUserId={user?.id} 
         onDeletePost={handleDeletePost}
@@ -47,12 +59,15 @@ export const FeedContent: React.FC<FeedContentProps> = ({
         isLoadingMore={isLoadingMore}
         onRefreshFeed={handleRefresh}
         lastElementRef={lastElementRef}
-      />
+      />}
     </>
   );
 
-  const followingContent = isLoading ? (
-    <div className="text-center py-8">Loading posts...</div>
+  const followingContent = error ? errorView : isLoading ? (
+    <div className="flex flex-col items-center gap-4 py-8">
+      <LoadingGif size="lg" />
+      <p className="text-muted-foreground">Loading posts...</p>
+    </div>
   ) : posts.length > 0 ? (
     <>
       {user && <CreatePostForm onPostCreated={handleRefresh} />}
@@ -75,7 +90,7 @@ export const FeedContent: React.FC<FeedContentProps> = ({
       activeTab={activeTab}
       onTabChange={setActiveTab}
       onRefresh={handleRefresh}
-      isLoading={isLoading}
+      isLoading={isLoading && !error}
       forYouContent={forYouContent}
       followingContent={followingContent}
     />

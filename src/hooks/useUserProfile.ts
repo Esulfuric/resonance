@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +34,19 @@ export const useUserProfile = () => {
   const [following, setFollowing] = useState<FollowUser[]>([]);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    if (isLoading) {
+      timeoutId = setTimeout(() => {
+        if (isLoading) { // Re-check to avoid race condition
+          setIsLoading(false);
+          setErrorMessage("The profile took too long to load. Please try refreshing the page.");
+        }
+      }, 15000); // 15s timeout
+    }
+    return () => clearTimeout(timeoutId);
+  }, [isLoading]);
 
   useEffect(() => {
     if (!currentUser) return;

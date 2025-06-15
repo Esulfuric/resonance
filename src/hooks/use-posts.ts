@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Post } from "@/types/post";
 import { fetchLatestPosts, fetchUserPosts, deletePost } from "@/services/postService";
@@ -11,10 +10,12 @@ export const usePosts = (userId?: string) => {
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const [currentTab, setCurrentTab] = useState<string>('foryou');
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const observer = useRef<IntersectionObserver>();
 
   const fetchPosts = async (tab: string, loadMore = false) => {
+    setError(null);
     try {
       if (loadMore) {
         setIsLoadingMore(true);
@@ -35,7 +36,6 @@ export const usePosts = (userId?: string) => {
         fetchedPosts = await fetchLatestPosts(limit, currentOffset);
       }
       
-      // Sort posts by creation date, newest first
       fetchedPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
       if (loadMore) {
@@ -50,6 +50,7 @@ export const usePosts = (userId?: string) => {
       
     } catch (error: any) {
       console.error('Error fetching posts:', error);
+      setError("Failed to load posts. Please try again.");
       toast({
         title: "Error loading posts",
         description: error.message,
@@ -60,6 +61,22 @@ export const usePosts = (userId?: string) => {
       setIsLoadingMore(false);
     }
   };
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    if (isLoading) {
+      timeoutId = setTimeout(() => {
+        if (isLoading) {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+          setError("Couldn't refresh feed. Please try again.");
+        }
+      }, 10000); // 10 seconds
+    }
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [isLoading]);
 
   const lastElementRef = useCallback((node: HTMLDivElement) => {
     if (isLoadingMore) return;
@@ -72,7 +89,7 @@ export const usePosts = (userId?: string) => {
     });
     
     if (node) observer.current.observe(node);
-  }, [isLoadingMore, hasMore, currentTab]);
+  }, [isLoadingMore, hasMore, currentTab, fetchPosts]);
 
   const handleDeletePost = async (postId: string) => {
     try {
@@ -104,6 +121,7 @@ export const usePosts = (userId?: string) => {
     isLoading,
     isLoadingMore,
     hasMore,
+    error,
     fetchPosts,
     handleDeletePost,
     setPosts,
