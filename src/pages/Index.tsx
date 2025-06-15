@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -14,6 +15,20 @@ const Index = () => {
         <section className="py-20 md:py-32 bg-gradient-to-b from-background to-muted">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center space-y-4 text-center">
+              {/* RESONANCE Logo */}
+              <motion.div 
+                className="mb-8"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <img 
+                  src="/lovable-uploads/35a075eb-c0b7-41af-8dc3-619f18153b82.png" 
+                  alt="Resonance Logo" 
+                  className="h-24 md:h-32 lg:h-40 w-auto"
+                />
+              </motion.div>
+              
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
                   Connect Through Music
