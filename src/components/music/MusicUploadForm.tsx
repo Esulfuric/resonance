@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -6,6 +5,7 @@ import { useSupabase } from "@/lib/supabase-provider";
 import { TrackInput } from "./TrackInput";
 import { UploadFormFields } from "./UploadFormFields";
 import { SubmitButton } from "./SubmitButton";
+import { LoadingGif } from "@/components/ui/loading-gif";
 
 interface Track {
   id: string;
@@ -129,6 +129,18 @@ export function MusicUploadForm() {
       setIsUploading(false);
     }
   };
+
+  if (isUploading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <LoadingGif size="xl" />
+        <div className="text-center">
+          <h3 className="text-lg font-medium">Uploading your music...</h3>
+          <p className="text-muted-foreground">Please wait while we process your files</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

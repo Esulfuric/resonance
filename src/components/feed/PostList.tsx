@@ -1,6 +1,7 @@
 import React from "react";
 import { Post } from "@/types/post";
 import { PostCard } from "@/components/PostCard";
+import { LoadingGif } from "@/components/ui/loading-gif";
 
 interface PostListProps {
   posts: Post[];
@@ -22,19 +23,12 @@ export const PostList: React.FC<PostListProps> = ({
   lastElementRef
 }) => {
   if (isLoading) {
-    // Instead of just "Loading", render skeleton rows for instant feedback
     return (
-      <div className="space-y-4">
-        {[...Array(6)].map((_, idx) => (
-          <div key={idx} className="p-4 border rounded-lg flex flex-col gap-2 animate-pulse bg-muted">
-            <div className="flex items-center gap-3">
-              <div className="bg-gray-300 rounded-full h-8 w-8" />
-              <div className="h-4 bg-gray-300 rounded w-1/3" />
-            </div>
-            <div className="h-4 bg-gray-200 rounded w-2/3 mt-2" />
-            <div className="h-3 bg-gray-200 rounded w-1/2 mt-1" />
-          </div>
-        ))}
+      <div className="space-y-8 py-8">
+        <div className="flex flex-col items-center gap-4">
+          <LoadingGif size="lg" />
+          <p className="text-muted-foreground">Loading posts...</p>
+        </div>
       </div>
     );
   }
@@ -95,7 +89,8 @@ export const PostList: React.FC<PostListProps> = ({
         </div>
       ))}
       {isLoadingMore && (
-        <div className="text-center py-4">
+        <div className="flex flex-col items-center gap-2 py-4">
+          <LoadingGif size="md" />
           <p className="text-muted-foreground">Loading more posts...</p>
         </div>
       )}

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Conversation, Message } from '@/types/post';
 import { Send } from 'lucide-react';
+import { LoadingGif } from '@/components/ui/loading-gif';
 
 interface ChatInterfaceProps {
   activeConversation: Conversation | null;
@@ -80,7 +81,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {isLoading ? (
-          <div className="text-center py-8">Loading messages...</div>
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <LoadingGif size="md" />
+            <p className="text-muted-foreground">Loading messages...</p>
+          </div>
         ) : messages.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             No messages yet. Start the conversation!
