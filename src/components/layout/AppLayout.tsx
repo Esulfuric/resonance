@@ -1,6 +1,6 @@
 
 import React, { Suspense } from "react";
-import { Navbar } from "@/components/Navbar";
+import Navbar from "@/components/Navbar";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { AuthenticatedRouteOptimized } from "@/components/AuthenticatedRouteOptimized";
 import { FullScreenLoader } from "@/components/ui/loading-state";
