@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -26,7 +27,8 @@ import { toast } from "sonner";
 import Navbar from "./components/Navbar";
 import { AuthenticatedRoute } from "./components/AuthenticatedRoute";
 import AdminLogin from "./pages/AdminLogin";
-import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import { AdminProtectedRoute } from "./components/AdminProtectedRoute";
 import SongDetails from "@/pages/SongDetails";
 import ArtistDetails from "@/pages/ArtistDetails";
 import AlbumDetails from "@/pages/AlbumDetails";

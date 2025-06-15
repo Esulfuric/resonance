@@ -50,7 +50,7 @@ interface Post {
     username: string;
     full_name: string;
     avatar_url: string;
-  };
+  } | null;
 }
 
 interface User {
@@ -72,7 +72,7 @@ interface MusicUpload {
   profiles: {
     username: string;
     full_name: string;
-  };
+  } | null;
 }
 
 const AdminDashboard = () => {
@@ -96,7 +96,7 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     try {
       // Fetch posts
-      const { data: postsData } = await supabase
+      const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
           *,
@@ -104,14 +104,22 @@ const AdminDashboard = () => {
         `)
         .order('created_at', { ascending: false });
 
+      if (postsError) {
+        console.error('Error fetching posts:', postsError);
+      }
+
       // Fetch users
-      const { data: usersData } = await supabase
+      const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('*')
         .order('username');
 
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+      }
+
       // Fetch music uploads
-      const { data: musicData } = await supabase
+      const { data: musicData, error: musicError } = await supabase
         .from('music_uploads')
         .select(`
           *,
@@ -119,9 +127,13 @@ const AdminDashboard = () => {
         `)
         .order('created_at', { ascending: false });
 
-      setPosts(postsData || []);
-      setUsers(usersData || []);
-      setMusicUploads(musicData || []);
+      if (musicError) {
+        console.error('Error fetching music:', musicError);
+      }
+
+      setPosts((postsData || []) as Post[]);
+      setUsers((usersData || []) as User[]);
+      setMusicUploads((musicData || []) as MusicUpload[]);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to fetch data');

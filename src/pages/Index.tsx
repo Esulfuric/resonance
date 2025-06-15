@@ -1,8 +1,10 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/Footer";
+import { Shield } from "lucide-react";
 
 // This is the landing page component
 const Index = () => {
