@@ -24,13 +24,12 @@ serve(async (req) => {
       )
     }
 
-    // In a real application, you would hash the password and compare with stored hash
-    // For this demo, we're using a simple comparison (not secure for production)
-    if (username === 'admin' && password === 'admin123') {
+    // Updated admin credentials
+    if (username === 'sulfuriccreations@gmail.com' && password === 'Resonance@123') {
       return new Response(
         JSON.stringify([{
           id: 'admin-1',
-          username: 'admin',
+          username: 'sulfuriccreations@gmail.com',
           created_at: new Date().toISOString()
         }]),
         { 
