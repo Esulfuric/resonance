@@ -49,8 +49,8 @@ const Navbar = () => {
     }
   };
 
-  // Hide navbar on certain pages
-  if (['/login', '/signup', '/forgot-password'].includes(location.pathname)) {
+  // Hide navbar on certain pages including admin routes
+  if (['/login', '/signup', '/forgot-password', '/admin/login', '/admin/dashboard'].includes(location.pathname)) {
     return null;
   }
 
