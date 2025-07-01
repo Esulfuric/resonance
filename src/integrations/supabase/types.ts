@@ -392,6 +392,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      authenticate_admin: {
+        Args: { username_param: string; password_param: string }
+        Returns: Json
+      }
+      create_admin_user: {
+        Args: { username_param: string; password_param: string }
+        Returns: Json
+      }
       get_user_conversations: {
         Args: { user_id_param: string }
         Returns: {
