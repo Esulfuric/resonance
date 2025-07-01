@@ -47,7 +47,7 @@ const AdminLogin = () => {
       }
 
       // Type cast the response to our expected interface
-      const authResponse = data as AdminAuthResponse;
+      const authResponse = data as unknown as AdminAuthResponse;
 
       if (authResponse.success) {
         // Store admin session
