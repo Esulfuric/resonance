@@ -9,6 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
+interface AdminAuthResponse {
+  success: boolean;
+  admin_id?: string;
+  username?: string;
+  error?: string;
+}
+
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
@@ -39,20 +46,23 @@ const AdminLogin = () => {
         return;
       }
 
-      if (data.success) {
+      // Type cast the response to our expected interface
+      const authResponse = data as AdminAuthResponse;
+
+      if (authResponse.success) {
         // Store admin session
         const adminSession = {
           isAdmin: true,
-          adminId: data.admin_id,
-          username: data.username,
+          adminId: authResponse.admin_id,
+          username: authResponse.username,
           timestamp: new Date().toISOString()
         };
 
         localStorage.setItem('adminSession', JSON.stringify(adminSession));
-        toast.success(`Welcome, ${data.username}!`);
+        toast.success(`Welcome, ${authResponse.username}!`);
         navigate('/admin/dashboard');
       } else {
-        toast.error(data.error || 'Invalid credentials');
+        toast.error(authResponse.error || 'Invalid credentials');
       }
     } catch (error) {
       console.error('Admin login error:', error);
