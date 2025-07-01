@@ -34,15 +34,19 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
+      console.log('Attempting admin authentication...');
+      
       // Call the secure authentication function
       const { data, error } = await supabase.rpc('authenticate_admin', {
         username_param: username.trim(),
         password_param: password
       });
 
+      console.log('Authentication response:', { data, error });
+
       if (error) {
         console.error('Admin authentication error:', error);
-        toast.error('Authentication failed. Please try again.');
+        toast.error(`Authentication failed: ${error.message}`);
         return;
       }
 
@@ -134,14 +138,6 @@ const AdminLogin = () => {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Default credentials: admin / ResonanceAdmin2024!
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              (Change password after first login)
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
