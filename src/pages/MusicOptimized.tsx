@@ -3,6 +3,7 @@ import { useAuthGuard } from "@/hooks/use-auth-guard";
 import { MusicSearch } from "@/components/MusicSearch";
 import { TrendingMusic } from "@/components/TrendingMusic";
 import { MusicUpload } from "@/components/MusicUpload";
+import { ApprovedMusicList } from "@/components/ApprovedMusicList";
 import { useSupabase } from "@/lib/supabase-provider";
 import { useEffect } from "react";
 import { FullScreenLoader } from "@/components/ui/loading-state";
@@ -42,6 +43,10 @@ const MusicOptimized = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
+            {/* Show approved music for all users */}
+            <ApprovedMusicList />
+            
+            {/* Show upload form for musicians or search for listeners */}
             {isMusician ? <MusicUpload /> : <MusicSearch />}
           </div>
           <div className="space-y-6">

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -12,6 +13,14 @@ interface Track {
   title: string;
   file: File | null;
 }
+
+// Function to sanitize file names for storage
+const sanitizeFileName = (fileName: string): string => {
+  return fileName
+    .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
+    .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+    .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+};
 
 export function MusicUploadForm() {
   const { toast } = useToast();
@@ -29,9 +38,10 @@ export function MusicUploadForm() {
   ]);
 
   const handleFileUpload = async (file: File, path: string) => {
+    const sanitizedPath = sanitizeFileName(path);
     const { data, error } = await supabase.storage
       .from(path.startsWith('cover-art') ? 'cover-art' : 'music-files')
-      .upload(path, file);
+      .upload(sanitizedPath, file);
     
     if (error) throw error;
     return data.path;
@@ -63,9 +73,11 @@ export function MusicUploadForm() {
 
       let coverArtUrl = null;
       if (formData.coverArt) {
-        const coverArtPath = `${user.id}/${Date.now()}-cover.${formData.coverArt.name.split('.').pop()}`;
-        await handleFileUpload(formData.coverArt, coverArtPath);
-        coverArtUrl = `https://sieepgujumwjauyoahzp.supabase.co/storage/v1/object/public/cover-art/${coverArtPath}`;
+        const timestamp = Date.now();
+        const sanitizedCoverName = sanitizeFileName(formData.coverArt.name);
+        const coverArtPath = `${user.id}/${timestamp}-cover-${sanitizedCoverName}`;
+        const uploadedCoverPath = await handleFileUpload(formData.coverArt, coverArtPath);
+        coverArtUrl = `https://sieepgujumwjauyoahzp.supabase.co/storage/v1/object/public/cover-art/${uploadedCoverPath}`;
       }
 
       const { data: uploadData, error: uploadError } = await supabase
@@ -87,7 +99,9 @@ export function MusicUploadForm() {
         const track = validTracks[i];
         if (!track.file) continue;
 
-        const originalPath = `${user.id}/${uploadData.id}/${Date.now()}-${track.file.name}`;
+        const timestamp = Date.now();
+        const sanitizedFileName = sanitizeFileName(track.file.name);
+        const originalPath = `${user.id}/${uploadData.id}/${timestamp}-${sanitizedFileName}`;
         const uploadedPath = await handleFileUpload(track.file, originalPath);
         const convertedPath = await convertToAAC(uploadedPath);
 
