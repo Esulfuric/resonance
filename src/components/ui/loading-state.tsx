@@ -16,7 +16,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   return (
     <div className={`flex flex-col items-center justify-center gap-4 py-8 ${className}`}>
       <LoadingGif size={size} />
-      <p className="text-muted-foreground">{message}</p>
+      <p className="text-muted-foreground animate-pulse">{message}</p>
     </div>
   );
 };
@@ -27,8 +27,10 @@ export const FullScreenLoader: React.FC<LoadingStateProps> = ({
   className = "" 
 }) => {
   return (
-    <div className={`flex items-center justify-center h-screen ${className}`}>
-      <LoadingState size={size} message={message} />
+    <div className={`flex items-center justify-center h-screen bg-background ${className}`}>
+      <div className="text-center">
+        <LoadingState size={size} message={message} />
+      </div>
     </div>
   );
 };

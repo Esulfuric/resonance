@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { SupabaseProvider } from "@/lib/supabase-provider";
 import { TranslationProvider } from "@/contexts/TranslationContext";
 import { toast } from "sonner";
@@ -35,28 +35,50 @@ const queryClient = new QueryClient({
 });
 
 const AppOptimized = () => {
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
+  const [isInitialized, setIsInitialized] = useState(false);
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn("Supabase configuration missing in environment variables");
-    }
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Theme initialization
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        }
+
+        // Environment validation
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseAnonKey) {
+          console.warn("Supabase configuration missing in environment variables");
+        }
+
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('App initialization error:', error);
+        setIsInitialized(true); // Still set to true to allow app to render
+      }
+    };
+
+    initializeApp();
   }, []);
 
+  if (!isInitialized) {
+    return <FullScreenLoader message="Initializing app..." />;
+  }
+
   return (
-    <ErrorBoundary>
+    <ErrorBoundary onError={(error, errorInfo) => {
+      console.error('App-level error:', { error, errorInfo });
+      // Could add error reporting service here
+    }}>
       <SupabaseProvider>
         <TranslationProvider>
           <QueryClientProvider client={queryClient}>
@@ -70,20 +92,78 @@ const AppOptimized = () => {
                       <Routes>
                         <AdminRoutes />
                         
-                        {/* Simplified protected routes */}
-                        <Route path="/feed" element={<AuthenticatedLayout><pages.Feed /></AuthenticatedLayout>} />
-                        <Route path="/discover" element={<AuthenticatedLayout><pages.Discover /></AuthenticatedLayout>} />
-                        <Route path="/music" element={<AuthenticatedLayout><pages.MusicOptimized /></AuthenticatedLayout>} />
-                        <Route path="/search" element={<AuthenticatedLayout><pages.SearchPage /></AuthenticatedLayout>} />
-                        <Route path="/profile" element={<AuthenticatedLayout><pages.Profile /></AuthenticatedLayout>} />
-                        <Route path="/l/:username" element={<AuthenticatedLayout><pages.UserProfile /></AuthenticatedLayout>} />
-                        <Route path="/m/:username" element={<AuthenticatedLayout><pages.UserProfile /></AuthenticatedLayout>} />
-                        <Route path="/messages" element={<AuthenticatedLayout><pages.Messages /></AuthenticatedLayout>} />
-                        <Route path="/create-post" element={<components.AuthenticatedRouteOptimized><pages.CreatePost /></components.AuthenticatedRouteOptimized>} />
+                        {/* Simplified protected routes with individual error boundaries */}
+                        <Route path="/feed" element={
+                          <ErrorBoundary>
+                            <AuthenticatedLayout>
+                              <pages.Feed />
+                            </AuthenticatedLayout>
+                          </ErrorBoundary>
+                        } />
+                        <Route path="/discover" element={
+                          <ErrorBoundary>
+                            <AuthenticatedLayout>
+                              <pages.Discover />
+                            </AuthenticatedLayout>
+                          </ErrorBoundary>
+                        } />
+                        <Route path="/music" element={
+                          <ErrorBoundary>
+                            <AuthenticatedLayout>
+                              <pages.MusicOptimized />
+                            </AuthenticatedLayout>
+                          </ErrorBoundary>
+                        } />
+                        <Route path="/search" element={
+                          <ErrorBoundary>
+                            <AuthenticatedLayout>
+                              <pages.SearchPage />
+                            </AuthenticatedLayout>
+                          </ErrorBoundary>
+                        } />
+                        <Route path="/profile" element={
+                          <ErrorBoundary>
+                            <AuthenticatedLayout>
+                              <pages.Profile />
+                            </AuthenticatedLayout>
+                          </ErrorBoundary>
+                        } />
+                        <Route path="/l/:username" element={
+                          <ErrorBoundary>
+                            <AuthenticatedLayout>
+                              <pages.UserProfile />
+                            </AuthenticatedLayout>
+                          </ErrorBoundary>
+                        } />
+                        <Route path="/m/:username" element={
+                          <ErrorBoundary>
+                            <AuthenticatedLayout>
+                              <pages.UserProfile />
+                            </AuthenticatedLayout>
+                          </ErrorBoundary>
+                        } />
+                        <Route path="/messages" element={
+                          <ErrorBoundary>
+                            <AuthenticatedLayout>
+                              <pages.Messages />
+                            </AuthenticatedLayout>
+                          </ErrorBoundary>
+                        } />
+                        <Route path="/create-post" element={
+                          <ErrorBoundary>
+                            <components.AuthenticatedRouteOptimized>
+                              <pages.CreatePost />
+                            </components.AuthenticatedRouteOptimized>
+                          </ErrorBoundary>
+                        } />
 
                         <PublicRoutes />
                         <DetailRoutes />
-                        <Route path="*" element={<pages.NotFound />} />
+                        <Route path="*" element={
+                          <ErrorBoundary>
+                            <pages.NotFound />
+                          </ErrorBoundary>
+                        } />
                       </Routes>
                     </Suspense>
                   </ErrorBoundary>

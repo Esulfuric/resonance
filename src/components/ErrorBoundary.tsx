@@ -1,30 +1,46 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
   hasError: boolean;
   error?: Error;
+  errorInfo?: ErrorInfo;
+  retryCount: number;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
-    hasError: false
+    hasError: false,
+    retryCount: 0
   };
 
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     console.error('ErrorBoundary caught an error:', error);
     return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary details:', error, errorInfo);
+    console.error('ErrorBoundary details:', { error, errorInfo });
+    
+    this.setState({ errorInfo });
+    
+    // Call custom error handler if provided
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
+
+    // Log specific error patterns
+    if (error.message?.includes('ct[s] is not a function')) {
+      console.error('Component measurement error detected - likely lazy loading issue');
+    }
   }
 
   private handleReload = () => {
@@ -32,7 +48,12 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   private handleReset = () => {
-    this.setState({ hasError: false, error: undefined });
+    this.setState({ 
+      hasError: false, 
+      error: undefined, 
+      errorInfo: undefined,
+      retryCount: this.state.retryCount + 1
+    });
   };
 
   public render() {
@@ -49,20 +70,38 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-muted-foreground">
               We encountered an unexpected error. Please try refreshing the page.
             </p>
-            <div className="flex gap-2 justify-center">
-              <Button onClick={this.handleReload} variant="default">
-                Refresh Page
-              </Button>
-              <Button onClick={this.handleReset} variant="outline">
-                Try Again
-              </Button>
-            </div>
+            
+            {this.state.retryCount < 3 && (
+              <div className="flex gap-2 justify-center">
+                <Button onClick={this.handleReset} variant="default">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+                </Button>
+                <Button onClick={this.handleReload} variant="outline">
+                  Refresh Page
+                </Button>
+              </div>
+            )}
+
+            {this.state.retryCount >= 3 && (
+              <div className="flex gap-2 justify-center">
+                <Button onClick={this.handleReload} variant="default">
+                  Refresh Page
+                </Button>
+              </div>
+            )}
+
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-4 text-left">
                 <summary className="text-sm font-medium cursor-pointer">Error Details</summary>
-                <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto">
+                <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-40">
                   {this.state.error.stack}
                 </pre>
+                {this.state.errorInfo && (
+                  <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-40">
+                    Component Stack: {this.state.errorInfo.componentStack}
+                  </pre>
+                )}
               </details>
             )}
           </div>
