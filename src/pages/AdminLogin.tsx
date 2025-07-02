@@ -9,16 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
-interface AdminAuthResponse {
-  success: boolean;
-  admin_id?: string;
-  username?: string;
-  error?: string;
-}
-
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('admin@resonance.app');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,48 +19,65 @@ const AdminLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username.trim() || !password.trim()) {
-      toast.error('Please enter both username and password');
+    if (!email.trim() || !password.trim()) {
+      toast.error('Please enter both email and password');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      console.log('Attempting admin authentication...');
+      console.log('Attempting admin login with Supabase Auth...');
       
-      // Call the secure authentication function
-      const { data, error } = await supabase.rpc('authenticate_admin', {
-        username_param: username.trim(),
-        password_param: password
+      // Sign in with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password
       });
 
-      console.log('Authentication response:', { data, error });
-
-      if (error) {
-        console.error('Admin authentication error:', error);
-        toast.error(`Authentication failed: ${error.message}`);
+      if (authError) {
+        console.error('Auth error:', authError);
+        toast.error(`Login failed: ${authError.message}`);
         return;
       }
 
-      // Type cast the response to our expected interface
-      const authResponse = data as unknown as AdminAuthResponse;
-
-      if (authResponse.success) {
-        // Store admin session
-        const adminSession = {
-          isAdmin: true,
-          adminId: authResponse.admin_id,
-          username: authResponse.username,
-          timestamp: new Date().toISOString()
-        };
-
-        localStorage.setItem('adminSession', JSON.stringify(adminSession));
-        toast.success(`Welcome, ${authResponse.username}!`);
-        navigate('/admin/dashboard');
-      } else {
-        toast.error(authResponse.error || 'Invalid credentials');
+      if (!authData.user) {
+        toast.error('Login failed: No user data returned');
+        return;
       }
+
+      console.log('Auth successful, checking admin access...');
+
+      // Check if the user is an admin
+      const { data: adminCheck, error: adminError } = await supabase.rpc('check_admin_access');
+
+      if (adminError) {
+        console.error('Admin check error:', adminError);
+        // Sign out the user since they're not admin
+        await supabase.auth.signOut();
+        toast.error('Access denied: Admin privileges required');
+        return;
+      }
+
+      if (!adminCheck?.success || !adminCheck?.is_admin) {
+        console.log('User is not admin:', adminCheck);
+        // Sign out the user since they're not admin
+        await supabase.auth.signOut();
+        toast.error('Access denied: Admin privileges required');
+        return;
+      }
+
+      // Store admin session info
+      const adminSession = {
+        isAdmin: true,
+        userId: authData.user.id,
+        email: authData.user.email,
+        timestamp: new Date().toISOString()
+      };
+
+      localStorage.setItem('adminSession', JSON.stringify(adminSession));
+      toast.success(`Welcome, Admin!`);
+      navigate('/admin/dashboard');
     } catch (error) {
       console.error('Admin login error:', error);
       toast.error('An unexpected error occurred. Please try again.');
@@ -91,13 +101,13 @@ const AdminLogin = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="Enter admin username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                placeholder="Enter admin email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
               />
@@ -138,6 +148,10 @@ const AdminLogin = () => {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            <p>Use the admin account created in Supabase Auth</p>
+            <p className="text-xs mt-1">Email: admin@resonance.app</p>
+          </div>
         </CardContent>
       </Card>
     </div>

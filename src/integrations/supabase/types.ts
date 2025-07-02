@@ -36,27 +36,6 @@ export type Database = {
         }
         Relationships: []
       }
-      admin_users: {
-        Row: {
-          created_at: string
-          id: string
-          password_hash: string
-          username: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          password_hash: string
-          username: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          password_hash?: string
-          username?: string
-        }
-        Relationships: []
-      }
       follows: {
         Row: {
           created_at: string | null
@@ -392,12 +371,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      authenticate_admin: {
-        Args: { username_param: string; password_param: string }
-        Returns: Json
-      }
-      create_admin_user: {
-        Args: { username_param: string; password_param: string }
+      check_admin_access: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       get_user_conversations: {
@@ -409,6 +384,10 @@ export type Database = {
           created_at: string
           unread_count: number
         }[]
+      }
+      is_admin_user: {
+        Args: { user_email: string }
+        Returns: boolean
       }
       is_user_banned: {
         Args: { user_id_param: string }
