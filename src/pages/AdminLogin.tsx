@@ -59,8 +59,11 @@ const AdminLogin = () => {
         return;
       }
 
-      if (!adminCheck?.success || !adminCheck?.is_admin) {
-        console.log('User is not admin:', adminCheck);
+      // Type cast the Json response to access properties
+      const adminResponse = adminCheck as { success?: boolean; is_admin?: boolean; email?: string; error?: string };
+
+      if (!adminResponse?.success || !adminResponse?.is_admin) {
+        console.log('User is not admin:', adminResponse);
         // Sign out the user since they're not admin
         await supabase.auth.signOut();
         toast.error('Access denied: Admin privileges required');
