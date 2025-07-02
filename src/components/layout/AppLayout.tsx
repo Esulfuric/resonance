@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { AuthenticatedRouteOptimized } from "@/components/AuthenticatedRouteOptimized";
 import { FullScreenLoader } from "@/components/ui/loading-state";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -19,13 +20,15 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   requiresAuth = true 
 }) => {
   const content = (
-    <Suspense fallback={<FullScreenLoader />}>
-      {hasNavbar && <Navbar />}
-      <div className={`${hasNavbar ? 'pt-16' : ''} ${hasBottomNav ? 'pb-16' : ''}`}>
-        {children}
-      </div>
-      {hasBottomNav && <BottomNavigation />}
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<FullScreenLoader />}>
+        {hasNavbar && <Navbar />}
+        <div className={`${hasNavbar ? 'pt-16' : ''} ${hasBottomNav ? 'pb-16' : ''}`}>
+          {children}
+        </div>
+        {hasBottomNav && <BottomNavigation />}
+      </Suspense>
+    </ErrorBoundary>
   );
 
   if (requiresAuth) {
