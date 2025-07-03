@@ -68,6 +68,9 @@ interface MusicUploadWithProfile {
   composer_full_name: string;
   status: string;
   created_at: string;
+  upload_type: string;
+  album_name: string | null;
+  cover_art_url: string | null;
   profiles: {
     username: string;
     full_name: string;
@@ -94,7 +97,9 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch posts without profiles join first
+      console.log('Fetching admin dashboard data...');
+
+      // Fetch posts
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select('id, content, created_at, user_id, is_removed')
@@ -102,6 +107,8 @@ const AdminDashboard = () => {
 
       if (postsError) {
         console.error('Error fetching posts:', postsError);
+      } else {
+        console.log('Posts fetched:', postsData);
       }
 
       // Fetch users/profiles
@@ -112,16 +119,33 @@ const AdminDashboard = () => {
 
       if (usersError) {
         console.error('Error fetching users:', usersError);
+      } else {
+        console.log('Users fetched:', usersData);
       }
 
-      // Fetch music uploads without profiles join first
+      // Fetch ALL music uploads (not filtered by RLS since admin should see all)
+      console.log('Attempting to fetch music uploads...');
       const { data: musicData, error: musicError } = await supabase
         .from('music_uploads')
-        .select('id, title, artist_id, composer_full_name, status, created_at')
+        .select(`
+          id, 
+          title, 
+          artist_id, 
+          composer_full_name, 
+          status, 
+          created_at,
+          upload_type,
+          album_name,
+          cover_art_url
+        `)
         .order('created_at', { ascending: false });
 
       if (musicError) {
-        console.error('Error fetching music:', musicError);
+        console.error('Error fetching music uploads:', musicError);
+        toast.error('Failed to fetch music uploads: ' + musicError.message);
+      } else {
+        console.log('Music uploads fetched:', musicData);
+        console.log('Total music uploads found:', musicData?.length || 0);
       }
 
       // Create profiles lookup map
@@ -162,11 +186,16 @@ const AdminDashboard = () => {
         composer_full_name: upload.composer_full_name,
         status: upload.status,
         created_at: upload.created_at,
+        upload_type: upload.upload_type,
+        album_name: upload.album_name,
+        cover_art_url: upload.cover_art_url,
         profiles: profilesMap[upload.artist_id] ? {
           username: profilesMap[upload.artist_id].username || '',
           full_name: profilesMap[upload.artist_id].full_name || ''
         } : null
       }));
+
+      console.log('Transformed music uploads:', transformedMusicUploads);
 
       setPosts(transformedPosts);
       setUsers(transformedUsers);
@@ -339,23 +368,147 @@ const AdminDashboard = () => {
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Pending Music</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Music Uploads</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
                 <Music className="h-4 w-4 text-yellow-500" />
-                <span className="text-2xl font-bold text-yellow-500">{pendingMusicCount}</span>
+                <span className="text-2xl font-bold text-yellow-500">{musicUploads.length}</span>
+                <span className="text-xs text-muted-foreground">({pendingMusicCount} pending)</span>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="posts" className="space-y-4">
+        <Tabs defaultValue="music" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="music">Music Approval ({musicUploads.length})</TabsTrigger>
             <TabsTrigger value="posts">Posts Management</TabsTrigger>
             <TabsTrigger value="users">Users Management</TabsTrigger>
-            <TabsTrigger value="music">Music Approval</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="music">
+            <Card>
+              <CardHeader>
+                <CardTitle>Music Approval</CardTitle>
+                <CardDescription>
+                  Review and approve music submissions ({musicUploads.length} total uploads)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {musicUploads.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No music uploads found</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Cover</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Artist</TableHead>
+                        <TableHead>Composer</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {musicUploads.map((upload) => (
+                        <TableRow key={upload.id}>
+                          <TableCell>
+                            <div className="h-10 w-10 rounded overflow-hidden bg-muted">
+                              {upload.cover_art_url ? (
+                                <img 
+                                  src={upload.cover_art_url} 
+                                  alt={upload.title}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-full w-full flex items-center justify-center">
+                                  <Music className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {upload.title}
+                            {upload.album_name && (
+                              <div className="text-xs text-muted-foreground">
+                                Album: {upload.album_name}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {upload.profiles?.full_name || upload.profiles?.username || 'Unknown Artist'}
+                          </TableCell>
+                          <TableCell>
+                            {upload.composer_full_name}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {upload.upload_type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(upload.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                upload.status === 'approved' ? 'default' :
+                                upload.status === 'rejected' ? 'destructive' : 'secondary'
+                              }
+                            >
+                              {upload.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {upload.status === 'pending' && (
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleApproveMusicUpload(upload.id)}
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm">
+                                      <XCircle className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Reject Music Upload</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will reject the music upload. The artist will be notified.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleRejectMusicUpload(upload.id, "Quality standards not met")}
+                                      >
+                                        Reject Upload
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="posts">
             <Card>
@@ -516,95 +669,6 @@ const AdminDashboard = () => {
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="music">
-            <Card>
-              <CardHeader>
-                <CardTitle>Music Approval</CardTitle>
-                <CardDescription>
-                  Review and approve music submissions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Artist</TableHead>
-                      <TableHead>Composer</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {musicUploads.map((upload) => (
-                      <TableRow key={upload.id}>
-                        <TableCell className="font-medium">
-                          {upload.title}
-                        </TableCell>
-                        <TableCell>
-                          {upload.profiles?.full_name || upload.profiles?.username || 'Unknown'}
-                        </TableCell>
-                        <TableCell>
-                          {upload.composer_full_name}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(upload.created_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={
-                              upload.status === 'approved' ? 'default' :
-                              upload.status === 'rejected' ? 'destructive' : 'secondary'
-                            }
-                          >
-                            {upload.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {upload.status === 'pending' && (
-                            <div className="flex gap-2">
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => handleApproveMusicUpload(upload.id)}
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" size="sm">
-                                    <XCircle className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Reject Music Upload</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This will reject the music upload. The artist will be notified.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleRejectMusicUpload(upload.id, "Quality standards not met")}
-                                    >
-                                      Reject Upload
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
                           )}
                         </TableCell>
                       </TableRow>
