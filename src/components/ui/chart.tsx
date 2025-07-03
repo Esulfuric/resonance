@@ -74,26 +74,31 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
+  // Generate CSS custom properties for each theme and color
+  const cssVariables = React.useMemo(() => {
+    const vars: Record<string, string> = {}
+    
+    Object.entries(THEMES).forEach(([theme, prefix]) => {
+      colorConfig.forEach(([key, itemConfig]) => {
+        const color =
+          itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+          itemConfig.color
+        if (color) {
+          const varName = `--color-${key}${theme !== 'light' ? `-${theme}` : ''}`
+          vars[varName] = color
+        }
+      })
+    })
+    
+    return vars
+  }, [colorConfig])
+
+  // Apply styles using CSS custom properties without dangerouslySetInnerHTML
   return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
+    <div
+      data-chart-styles={id}
+      style={cssVariables as React.CSSProperties}
+      className="contents"
     />
   )
 }
