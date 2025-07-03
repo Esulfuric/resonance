@@ -1,7 +1,9 @@
+
 import React from "react";
 import { Route } from "react-router-dom";
-import { pages, components } from "@/config/routes";
+import { pages } from "@/config/routes";
 import { AuthenticatedLayout } from "@/components/layout/AppLayout";
+import { AuthenticatedRouteOptimized } from "@/components/AuthenticatedRouteOptimized";
 
 export const ProtectedRoutes = () => (
   <>
@@ -48,9 +50,9 @@ export const ProtectedRoutes = () => (
       </AuthenticatedLayout>
     } />
     <Route path="/create-post" element={
-      <components.AuthenticatedRouteOptimized>
+      <AuthenticatedRouteOptimized>
         <pages.CreatePost />
-      </components.AuthenticatedRouteOptimized>
+      </AuthenticatedRouteOptimized>
     } />
     {/* NOTE: Do NOT add a catch-all * route here! It should only go in your top-level router! */}
   </>

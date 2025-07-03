@@ -12,9 +12,10 @@ import { FullScreenLoader } from "@/components/ui/loading-state";
 import { PublicRoutes } from "@/components/routing/PublicRoutes";
 import { AdminRoutes } from "@/components/routing/AdminRoutes";
 import { DetailRoutes } from "@/components/routing/DetailRoutes";
-import { pages, components } from "@/config/routes";
+import { pages } from "@/config/routes";
 import { AuthenticatedLayout } from "@/components/layout/AppLayout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AuthenticatedRouteOptimized } from "@/components/AuthenticatedRouteOptimized";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -151,9 +152,9 @@ const AppOptimized = () => {
                         } />
                         <Route path="/create-post" element={
                           <ErrorBoundary>
-                            <components.AuthenticatedRouteOptimized>
+                            <AuthenticatedRouteOptimized>
                               <pages.CreatePost />
-                            </components.AuthenticatedRouteOptimized>
+                            </AuthenticatedRouteOptimized>
                           </ErrorBoundary>
                         } />
 
